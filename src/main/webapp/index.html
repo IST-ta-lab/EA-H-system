@@ -1,13 +1,175 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>我的 H5 首页</title>
+    <title>用户接口测试（调试版）</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .section { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; border-radius: 5px; }
+        input { margin: 5px; padding: 8px; width: 200px; display: block; }
+        button { margin-top: 10px; padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; max-height: 300px; overflow: auto; }
+        .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-<h1>欢迎来到我的 Servlet + H5 项目！</h1>
-<p>这里没有 JSP，只有纯 HTML5 😊</p>
-<!-- 把原来的href="/tapj_war_exploded/hello" 改成下面的 -->
-<a href="hello">访问 Hello Servlet</a>
+<h1>用户接口测试（调试版）</h1>
+
+<div class="note">
+    <strong>⚠️ 配置提示：</strong> 如果你的应用部署在某个上下文路径下（例如 <code>/myapp</code>），请在下方输入框中填写该路径（例如 <code>/myapp</code>），然后点击“更新BASE_URL”。<br>
+    当前 BASE_URL: <span id="baseUrlDisplay"></span>
+</div>
+<div>
+    <input type="text" id="baseUrlInput" placeholder="例如 /myapp 或留空" value="">
+    <button onclick="updateBaseUrl()">更新BASE_URL</button>
+</div>
+
+<!-- TA 注册表单 -->
+<div class="section">
+    <h2>TA 注册</h2>
+    <input type="text" id="regUsername" placeholder="用户名" value="ta001">
+    <input type="password" id="regPassword" placeholder="密码" value="123456">
+    <input type="text" id="regRealName" placeholder="真实姓名" value="张三">
+    <input type="email" id="regEmail" placeholder="邮箱" value="zhangsan@example.com">
+    <input type="text" id="regStudentId" placeholder="学号" value="2024001">
+    <input type="text" id="regMajor" placeholder="专业" value="计算机科学">
+    <input type="text" id="regEducation" placeholder="学历" value="硕士">
+    <input type="text" id="regGrade" placeholder="年级" value="研二">
+    <button onclick="registerTA()">注册 TA</button>
+</div>
+
+<!-- 登录表单 -->
+<div class="section">
+    <h2>登录</h2>
+    <input type="text" id="loginUsername" placeholder="用户名" value="ta001">
+    <input type="password" id="loginPassword" placeholder="密码" value="123456">
+    <button onclick="login()">登录</button>
+</div>
+
+<!-- 获取当前用户 -->
+<div class="section">
+    <h2>获取登录用户信息</h2>
+    <button onclick="getLoginUser()">获取用户信息</button>
+    <pre id="userInfo">点击按钮获取</pre>
+</div>
+
+<!-- 响应显示区域（显示原始响应） -->
+<div class="section">
+    <h2>服务器响应（原始）</h2>
+    <pre id="response">等待操作...</pre>
+</div>
+
+<script>
+    // 可配置的 BASE_URL，默认空字符串（当前域名根路径）
+    let BASE_URL = '/tapj';
+
+    // 更新显示
+    function updateBaseUrlDisplay() {
+        document.getElementById('baseUrlDisplay').innerText = BASE_URL || '（空字符串，即当前域名根路径）';
+    }
+
+    // 更新 BASE_URL
+    function updateBaseUrl() {
+        const input = document.getElementById('baseUrlInput').value.trim();
+        BASE_URL = input;
+        updateBaseUrlDisplay();
+        showResponse({ info: `BASE_URL 已更新为: ${BASE_URL || '空'}` });
+    }
+
+    // 初始化显示
+    updateBaseUrlDisplay();
+
+    // 显示响应的辅助函数（支持任何类型）
+    function showResponse(data) {
+        document.getElementById('response').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // 通用请求函数：先获取文本，尝试解析JSON，若失败则显示文本
+    async function request(url, options) {
+        const fullUrl = BASE_URL + url;
+        try {
+            const response = await fetch(fullUrl, options);
+            const text = await response.text();
+            // 尝试解析 JSON
+            try {
+                const json = JSON.parse(text);
+                return { ok: true, data: json, raw: text };
+            } catch (e) {
+                // 不是 JSON，返回原始文本
+                return { ok: false, raw: text, error: '响应不是 JSON 格式' };
+            }
+        } catch (error) {
+            return { ok: false, raw: null, error: error.message };
+        }
+    }
+
+    // TA 注册
+    async function registerTA() {
+        const params = new URLSearchParams();
+        params.append('username', document.getElementById('regUsername').value);
+        params.append('password', document.getElementById('regPassword').value);
+        params.append('realName', document.getElementById('regRealName').value);
+        params.append('email', document.getElementById('regEmail').value);
+        params.append('studentId', document.getElementById('regStudentId').value);
+        params.append('major', document.getElementById('regMajor').value);
+        params.append('education', document.getElementById('regEducation').value);
+        params.append('grade', document.getElementById('regGrade').value);
+
+        const result = await request('/user?action=registerTA', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+            credentials: 'include'
+        });
+
+        if (result.ok) {
+            showResponse(result.data);
+        } else {
+            showResponse(result.raw || result.error);
+        }
+    }
+
+    // 登录
+    async function login() {
+        const params = new URLSearchParams();
+        params.append('username', document.getElementById('loginUsername').value);
+        params.append('password', document.getElementById('loginPassword').value);
+
+        const result = await request('/user?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+            credentials: 'include'
+        });
+
+        if (result.ok) {
+            // 成功解析为 JSON
+            if (result.data.code === 200) {
+                window.location.href = 'main.html';
+            } else {
+                showResponse(result.data);
+            }
+        } else {
+            // 显示原始响应（可能是 HTML 错误页）
+            showResponse(result.raw || result.error);
+        }
+    }
+
+    // 获取当前登录用户
+    async function getLoginUser() {
+        const result = await request('/user?action=getLoginUser', {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        if (result.ok) {
+            document.getElementById('userInfo').textContent = JSON.stringify(result.data, null, 2);
+            showResponse(result.data);
+        } else {
+            document.getElementById('userInfo').textContent = '获取失败';
+            showResponse(result.raw || result.error);
+        }
+    }
+</script>
 </body>
 </html>
