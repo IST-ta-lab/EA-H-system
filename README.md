@@ -1,6 +1,10 @@
 # EA-H-system
 Agile-based TA Recruitment System for BUPT International School | Java/Java Servlet-JSP development | Core hiring workflows for TAs, MOs &amp; admins | Text-based data storage (CSV/JSON/XML) | Optional AI skill matching features
 
-注意：每个人各自的任务优先在自己的branch中进行上传，如果你已经将完成属于你的一步完整迭代，请将其上传到develop分支内，会在经过审查后合并到主分支
-注意：你做的所有修改请进行留痕记录，如在个人分支readme中记录，在上传后明确说明你的修改内容，方便大家知道你完成了什么功能。
-注意：请记得时常pull Product Backlog文件，查看当前任务，当然，也会在群里说明。
+## Name list of Group 96
+- Ruikai Xiao: GitHub username EchoWind-dev | QMID: 231223900
+- Peng Wen: GitHub username tomatooooo34 | QMID: 231223760
+- Yunyun Wan: GitHub username MacmillanceSylvia | QMID: 231224055
+- Hang Yu-big: GitHub username boliliemeng | QMID: 231223896
+- Shizhe Wang: GitHub username zuizuizuizuifai69 | QMID: 231223944
+- Hang Yu-mini: Github username yh6102 | QMID: 231223874
