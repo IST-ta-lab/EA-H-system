@@ -2,12 +2,16 @@ package com.qm.bupt.service.impl;
 
 import com.qm.bupt.dao.ApplicationDAO;
 import com.qm.bupt.dao.JobDAO;
+import com.qm.bupt.dao.TADAO; // 【新增】导入TADAO
+import com.qm.bupt.dto.ApplicationDetailDTO; // 【新增】导入DTO
 import com.qm.bupt.entity.Application;
 import com.qm.bupt.entity.Job;
+import com.qm.bupt.entity.TA; // 【新增】导入TA
 import com.qm.bupt.service.ApplicationService;
 import com.qm.bupt.util.AuthUtil;
 import com.qm.bupt.util.DateUtil;
 
+import java.util.ArrayList; // 【新增】
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +20,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private static final ApplicationServiceImpl INSTANCE = new ApplicationServiceImpl();
     private final ApplicationDAO applicationDAO = ApplicationDAO.getInstance();
     private final JobDAO jobDAO = JobDAO.getInstance();
+    private final TADAO taDAO = TADAO.getInstance(); // 【新增】注入TADAO
 
     private ApplicationServiceImpl() {
     }
@@ -91,5 +96,25 @@ public class ApplicationServiceImpl implements ApplicationService {
         return applicationDAO.listAll().stream()
                 .filter(a -> taUserId.equals(a.getTaUserId()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ApplicationDetailDTO> listApplicationDetailsByJobId(String jobId) {
+        // 1. 先查出所有申请记录
+        List<Application> appList = applicationDAO.listAll().stream()
+                .filter(a -> jobId.equals(a.getJobId()))
+                .collect(Collectors.toList());
+
+        // 2. 遍历申请记录，组装TA信息
+        List<ApplicationDetailDTO> dtoList = new ArrayList<>();
+        for (Application app : appList) {
+            // 根据 taUserId 查出 TA 的详细信息
+            TA ta = taDAO.getById(app.getTaUserId(), "userId").orElse(null);
+            // 组装成 DTO
+            ApplicationDetailDTO dto = new ApplicationDetailDTO(app, ta);
+            dtoList.add(dto);
+        }
+
+        return dtoList;
     }
 }
