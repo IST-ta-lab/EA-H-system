@@ -1,5 +1,6 @@
 package com.qm.bupt.servlet;
 
+import com.qm.bupt.dto.ApplicationDetailDTO;
 import com.qm.bupt.entity.Application;
 import com.qm.bupt.entity.User;
 import com.qm.bupt.service.ApplicationService;
@@ -68,7 +69,7 @@ public class ApplicationServlet extends BaseServlet {
     }
 
     /**
-     * 3. 查询某岗位的所有申请（MO调用）
+     * 3. 查询某岗位的所有申请（MO调用）【已修改：现在返回带TA详情的DTO】
      * GET /application?action=listByJob&jobId=xxx
      */
     public void listByJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -81,7 +82,9 @@ public class ApplicationServlet extends BaseServlet {
         }
 
         String jobId = request.getParameter("jobId");
-        List<Application> apps = applicationService.listApplicationsByJobId(jobId);
+
+        // 【修改点】：调用新的 service 方法，获取带详情的列表
+        List<ApplicationDetailDTO> apps = applicationService.listApplicationDetailsByJobId(jobId);
         writeJson(response, Result.success(apps));
     }
 
@@ -101,4 +104,5 @@ public class ApplicationServlet extends BaseServlet {
         List<Application> apps = applicationService.listMyApplications(loginUser.getUserId());
         writeJson(response, Result.success(apps));
     }
+
 }
