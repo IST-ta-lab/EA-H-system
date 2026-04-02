@@ -1,5 +1,6 @@
 package com.qm.bupt.service;
 
+import com.qm.bupt.dto.ApplicationDetailDTO;
 import com.qm.bupt.entity.Application;
 import java.util.List;
 
@@ -12,4 +13,7 @@ public interface ApplicationService {
     List<Application> listApplicationsByJobId(String jobId);
     // 4. TA查询自己的申请记录
     List<Application> listMyApplications(String taUserId);
+
+    // 【新增】查询某岗位的所有申请详情（包含TA信息）
+    List<ApplicationDetailDTO> listApplicationDetailsByJobId(String jobId);
 }
