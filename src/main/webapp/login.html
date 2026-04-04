@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+</head>
+<body>
+<h2>助教招聘系统 - 登录</h2>
+<input id="account" placeholder="账号">
+<input id="pwd" placeholder="密码" type="password">
+<button onclick="login()">登录</button>
+
+<script>
+    // 直接写，不使用模块化，100%兼容Tomcat
+    async function login() {
+        alert("点击登录，开始请求后端"); // 你点了一定会先弹出这个！
+
+        let account = document.getElementById("account").value;
+        let pwd = document.getElementById("pwd").value;
+
+        try {
+            let response = await fetch("/tapj/user/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userAccount: account, userPwd: pwd })
+            });
+
+            let res = await response.json();
+            alert("后端返回：" + res.msg);
+
+            if (res.code === 200) {
+                location.href = "job-list.html";
+            }
+        } catch (error) {
+            alert("请求失败：" + error);
+            console.log(error);
+        }
+    }
+</script>
+</body>
+</html>

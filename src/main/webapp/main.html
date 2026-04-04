@@ -1,11 +1,877 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>助教招聘系统 - 主界面</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+        .user-info { font-size: 16px; }
+        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 6px; }
+        .section h3 { margin-top: 0; color: #333; }
+        input, select, textarea { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        textarea { width: 400px; height: 80px; }
+        .card { border: 1px solid #eee; padding: 12px; margin: 8px 0; border-radius: 4px; background: #f9f9f9; }
+        .card-title { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+        .card-meta { color: #666; font-size: 14px; margin-bottom: 8px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; max-height: 300px; overflow: auto; }
+        .hidden { display: none; }
+        .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
+        .role-ta { background: #17a2b8; }
+        .role-mo { background: #6610f2; }
+    </style>
 </head>
 <body>
-    已经成功进入主页面了
+
+<div class="header">
+    <h1>助教招聘系统</h1>
+    <div class="user-info">
+        <span id="userDisplay"></span>
+        <button class="btn btn-danger" onclick="logout()">退出登录</button>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- TA 功能区 -->
+<!-- ================================== -->
+<div id="taSection" class="hidden">
+    <div class="section">
+        <h3>📋 招聘中岗位列表</h3>
+        <button class="btn" onclick="loadOpenJobs()">刷新岗位</button>
+        <div id="openJobList"></div>
+    </div>
+
+    <div class="section">
+        <h3>📝 我的申请记录</h3>
+        <button class="btn" onclick="loadMyApplications()">查看我的申请</button>
+        <div id="myApplicationList"></div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- MO 功能区 -->
+<!-- ================================== -->
+<div id="moSection" class="hidden">
+    <div class="section">
+        <h3>➕ 发布新岗位</h3>
+        <div>
+            <input type="text" id="jobName" placeholder="岗位名称"><br>
+            <select id="jobType">
+                <option value="1">助教</option>
+                <option value="2">助理</option>
+            </select>
+            <input type="text" id="belongModule" placeholder="所属模块"><br>
+            <textarea id="jobDesc" placeholder="岗位描述"></textarea><br>
+            <input type="number" id="workHoursWeekly" placeholder="每周工作时长"><br>
+            <input type="number" id="recruitNum" placeholder="招聘人数"><br>
+            <input type="text" id="applyDeadline" placeholder="申请截止日期 (YYYY-MM-DD)"><br>
+            <button class="btn btn-success" onclick="publishJob()">发布岗位</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📋 我发布的岗位</h3>
+        <button class="btn" onclick="loadMyJobs()">刷新我的岗位</button>
+        <div id="myJobList"></div>
+    </div>
+
+    <div class="section">
+        <h3>👥 查看岗位申请人</h3>
+        <input type="text" id="queryJobId" placeholder="输入岗位ID">
+        <button class="btn" onclick="loadJobApplications()">查询申请人</button>
+        <div id="jobApplicationList"></div>
+    </div>
+</div>
+
+<!-- 响应显示区域 -->
+<div class="section">
+    <h3>📡 服务器响应</h3>
+    <pre id="response">等待操作...</pre>
+</div>
+
+<script>
+    const BASE_URL = '/tapj';
+    let currentUser = null;
+
+    // 页面加载时检查登录状态
+    window.onload = async function() {
+        await loadLoginUser();
+    };
+
+    // 显示响应
+    function showResponse(data) {
+        document.getElementById('response').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // 通用请求函数
+    async function request(url, options = {}) {
+        try {
+            const res = await fetch(BASE_URL + url, {
+                credentials: 'include',
+                ...options
+            });
+            const text = await res.text();
+            try {
+                return { ok: true, data: JSON.parse(text) };
+            } catch (e) {
+                return { ok: false, raw: text };
+            }
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
+    }
+
+    // 获取当前登录用户
+    async function loadLoginUser() {
+        const r = await request('/user?action=getLoginUser');
+        if (r.ok && r.data.code === 200) {
+            currentUser = r.data.data;
+            displayUserInfo();
+            showRoleSection();
+        } else {
+            alert('未登录或登录已过期，请重新登录');
+            location.href = 'index.html';
+        }
+    }
+
+    // 显示用户信息
+    function displayUserInfo() {
+        const roleBadge = currentUser.userType === 1
+            ? '<span class="role-badge role-ta">TA</span>'
+            : '<span class="role-badge role-mo">MO</span>';
+        document.getElementById('userDisplay').innerHTML =
+            `欢迎，${currentUser.realName} (${currentUser.username}) ${roleBadge}`;
+    }
+
+    // 根据角色显示对应功能区
+    function showRoleSection() {
+        if (currentUser.userType === 1) {
+            document.getElementById('taSection').classList.remove('hidden');
+            loadOpenJobs();
+        } else if (currentUser.userType === 2) {
+            document.getElementById('moSection').classList.remove('hidden');
+            loadMyJobs();
+        }
+    }
+
+    // ==================== TA 功能 ====================
+
+    // 加载招聘中岗位
+    async function loadOpenJobs() {
+        const r = await request('/job?action=listOpen');
+        if (r.ok && r.data.code === 200) {
+            const jobs = r.data.data;
+            let html = '';
+            if (jobs && jobs.length > 0) {
+                jobs.forEach(job => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">${job.jobName}</div>
+                            <div class="card-meta">
+                                ID: ${job.jobId} | 类型: ${job.jobType === 1 ? '助教' : '助理'} | 模块: ${job.belongModule}<br>
+                                每周时长: ${job.workHoursWeekly}h | 招聘: ${job.recruitNum}人 | 截止: ${job.applyDeadline}
+                            </div>
+                            <div>${job.jobDesc}</div>
+                            <button class="btn btn-success" onclick="applyJob('${job.jobId}')">申请此岗位</button>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无招聘中岗位</p>';
+            }
+            document.getElementById('openJobList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 申请岗位
+    async function applyJob(jobId) {
+        const r = await request(`/application?action=apply&jobId=${jobId}`, { method: 'POST' });
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            loadMyApplications();
+        }
+    }
+
+    // 加载我的申请
+    async function loadMyApplications() {
+        const r = await request('/application?action=listMy');
+        if (r.ok && r.data.code === 200) {
+            const apps = r.data.data;
+            let html = '';
+            if (apps && apps.length > 0) {
+                apps.forEach(app => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">申请ID: ${app.applicationId}</div>
+                            <div class="card-meta">
+                                岗位ID: ${app.jobId} | 状态: ${app.status}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无申请记录</p>';
+            }
+            document.getElementById('myApplicationList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // ==================== MO 功能 ====================
+
+    // 发布岗位
+    async function publishJob() {
+        const params = new URLSearchParams();
+        params.append('jobName', document.getElementById('jobName').value);
+        params.append('jobType', document.getElementById('jobType').value);
+        params.append('belongModule', document.getElementById('belongModule').value);
+        params.append('jobDesc', document.getElementById('jobDesc').value);
+        params.append('workHoursWeekly', document.getElementById('workHoursWeekly').value);
+        params.append('recruitNum', document.getElementById('recruitNum').value);
+        params.append('applyDeadline', document.getElementById('applyDeadline').value);
+
+        const r = await request('/job?action=publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            if (r.data.code === 200) {
+                loadMyJobs();
+                // 清空表单
+                document.getElementById('jobName').value = '';
+                document.getElementById('belongModule').value = '';
+                document.getElementById('jobDesc').value = '';
+                document.getElementById('workHoursWeekly').value = '';
+                document.getElementById('recruitNum').value = '';
+                document.getElementById('applyDeadline').value = '';
+            }
+        }
+    }
+
+    // 加载我的岗位
+    async function loadMyJobs() {
+        const r = await request('/job?action=listMy');
+        if (r.ok && r.data.code === 200) {
+            const jobs = r.data.data;
+            let html = '';
+            if (jobs && jobs.length > 0) {
+                jobs.forEach(job => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">${job.jobName}</div>
+                            <div class="card-meta">
+                                ID: ${job.jobId} | 类型: ${job.jobType === 1 ? '助教' : '助理'} | 模块: ${job.belongModule}<br>
+                                每周时长: ${job.workHoursWeekly}h | 招聘: ${job.recruitNum}人 | 截止: ${job.applyDeadline}
+                            </div>
+                            <div>${job.jobDesc}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无发布的岗位</p>';
+            }
+            document.getElementById('myJobList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 加载岗位申请人
+    async function loadJobApplications() {
+        const jobId = document.getElementById('queryJobId').value;
+        if (!jobId) {
+            alert('请输入岗位ID');
+            return;
+        }
+
+        const r = await request(`/application?action=listByJob&jobId=${jobId}`);
+        if (r.ok && r.data.code === 200) {
+            const apps = r.data.data;
+            let html = '';
+            if (apps && apps.length > 0) {
+                apps.forEach(app => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">申请ID: ${app.applicationId}</div>
+                            <div class="card-meta">
+                                TA ID: ${app.taId} | 状态: ${app.status}
+                            </div>
+                            <div>
+                                <button class="btn btn-success" onclick="auditApplication('${app.applicationId}', 1, '通过')">通过</button>
+                                <button class="btn btn-danger" onclick="auditApplication('${app.applicationId}', 2, '拒绝')">拒绝</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无申请人</p>';
+            }
+            document.getElementById('jobApplicationList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 审核申请
+    async function auditApplication(applicationId, auditStatus, remark) {
+        const params = new URLSearchParams();
+        params.append('applicationId', applicationId);
+        params.append('auditStatus', auditStatus);
+        params.append('remark', remark);
+
+        const r = await request('/application?action=audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            if (r.data.code === 200) {
+                loadJobApplications();
+            }
+        }
+    }
+
+    // 退出登录
+    async function logout() {
+        const r = await request('/user?action=logout', { method: 'POST' });
+        alert('退出成功');
+        location.href = 'index.html';
+    }
+</script>
+
 </body>
 </html>
+
+
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>助教招聘系统 - 主界面</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+        .user-info { font-size: 16px; }
+        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .btn-secondary { background: #6c757d; }
+        .section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 6px; }
+        .section h3 { margin-top: 0; color: #333; }
+        input, select, textarea { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        textarea { width: 400px; height: 80px; }
+        .card { border: 1px solid #eee; padding: 12px; margin: 8px 0; border-radius: 4px; background: #f9f9f9; }
+        .card-title { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+        .card-meta { color: #666; font-size: 14px; margin-bottom: 8px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; max-height: 300px; overflow: auto; }
+        .hidden { display: none !important; }
+        .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
+        .role-ta { background: #17a2b8; }
+        .role-mo { background: #6610f2; }
+
+        /* 模态框样式 - 修复版 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 10000;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            margin: 0;
+            font-size: 22px;
+        }
+        .close-btn {
+            background: #f0f0f0;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { background: #e0e0e0; }
+        .detail-item {
+            margin: 10px 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #333;
+            display: inline-block;
+            width: 140px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>助教招聘系统</h1>
+    <div class="user-info">
+        <span id="userDisplay"></span>
+        <button class="btn btn-danger" onclick="logout()">退出登录</button>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- TA 功能区 -->
+<!-- ================================== -->
+<div id="taSection" class="hidden">
+    <div class="section">
+        <h3>📋 招聘中岗位列表</h3>
+        <button class="btn" onclick="loadOpenJobs()">刷新岗位</button>
+        <div id="openJobList"></div>
+    </div>
+
+    <div class="section">
+        <h3>📝 我的申请记录</h3>
+        <button class="btn" onclick="loadMyApplications()">查看我的申请</button>
+        <div id="myApplicationList"></div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- MO 功能区 -->
+<!-- ================================== -->
+<div id="moSection" class="hidden">
+    <div class="section">
+        <h3>➕ 发布新岗位</h3>
+        <div>
+            <input type="text" id="jobName" placeholder="岗位名称"><br>
+            <select id="jobType">
+                <option value="1">助教</option>
+                <option value="2">助理</option>
+            </select>
+            <input type="text" id="belongModule" placeholder="所属模块"><br>
+            <textarea id="jobDesc" placeholder="岗位描述"></textarea><br>
+            <input type="number" id="workHoursWeekly" placeholder="每周工作时长"><br>
+            <input type="number" id="recruitNum" placeholder="招聘人数"><br>
+            <input type="text" id="applyDeadline" placeholder="申请截止日期 (YYYY-MM-DD)"><br>
+            <button class="btn btn-success" onclick="publishJob()">发布岗位</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📋 我发布的岗位</h3>
+        <button class="btn" onclick="loadMyJobs()">刷新我的岗位</button>
+        <div id="myJobList"></div>
+    </div>
+
+    <div class="section">
+        <h3>👥 查看岗位申请人</h3>
+        <input type="text" id="queryJobId" placeholder="输入岗位ID">
+        <button class="btn" onclick="loadJobApplications()">查询申请人</button>
+        <div id="jobApplicationList"></div>
+    </div>
+</div>
+
+<!-- 响应显示区域 -->
+<div class="section">
+    <h3>📡 服务器响应</h3>
+    <pre id="response">等待操作...</pre>
+</div>
+
+<!-- ================================== -->
+<!-- 岗位详情模态框 -->
+<!-- ================================== -->
+<div id="jobDetailModal" class="modal-overlay hidden" onclick="closeOnOverlay(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalJobName">岗位详情</h2>
+            <button class="close-btn" onclick="closeJobDetail()">&times;</button>
+        </div>
+        <div id="jobDetailContent">
+            <!-- 详情内容会动态填充 -->
+        </div>
+        <div style="margin-top: 20px; text-align: right;">
+            <button class="btn btn-secondary" onclick="closeJobDetail()">关闭</button>
+            <button id="applyBtn" class="btn btn-success" onclick="applyFromDetail()">申请此岗位</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = '/tapj';
+    let currentUser = null;
+    let currentJobId = null;
+
+    // 页面加载
+    window.onload = function() {
+        loadLoginUser();
+    };
+
+    // 显示响应
+    function showResponse(data) {
+        document.getElementById('response').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // 通用请求
+    async function request(url, options = {}) {
+        try {
+            const res = await fetch(BASE_URL + url, {
+                credentials: 'include',
+                ...options
+            });
+            const text = await res.text();
+            try {
+                return { ok: true, data: JSON.parse(text) };
+            } catch (e) {
+                return { ok: false, raw: text };
+            }
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
+    }
+
+    // 获取当前用户
+    async function loadLoginUser() {
+        const r = await request('/user?action=getLoginUser');
+        if (r.ok && r.data.code === 200) {
+            currentUser = r.data.data;
+            displayUserInfo();
+            showRoleSection();
+        } else {
+            alert('未登录或登录已过期，请重新登录');
+            location.href = 'index.html';
+        }
+    }
+
+    // 显示用户信息
+    function displayUserInfo() {
+        const roleBadge = currentUser.userType === 1
+            ? '<span class="role-badge role-ta">TA</span>'
+            : '<span class="role-badge role-mo">MO</span>';
+        document.getElementById('userDisplay').innerHTML =
+            `欢迎，${currentUser.realName} (${currentUser.username}) ${roleBadge}`;
+    }
+
+    // 显示对应功能区
+    function showRoleSection() {
+        if (currentUser.userType === 1) {
+            document.getElementById('taSection').classList.remove('hidden');
+            loadOpenJobs();
+        } else if (currentUser.userType === 2) {
+            document.getElementById('moSection').classList.remove('hidden');
+            loadMyJobs();
+        }
+    }
+
+    // ==================== TA 功能 ====================
+
+    // 加载招聘中岗位
+    async function loadOpenJobs() {
+        const r = await request('/job?action=listOpen');
+        if (r.ok && r.data.code === 200) {
+            const jobs = r.data.data;
+            let html = '';
+            if (jobs && jobs.length > 0) {
+                jobs.forEach(job => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">${job.jobName}</div>
+                            <div class="card-meta">
+                                ID: ${job.jobId} | 类型: ${job.jobType === 1 ? '助教' : '助理'} | 模块: ${job.belongModule}<br>
+                                每周时长: ${job.workHoursWeekly}h | 招聘: ${job.recruitNum}人 | 截止: ${job.applyDeadline}
+                            </div>
+                            <div style="margin-bottom: 10px;">${job.jobDesc}</div>
+                            <button class="btn" onclick="viewJobDetail('${job.jobId}', 'ta')">查看详情</button>
+                            <button class="btn btn-success" onclick="applyJob('${job.jobId}')">申请此岗位</button>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无招聘中岗位</p>';
+            }
+            document.getElementById('openJobList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 查看岗位详情
+    async function viewJobDetail(jobId, role) {
+        currentJobId = jobId;
+        const r = await request(`/job?action=getDetail&jobId=${jobId}`);
+        if (r.ok && r.data.code === 200) {
+            const job = r.data.data;
+            document.getElementById('modalJobName').textContent = job.jobName;
+
+            let content = `
+                <div class="detail-item">
+                    <span class="detail-label">岗位ID:</span>
+                    <span>${job.jobId}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">岗位类型:</span>
+                    <span>${job.jobType === 1 ? '助教' : '助理'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">所属模块:</span>
+                    <span>${job.belongModule}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">每周工作时长:</span>
+                    <span>${job.workHoursWeekly} 小时</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">招聘人数:</span>
+                    <span>${job.recruitNum} 人</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">申请截止日期:</span>
+                    <span>${job.applyDeadline}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">岗位描述:</span>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                    ${job.jobDesc}
+                </div>
+            `;
+
+            document.getElementById('jobDetailContent').innerHTML = content;
+
+            // 根据角色显示/隐藏申请按钮
+            const applyBtn = document.getElementById('applyBtn');
+            if (role === 'ta') {
+                applyBtn.style.display = 'inline-block';
+            } else {
+                applyBtn.style.display = 'none';
+            }
+
+            document.getElementById('jobDetailModal').classList.remove('hidden');
+            showResponse(r.data);
+        } else {
+            alert('获取岗位详情失败');
+        }
+    }
+
+    // 点击遮罩层关闭
+    function closeOnOverlay(event) {
+        if (event.target.id === 'jobDetailModal') {
+            closeJobDetail();
+        }
+    }
+
+    // 关闭详情弹窗
+    function closeJobDetail() {
+        document.getElementById('jobDetailModal').classList.add('hidden');
+        currentJobId = null;
+    }
+
+    // 从详情页申请
+    async function applyFromDetail() {
+        if (currentJobId) {
+            await applyJob(currentJobId);
+            closeJobDetail();
+        }
+    }
+
+    // 申请岗位
+    async function applyJob(jobId) {
+        const r = await request(`/application?action=apply&jobId=${jobId}`, { method: 'POST' });
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            loadMyApplications();
+        }
+    }
+
+    // 加载我的申请
+    async function loadMyApplications() {
+        const r = await request('/application?action=listMy');
+        if (r.ok && r.data.code === 200) {
+            const apps = r.data.data;
+            let html = '';
+            if (apps && apps.length > 0) {
+                apps.forEach(app => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">申请ID: ${app.applicationId}</div>
+                            <div class="card-meta">
+                                岗位ID: ${app.jobId} | 状态: ${app.status}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无申请记录</p>';
+            }
+            document.getElementById('myApplicationList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // ==================== MO 功能 ====================
+
+    // 发布岗位
+    async function publishJob() {
+        const params = new URLSearchParams();
+        params.append('jobName', document.getElementById('jobName').value);
+        params.append('jobType', document.getElementById('jobType').value);
+        params.append('belongModule', document.getElementById('belongModule').value);
+        params.append('jobDesc', document.getElementById('jobDesc').value);
+        params.append('workHoursWeekly', document.getElementById('workHoursWeekly').value);
+        params.append('recruitNum', document.getElementById('recruitNum').value);
+        params.append('applyDeadline', document.getElementById('applyDeadline').value);
+
+        const r = await request('/job?action=publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            if (r.data.code === 200) {
+                loadMyJobs();
+                document.getElementById('jobName').value = '';
+                document.getElementById('belongModule').value = '';
+                document.getElementById('jobDesc').value = '';
+                document.getElementById('workHoursWeekly').value = '';
+                document.getElementById('recruitNum').value = '';
+                document.getElementById('applyDeadline').value = '';
+            }
+        }
+    }
+
+    // 加载我的岗位（MO）- 新增查看详情按钮
+    async function loadMyJobs() {
+        const r = await request('/job?action=listMy');
+        if (r.ok && r.data.code === 200) {
+            const jobs = r.data.data;
+            let html = '';
+            if (jobs && jobs.length > 0) {
+                jobs.forEach(job => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">${job.jobName}</div>
+                            <div class="card-meta">
+                                ID: ${job.jobId} | 类型: ${job.jobType === 1 ? '助教' : '助理'} | 模块: ${job.belongModule}<br>
+                                每周时长: ${job.workHoursWeekly}h | 招聘: ${job.recruitNum}人 | 截止: ${job.applyDeadline}
+                            </div>
+                            <div style="margin-bottom: 10px;">${job.jobDesc}</div>
+                            <button class="btn" onclick="viewJobDetail('${job.jobId}', 'mo')">查看详情</button>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无发布的岗位</p>';
+            }
+            document.getElementById('myJobList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 加载岗位申请人
+    async function loadJobApplications() {
+        const jobId = document.getElementById('queryJobId').value;
+        if (!jobId) {
+            alert('请输入岗位ID');
+            return;
+        }
+
+        const r = await request(`/application?action=listByJob&jobId=${jobId}`);
+        if (r.ok && r.data.code === 200) {
+            const apps = r.data.data;
+            let html = '';
+            if (apps && apps.length > 0) {
+                apps.forEach(app => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">申请ID: ${app.applicationId}</div>
+                            <div class="card-meta">
+                                TA ID: ${app.taId} | 状态: ${app.status}
+                            </div>
+                            <div>
+                                <button class="btn btn-success" onclick="auditApplication('${app.applicationId}', 1, '通过')">通过</button>
+                                <button class="btn btn-danger" onclick="auditApplication('${app.applicationId}', 2, '拒绝')">拒绝</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>暂无申请人</p>';
+            }
+            document.getElementById('jobApplicationList').innerHTML = html;
+            showResponse(r.data);
+        }
+    }
+
+    // 审核申请
+    async function auditApplication(applicationId, auditStatus, remark) {
+        const params = new URLSearchParams();
+        params.append('applicationId', applicationId);
+        params.append('auditStatus', auditStatus);
+        params.append('remark', remark);
+
+        const r = await request('/application?action=audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+
+        if (r.ok) {
+            alert(r.data.msg);
+            showResponse(r.data);
+            if (r.data.code === 200) {
+                loadJobApplications();
+            }
+        }
+    }
+
+    // 退出登录
+    async function logout() {
+        try {
+            await request('/user?action=logout', { method: 'POST' });
+        } catch (e) {
+            console.log(e);
+        }
+        alert('退出成功');
+        location.href = 'index.html';
+    }
+</script>
+
+</body>
+</html>
+
+
+
+
