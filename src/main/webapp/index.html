@@ -13,18 +13,18 @@
     </style>
 </head>
 <body>
-<h1>用户接口测试（调试版）</h1>
+<h1>用户接口测试（调试版）123412312</h1>
 
 <div class="note">
-    <strong>⚠️ 配置提示：</strong> 如果你的应用部署在某个上下文路径下（例如 <code>/myapp</code>），请在下方输入框中填写该路径（例如 <code>/myapp</code>），然后点击“更新BASE_URL”。<br>
+    <strong>⚠️ 配置提示：</strong> 上下文路径默认 /tapj<br>
     当前 BASE_URL: <span id="baseUrlDisplay"></span>
 </div>
 <div>
-    <input type="text" id="baseUrlInput" placeholder="例如 /myapp 或留空" value="">
+    <input type="text" id="baseUrlInput" placeholder="例如 /tapj" value="/tapj">
     <button onclick="updateBaseUrl()">更新BASE_URL</button>
 </div>
 
-<!-- TA 注册表单 -->
+<!-- TA 注册 -->
 <div class="section">
     <h2>TA 注册</h2>
     <input type="text" id="regUsername" placeholder="用户名" value="ta001">
@@ -38,9 +38,20 @@
     <button onclick="registerTA()">注册 TA</button>
 </div>
 
-<!-- 登录表单 -->
+<!-- MO 注册（新增！） -->
 <div class="section">
-    <h2>登录</h2>
+    <h2>MO 注册（教师/管理员）</h2>
+    <input type="text" id="moRegUsername" placeholder="用户名" value="mo001">
+    <input type="password" id="moRegPassword" placeholder="密码" value="123456">
+    <input type="text" id="moRegRealName" placeholder="真实姓名" value="李老师">
+    <input type="email" id="moRegEmail" placeholder="邮箱" value="mo@bupt.edu.cn">
+    <input type="text" id="moRegCourse" placeholder="负责课程" value="软件工程">
+    <button onclick="registerMO()">注册 MO</button>
+</div>
+
+<!-- 登录 -->
+<div class="section">
+    <h2>登录（TA/MO通用）</h2>
     <input type="text" id="loginUsername" placeholder="用户名" value="ta001">
     <input type="password" id="loginPassword" placeholder="密码" value="123456">
     <button onclick="login()">登录</button>
@@ -53,121 +64,85 @@
     <pre id="userInfo">点击按钮获取</pre>
 </div>
 
-<!-- 响应显示区域（显示原始响应） -->
+<!-- 响应显示区域 -->
 <div class="section">
     <h2>服务器响应（原始）</h2>
     <pre id="response">等待操作...</pre>
 </div>
 
 <script>
-    // 可配置的 BASE_URL，默认空字符串（当前域名根路径）
     let BASE_URL = '/tapj';
-
-    // 更新显示
-    function updateBaseUrlDisplay() {
-        document.getElementById('baseUrlDisplay').innerText = BASE_URL || '（空字符串，即当前域名根路径）';
-    }
-
-    // 更新 BASE_URL
-    function updateBaseUrl() {
-        const input = document.getElementById('baseUrlInput').value.trim();
-        BASE_URL = input;
-        updateBaseUrlDisplay();
-        showResponse({ info: `BASE_URL 已更新为: ${BASE_URL || '空'}` });
-    }
-
-    // 初始化显示
     updateBaseUrlDisplay();
 
-    // 显示响应的辅助函数（支持任何类型）
+    function updateBaseUrlDisplay() {
+        document.getElementById('baseUrlDisplay').innerText = BASE_URL;
+    }
+    function updateBaseUrl() {
+        BASE_URL = document.getElementById('baseUrlInput').value.trim();
+        updateBaseUrlDisplay();
+        showResponse({info:"更新成功："+BASE_URL});
+    }
+
     function showResponse(data) {
         document.getElementById('response').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     }
 
-    // 通用请求函数：先获取文本，尝试解析JSON，若失败则显示文本
     async function request(url, options) {
-        const fullUrl = BASE_URL + url;
         try {
-            const response = await fetch(fullUrl, options);
-            const text = await response.text();
-            // 尝试解析 JSON
-            try {
-                const json = JSON.parse(text);
-                return { ok: true, data: json, raw: text };
-            } catch (e) {
-                // 不是 JSON，返回原始文本
-                return { ok: false, raw: text, error: '响应不是 JSON 格式' };
-            }
-        } catch (error) {
-            return { ok: false, raw: null, error: error.message };
-        }
+            const res = await fetch(BASE_URL + url, { credentials:'include', ...options });
+            const text = await res.text();
+            try { return {ok:true, data:JSON.parse(text)}; }
+            catch (e) { return {ok:false, raw:text}; }
+        } catch (e) { return {ok:false, error:e.message}; }
     }
 
-    // TA 注册
+    // TA注册
     async function registerTA() {
-        const params = new URLSearchParams();
-        params.append('username', document.getElementById('regUsername').value);
-        params.append('password', document.getElementById('regPassword').value);
-        params.append('realName', document.getElementById('regRealName').value);
-        params.append('email', document.getElementById('regEmail').value);
-        params.append('studentId', document.getElementById('regStudentId').value);
-        params.append('major', document.getElementById('regMajor').value);
-        params.append('education', document.getElementById('regEducation').value);
-        params.append('grade', document.getElementById('regGrade').value);
+        const p = new URLSearchParams();
+        p.append('username', document.getElementById('regUsername').value);
+        p.append('password', document.getElementById('regPassword').value);
+        p.append('realName', document.getElementById('regRealName').value);
+        p.append('email', document.getElementById('regEmail').value);
+        p.append('studentId', document.getElementById('regStudentId').value);
+        p.append('major', document.getElementById('regMajor').value);
+        p.append('education', document.getElementById('regEducation').value);
+        p.append('grade', document.getElementById('regGrade').value);
+        const r = await request('/user?action=registerTA', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
+        showResponse(r.data || r.raw);
+    }
 
-        const result = await request('/user?action=registerTA', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params,
-            credentials: 'include'
-        });
-
-        if (result.ok) {
-            showResponse(result.data);
-        } else {
-            showResponse(result.raw || result.error);
-        }
+    // MO注册（新增！）
+    async function registerMO() {
+        const p = new URLSearchParams();
+        p.append('username', document.getElementById('moRegUsername').value);
+        p.append('password', document.getElementById('moRegPassword').value);
+        p.append('realName', document.getElementById('moRegRealName').value);
+        p.append('email', document.getElementById('moRegEmail').value);
+        p.append('course', document.getElementById('moRegCourse').value);
+        const r = await request('/user?action=registerMO', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
+        showResponse(r.data || r.raw);
     }
 
     // 登录
     async function login() {
-        const params = new URLSearchParams();
-        params.append('username', document.getElementById('loginUsername').value);
-        params.append('password', document.getElementById('loginPassword').value);
-
-        const result = await request('/user?action=login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params,
-            credentials: 'include'
-        });
-
-        if (result.ok) {
-            // 成功解析为 JSON
-            if (result.data.code === 200) {
-                window.location.href = 'main.html';
-            } else {
-                showResponse(result.data);
-            }
+        const p = new URLSearchParams();
+        p.append('username', document.getElementById('loginUsername').value);
+        p.append('password', document.getElementById('loginPassword').value);
+        const r = await request('/user?action=login', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
+        if(r.ok && r.data.code === 200) {
+            alert("登录成功！");
+            location.href = "main.html";
         } else {
-            // 显示原始响应（可能是 HTML 错误页）
-            showResponse(result.raw || result.error);
+            showResponse(r.data || r.raw);
         }
     }
 
-    // 获取当前登录用户
+    // 获取登录用户
     async function getLoginUser() {
-        const result = await request('/user?action=getLoginUser', {
-            method: 'GET',
-            credentials: 'include'
-        });
-
-        if (result.ok) {
-            document.getElementById('userInfo').textContent = JSON.stringify(result.data, null, 2);
-            showResponse(result.data);
-        } else {
-            document.getElementById('userInfo').textContent = '获取失败';
-            showResponse(result.raw || result.error);
+        const r = await request('/user?action=getLoginUser', {method:'GET'});
+        if(r.ok) {
+            document.getElementById('userInfo').textContent = JSON.stringify(r.data, null, 2);
+            showResponse(r.data);
         }
     }
 </script>

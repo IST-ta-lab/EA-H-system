@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>应聘</title>
+</head>
+<body>
+<h2>提交应聘</h2>
+<input id="stuId" placeholder="学号">
+<input id="name" placeholder="姓名">
+<input id="skill" placeholder="技能">
+<button onclick="submitApply()">提交</button>
+
+<script type="module">
+    import { applyJob } from './common.js'
+    const jobId = new URLSearchParams(location.search).get('jobId')
+
+    window.submitApply = async () => {
+        const stuId = document.getElementById('stuId').value
+        const name = document.getElementById('name').value
+        const skill = document.getElementById('skill').value
+
+        const res = await applyJob(jobId, { stuId, name }, skill)
+        alert(res.msg)
+    }
+</script>
+</body>
+</html>
