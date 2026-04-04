@@ -8,3 +8,7 @@ Agile-based TA Recruitment System for BUPT International School | Java/Java Serv
 - Hang Yu-big: GitHub username boliliemeng | QMID: 231223896
 - Shizhe Wang: GitHub username zuizuizuizuifai69 | QMID: 231223944
 - Hang Yu-mini: Github username yh6102 | QMID: 231223874
+
+## Finished tasks
+- Basic TA api (log in / sign up ...)
+- Basic MO api (log in / sign up ...)
