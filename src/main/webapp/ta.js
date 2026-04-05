@@ -658,7 +658,7 @@ function bindFeedEvents() {
     openButtons.forEach(btn => {
         btn.addEventListener("click", async event => {
             event.stopPropagation();
-            const id = Number(btn.dataset.jobId);
+            const id = btn.dataset.jobId;
             await openJobModal(id);
         });
     });
@@ -666,7 +666,7 @@ function bindFeedEvents() {
     applyButtons.forEach(btn => {
         btn.addEventListener("click", async event => {
             event.stopPropagation();
-            const id = Number(btn.dataset.jobId);
+            const id = btn.dataset.jobId;
             await handleApply(id);
         });
     });
@@ -674,7 +674,7 @@ function bindFeedEvents() {
     const cards = els.feedView.querySelectorAll(".job-card");
     cards.forEach(card => {
         card.addEventListener("click", async () => {
-            await openJobModal(Number(card.dataset.jobId));
+            await openJobModal(card.dataset.jobId);
         });
     });
 
