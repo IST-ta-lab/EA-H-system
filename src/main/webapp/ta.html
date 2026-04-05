@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TA Market</title>
+    <link rel="stylesheet" href="ta.css" />
+</head>
+<body>
+<div class="page-shell">
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+        <div class="bg-blob bg-blob-3"></div>
+    </div>
+
+    <header class="top-nav">
+        <div class="container nav-inner">
+            <div class="brand">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 6.5 12 3l8 3.5-8 3.5L4 6.5Zm2 3.1V15c0 1.2 2.7 3 6 3s6-1.8 6-3V9.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="brand-name">TA Market</span>
+            </div>
+
+            <div class="nav-right">
+                <span class="nav-username" id="navUserName"></span>
+                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="打开个人资料">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-layout">
+        <section class="main-content" id="mainContent">
+            <div id="feedView" class="view-panel active"></div>
+            <div id="profileView" class="view-panel"></div>
+        </section>
+
+        <aside class="sidebar" id="sidebar"></aside>
+    </main>
+</div>
+
+<!-- 编辑资料弹窗 -->
+<div class="modal-overlay hidden" id="profileModalOverlay">
+    <div class="modal-card modal-large scale-enter" id="profileModalCard">
+        <div class="modal-header">
+            <h2>编辑个人资料</h2>
+            <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body form-layout">
+            <div class="form-group">
+                <label for="profileNameInput">姓名</label>
+                <input id="profileNameInput" type="text" />
+            </div>
+
+            <div class="form-group">
+                <label for="profileEmailInput">邮箱</label>
+                <input id="profileEmailInput" type="email" />
+            </div>
+
+            <div class="form-group">
+                <label for="profileMajorInput">专业 / 院系</label>
+                <input id="profileMajorInput" type="text" />
+            </div>
+
+            <div class="form-group">
+                <label for="profileBioInput">个人简介</label>
+                <textarea id="profileBioInput" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="profileSkillsInput">技能（英文逗号分隔）</label>
+                <input id="profileSkillsInput" type="text" />
+            </div>
+
+            <button class="check-row" id="profileVisibleToggle" type="button">
+                <span class="check-icon" id="profileVisibleIcon"></span>
+                <span>
+            <strong>对他人可见</strong>
+            <small>允许课程负责人搜索到你的资料</small>
+          </span>
+            </button>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">取消</button>
+            <button class="btn btn-primary" id="saveProfileBtn" type="button">保存修改</button>
+        </div>
+    </div>
+</div>
+
+<!-- 岗位详情 / 申请弹窗 -->
+<div class="modal-overlay hidden" id="jobModalOverlay">
+    <div class="modal-card modal-xl scale-enter" id="jobModalCard">
+        <div class="modal-header job-header">
+            <div>
+                <h2 id="jobModalTitle"></h2>
+                <div class="job-meta-row" id="jobModalMeta"></div>
+            </div>
+            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body scrollable" id="jobModalBody">
+            <section class="job-section">
+                <h3>岗位说明</h3>
+                <p id="jobDescriptionText"></p>
+            </section>
+
+            <section class="match-card" id="matchCard"></section>
+
+            <section class="job-section">
+                <h3>所需技能</h3>
+                <div class="tag-list" id="jobRequiredTags"></div>
+            </section>
+
+            <hr class="divider" />
+
+            <section class="job-section">
+                <h3>提交申请</h3>
+
+                <div class="option-list">
+                    <button class="check-row" id="takenCourseToggle" type="button">
+                        <span class="check-icon" id="takenCourseIcon"></span>
+                        <span><strong>我之前修过这门课</strong></span>
+                    </button>
+
+                    <button class="check-row" id="inPersonToggle" type="button">
+                        <span class="check-icon" id="inPersonIcon"></span>
+                        <span><strong>我可以参加线下答疑</strong></span>
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label for="appRemarksInput">补充说明（可选）</label>
+                    <textarea id="appRemarksInput" rows="3" placeholder="补充你的相关经验，或说明为什么适合这个岗位..."></textarea>
+                </div>
+            </section>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">取消</button>
+            <button class="btn btn-primary" id="submitApplicationBtn" type="button">提交申请</button>
+        </div>
+    </div>
+</div>
+
+<script src="ta.js"></script>
+</body>
+</html>
