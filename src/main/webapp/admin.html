@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TA Market Admin</title>
+    <link rel="stylesheet" href="./admin.css" />
+</head>
+<body>
+<div class="admin-shell">
+    <!-- 顶部导航 -->
+    <header class="top-nav">
+        <div class="container nav-inner">
+            <div class="brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 6.5 12 3l8 3.5-8 3.5L4 6.5Zm2 3.1V15c0 1.2 2.7 3 6 3s6-1.8 6-3V9.6"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="brand-name">TA Market</span>
+            </div>
+
+            <div class="nav-right">
+                <button class="nav-icon-btn" id="openRequestsBtn" type="button" aria-label="打开角色申请通知">
+                    <span class="nav-dot hidden" id="requestDot"></span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <span class="nav-username" id="navUserName">Admin User</span>
+
+                <div class="avatar-btn" id="adminAvatar" aria-label="管理员头像">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体 -->
+    <main class="container page-main">
+        <!-- 顶部两张动作卡 -->
+        <section class="hero-actions" id="heroActions">
+            <!-- JS 渲染：Statistics Report / System Users -->
+        </section>
+
+        <!-- 主监控面板 -->
+        <section class="monitor-shell glass-card">
+            <div class="monitor-switcher" id="monitorSwitcher">
+                <!-- JS 渲染：TA / MO / Logs -->
+            </div>
+
+            <div class="monitor-content" id="monitorContent">
+                <!-- JS 渲染：TA workload / MO workload / Logs -->
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- ========================= -->
+<!-- TA 详情弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="taDetailModalOverlay">
+    <div class="modal-card modal-lg scale-enter">
+        <div class="modal-header">
+            <h2>Teaching Assistant Details</h2>
+            <button class="icon-btn" id="closeTaDetailModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="taDetailModalBody"></div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 统计报告弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="statsModalOverlay">
+    <div class="modal-card modal-xl scale-enter">
+        <div class="modal-header">
+            <h2>System Statistics Report</h2>
+            <button class="icon-btn" id="closeStatsModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body scrollable" id="statsModalBody"></div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 系统用户弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="usersModalOverlay">
+    <div class="modal-card modal-xl scale-enter">
+        <div class="modal-header">
+            <h2>System Users Management</h2>
+            <button class="icon-btn" id="closeUsersModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body scrollable" id="usersModalBody"></div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 用户详情弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="userDetailModalOverlay">
+    <div class="modal-card modal-md scale-enter user-detail-modal-card">
+        <div class="user-detail-cover">
+            <button class="icon-btn icon-btn-light" id="closeUserDetailModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="user-detail-content" id="userDetailModalBody"></div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 驳回岗位弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="rejectPostModalOverlay">
+    <div class="modal-card modal-md scale-enter">
+        <div class="modal-header">
+            <h2>Reject Post</h2>
+            <button class="icon-btn" id="closeRejectPostModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="rejectPostModalBody">
+            <div class="alert-block alert-danger">
+                <div class="alert-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 9v4m0 4h.01M10.29 3.86l-7.54 13A2 2 0 0 0 4.47 20h15.06a2 2 0 0 0 1.72-3.14l-7.54-13a2 2 0 0 0-3.42 0Z"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="alert-text">
+                    Rejecting this post will send it back to the MO for modification. It will not be visible to TAs until approved.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="rejectReasonInput">Rejection Reason (Required)</label>
+                <textarea id="rejectReasonInput" rows="6" placeholder="Please explain why this post is being rejected..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="cancelRejectPostBtn" type="button">Cancel</button>
+            <button class="btn btn-danger" id="confirmRejectPostBtn" type="button">Confirm Reject</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 角色申请通知弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="requestsModalOverlay">
+    <div class="modal-card modal-lg scale-enter">
+        <div class="modal-header">
+            <h2>Role Change Requests</h2>
+            <button class="icon-btn" id="closeRequestsModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body scrollable" id="requestsModalBody"></div>
+    </div>
+</div>
+
+<script src="./admin.js"></script>
+</body>
+</html>
