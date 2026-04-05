@@ -22,6 +22,7 @@ public class AuthFilter implements Filter {
             "/user?action=login",
             "/user?action=registerTA",
             "/user?action=registerMO",
+            "/user?action=registerAdmin", // 【新增】放开Admin注册
             "/job?action=listAll",    // 【新增】游客查所有岗位
             "/job?action=listOpen",   // 【新增】游客查招聘中岗位
             "/job?action=getDetail",  // 【新增】游客查岗位详情
