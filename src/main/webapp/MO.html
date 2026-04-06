@@ -1,1068 +1,1027 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MO 工作台 - 助教招聘系统</title>
-    <style>
-        :root {
-            --bg: #f8fafc;
-            --panel: rgba(255, 255, 255, 0.8);
-            --text: #0f172a;
-            --subtext: #64748b;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --accent: #0ea5e9;
-            --danger: #e11d48;
-            --warning: #d97706;
-            --success: #059669;
-            --border: #e2e8f0;
-            --ring: 0 0 0 4px rgba(79, 70, 229, 0.1);
-            --shadow-card: 0 8px 30px rgba(15, 23, 42, 0.06);
-            --shadow-float: 0 20px 50px rgba(15, 23, 42, 0.12);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-            color: var(--text);
-            background: var(--bg);
-            min-height: 100vh;
-            position: relative;
-        }
-
-        .page-decor {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .orb {
-            position: absolute;
-            border-radius: 999px;
-            filter: blur(90px);
-            opacity: 0.42;
-            animation: float 8s ease-in-out infinite;
-        }
-
-        .orb-1 {
-            width: 420px;
-            height: 420px;
-            background: #c7d2fe;
-            top: -120px;
-            left: -120px;
-        }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: #fbcfe8;
-            bottom: -100px;
-            right: -50px;
-            animation-delay: 1.5s;
-        }
-
-        .orb-3 {
-            width: 260px;
-            height: 260px;
-            background: #bae6fd;
-            top: 25%;
-            right: 22%;
-            animation-delay: 0.8s;
-        }
-
-        .grid-mask {
-            position: absolute;
-            inset: 0;
-            background-image: radial-gradient(rgba(15, 23, 42, 0.07) 1px, transparent 1px);
-            background-size: 22px 22px;
-            mask-image: linear-gradient(to bottom, white 0%, transparent 82%);
-            -webkit-mask-image: linear-gradient(to bottom, white 0%, transparent 82%);
-            opacity: 0.55;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-14px); }
-        }
-
-        .top-nav {
-            position: sticky;
-            top: 0;
-            z-index: 25;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-            backdrop-filter: blur(16px);
-            background: rgba(255, 255, 255, 0.64);
-        }
-
-        .nav-inner {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            background: linear-gradient(140deg, #4f46e5, #7c3aed);
-            color: #fff;
-            font-weight: 700;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 10px 22px rgba(79, 70, 229, 0.34);
-            transform: rotate(-6deg);
-        }
-
-        .brand-title {
-            font-size: 21px;
-            font-weight: 700;
-            letter-spacing: 0.2px;
-        }
-
-        .brand-sub {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 2px;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .toolbar-field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 600;
-        }
-
-        .toolbar input {
-            width: 130px;
-            border-radius: 10px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(255, 255, 255, 0.9);
-            color: #0f172a;
-            padding: 8px 10px;
-            outline: none;
-        }
-
-        .toolbar input:focus {
-            border-color: rgba(79, 70, 229, 0.6);
-            box-shadow: var(--ring);
-        }
-
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 24px 20px 30px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero {
-            margin-bottom: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 18px;
-            flex-wrap: wrap;
-        }
-
-        .hero h1 {
-            margin: 0;
-            font-size: clamp(30px, 4vw, 54px);
-            line-height: 1.05;
-            letter-spacing: -0.02em;
-        }
-
-        .hero h1 .dot {
-            color: #4f46e5;
-        }
-
-        .hero p {
-            margin: 10px 0 0;
-            color: var(--subtext);
-            max-width: 700px;
-            line-height: 1.6;
-        }
-
-        .user-pill {
-            border-radius: 18px;
-            padding: 12px 14px;
-            background: rgba(255, 255, 255, 0.78);
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            box-shadow: var(--shadow-card);
-            min-width: 260px;
-        }
-
-        .user-pill .label {
-            font-size: 11px;
-            color: #94a3b8;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1.2fr 0.9fr;
-            gap: 20px;
-            align-items: start;
-        }
-
-        .panel {
-            border-radius: 26px;
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            background: var(--panel);
-            backdrop-filter: blur(14px);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-        }
-
-        .panel-title {
-            margin: 0;
-            padding: 20px 22px 12px;
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-        }
-
-        .panel-body {
-            padding: 10px 22px 22px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .form-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-item.full {
-            grid-column: 1 / -1;
-        }
-
-        .form-item label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #94a3b8;
-            font-weight: 700;
-        }
-
-        input,
-        select,
-        textarea {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-            color: var(--text);
-            outline: none;
-            background: rgba(248, 250, 252, 0.85);
-            transition: all 0.18s ease;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: rgba(79, 70, 229, 0.7);
-            box-shadow: var(--ring);
-            background: #fff;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 108px;
-            line-height: 1.5;
-        }
-
-        .btn {
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            padding: 10px 16px;
-            font-weight: 700;
-            font-size: 14px;
-            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-        }
-
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-            color: #fff;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, #4338ca, #4f46e5);
-        }
-
-        .btn-ghost {
-            background: #eef2ff;
-            color: #3730a3;
-        }
-
-        .btn-danger {
-            background: #f43f5e;
-            color: #fff;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: #fff;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: #fff;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .job-card,
-        .app-card {
-            border-radius: 22px;
-            border: 1px solid #eef2ff;
-            background: rgba(255, 255, 255, 0.94);
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow-card);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .job-card:hover,
-        .app-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.09);
-        }
-
-        .job-title {
-            font-size: 22px;
-            margin: 0 0 8px;
-            letter-spacing: -0.01em;
-        }
-
-        .desc {
-            color: #334155;
-            margin: 10px 0 12px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        .meta-list {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-        }
-
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #334155;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .chip-open { background: #ecfeff; border-color: #a5f3fc; color: #0c4a6e; }
-        .chip-closed { background: #fef3c7; border-color: #fde68a; color: #92400e; }
-        .chip-filled { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
-
-        .chip-pending { background: #fef3c7; border-color: #fde68a; color: #92400e; }
-        .chip-pass { background: #dcfce7; border-color: #bbf7d0; color: #065f46; }
-        .chip-reject { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
-
-        .muted {
-            color: var(--subtext);
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .row-end {
-            justify-content: flex-end;
-        }
-
-        .empty {
-            color: var(--subtext);
-            padding: 22px 0;
-            font-weight: 500;
-        }
-
-        .response {
-            white-space: pre-wrap;
-            background: #0f172a;
-            color: #dbeafe;
-            border-radius: 20px;
-            padding: 16px;
-            height: 240px;
-            overflow: auto;
-            font-size: 13px;
-            line-height: 1.5;
-            border: 1px solid #1e293b;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-        }
-
-        .modal-mask {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.28);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            z-index: 999;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal {
-            width: min(760px, 96vw);
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px;
-            box-shadow: var(--shadow-float);
-            max-height: 86vh;
-            overflow: auto;
-            border: 1px solid rgba(255, 255, 255, 0.85);
-        }
-
-        .modal-head {
-            padding: 20px 22px;
-            border-bottom: 1px solid #eef2ff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 20px 22px;
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: 130px 1fr;
-            gap: 10px 12px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .detail-grid b {
-            color: #334155;
-        }
-
-        @media (max-width: 1040px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 760px) {
-            .container {
-                padding: 18px 14px 24px;
-            }
-
-            .nav-inner {
-                padding: 12px 14px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .panel {
-                border-radius: 22px;
-            }
-
-            .panel-title {
-                font-size: 18px;
-            }
-
-            .job-title {
-                font-size: 19px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TA Market - MO Console</title>
+
+  <!-- Native HTML + JS only. No npm, no build tools. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --font-sans: Inter, system-ui, -apple-system, sans-serif;
+      --font-display: Outfit, Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      color: #0f172a;
+      background-color: #f8fafc;
+      background-image:
+        radial-gradient(circle at 0% 0%, rgba(224, 231, 255, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 100% 50%, rgba(252, 231, 243, 0.5) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(243, 232, 255, 0.4) 0%, transparent 40%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .font-display {
+      font-family: var(--font-display);
+    }
+
+    .soft-card {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(241, 245, 249, 0.9);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s ease;
+    }
+
+    .icon-btn:hover {
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .icon-btn.danger:hover {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .icon-btn.good:hover {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot-purple { background: #a855f7; }
+    .dot-green { background: #10b981; }
+    .dot-blue { background: #3b82f6; }
+
+    .status-approved {
+      color: #047857;
+      background: #d1fae5;
+    }
+
+    .status-rejected {
+      color: #b91c1c;
+      background: #fee2e2;
+    }
+
+    .status-pending {
+      color: #334155;
+      background: #f1f5f9;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #e2e8f0;
+      border-radius: 20px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: #cbd5e1;
+    }
+
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 80;
+    }
+
+    .modal-mask.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(100%, 720px);
+      max-height: 90vh;
+      overflow: auto;
+      border-radius: 30px;
+      background: #fff;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.3);
+      z-index: 120;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tooltip-anchor {
+      position: relative;
+    }
+
+    .tooltip-anchor:hover .tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%) translateY(5px);
+      background: #1e293b;
+      color: #fff;
+      border-radius: 7px;
+      padding: 4px 7px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 0.15s ease;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .line-clamp-2 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+  </style>
 </head>
-<body>
-<div class="page-decor">
-    <div class="grid-mask"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-</div>
+<body class="min-h-screen pb-20">
+  <header class="bg-transparent pt-6 pb-4">
+    <div class="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-[#6366f1] rounded-xl flex items-center justify-center text-white shadow-sm text-xs font-bold">TM</div>
+        <span class="font-bold text-3xl tracking-tight">TA Market</span>
+      </div>
 
-<nav class="top-nav">
-    <div class="nav-inner">
-        <div class="brand">
-            <div class="brand-icon">MO</div>
-            <div>
-                <div class="brand-title">TA Market</div>
-                <div class="brand-sub">Module Organizer Workspace</div>
-            </div>
-        </div>
-        <div class="toolbar">
-            <div class="toolbar-field">
-                <label for="baseUrlInput">BASE_URL</label>
-                <input id="baseUrlInput" value="/tapj" placeholder="/tapj">
-            </div>
-            <button class="btn btn-ghost" id="baseUrlBtn">更新</button>
-            <button class="btn btn-danger" id="logoutBtn">退出登录</button>
-        </div>
+      <div class="flex items-center gap-4">
+        <span id="headerRealName" class="text-sm font-medium text-slate-600 hidden sm:block">Loading...</span>
+        <button id="btnLogout" class="w-10 h-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm text-xs font-semibold">OUT</button>
+      </div>
     </div>
-</nav>
+  </header>
 
-<div class="container">
-    <section class="hero">
+  <main class="max-w-[1400px] mx-auto px-6 py-8 flex flex-col lg:flex-row gap-10">
+    <section class="flex-1 min-w-0">
+      <div class="mb-10">
+        <h1 class="text-5xl font-extrabold tracking-tight mb-4">Manage Roles<span class="text-indigo-500">.</span></h1>
+        <p class="text-slate-500 text-lg max-w-2xl leading-relaxed">
+          Create and manage teaching assistant positions. Review applications and select the best candidates for your courses.
+        </p>
+      </div>
+
+      <div id="jobCards" class="space-y-6"></div>
+
+      <div id="emptyJobs" class="hidden text-center py-16 bg-white rounded-[28px] border border-slate-100 border-dashed shadow-[0_2px_20px_rgba(0,0,0,0.02)]">
+        <div class="text-4xl text-slate-300 mb-4">[]</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-2">No Positions Posted</h3>
+        <p class="text-slate-500">Create a new position to start recruiting teaching assistants.</p>
+      </div>
+    </section>
+
+    <aside class="w-full lg:w-[340px] shrink-0">
+      <div class="soft-card rounded-[28px] p-8 sticky top-24">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-sm font-bold">POS</div>
+            <h3 class="text-lg font-bold">Post Position</h3>
+          </div>
+          <button id="btnOpenCreateFromPencil" class="text-slate-400 hover:text-slate-600 transition-colors text-xs font-semibold">EDIT</button>
+        </div>
+
+        <div class="mb-8">
+          <div class="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-2">Action</div>
+          <h4 class="text-4xl font-bold text-slate-900 mb-1">New Role</h4>
+          <p class="text-sm text-slate-500">Create a new Teaching Assistant position</p>
+        </div>
+
+        <div class="border border-slate-100 border-dashed rounded-2xl p-6 text-center mb-6">
+          <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3 text-2xl">+</div>
+          <h5 class="text-sm font-bold text-slate-900 mb-1">Add Details</h5>
+          <p class="text-xs text-slate-500">Fill out course info, hours, and requirements</p>
+        </div>
+
+        <button id="btnOpenCreate" class="w-full bg-[#0f172a] text-white font-semibold py-4 rounded-full hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
+          Create Position
+        </button>
+
+        <div class="mt-5 rounded-2xl bg-slate-50 border border-slate-100 p-3.5 text-xs text-slate-600">
+          <div>Current User: <span id="profileUserLine" class="font-semibold">-</span></div>
+          <div class="mt-1">Posted Jobs: <span id="statJobCount" class="mono">0</span></div>
+          <div>Pending Applications: <span id="statPendingCount" class="mono">0</span></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="jobModal" class="modal-mask" role="dialog" aria-modal="true">
+    <div class="modal-card custom-scrollbar">
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <h2 id="jobModalTitle" class="text-xl font-bold">Post a New Position</h2>
+        <button data-close="jobModal" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500">X</button>
+      </div>
+
+      <div class="p-6 space-y-5">
         <div>
-            <h1>Manage TA Roles<span class="dot">.</span></h1>
-            <p>在这里完成 MO 核心工作流：发布岗位、查看详情、审核申请，并实时同步后端状态。</p>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Course Name</label>
+          <input id="formCourseName" type="text" placeholder="e.g., CS101: Intro to Programming" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
         </div>
-        <div class="user-pill">
-            <div class="label">Current Organizer</div>
-            <div id="userInfo">正在读取登录信息...</div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Hours/week</label>
+            <input id="formHoursPerWeek" type="number" min="1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Max Capacity</label>
+            <input id="formMaxCapacity" type="number" min="1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Job Type</label>
+            <select id="formJobType" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="1">Teaching Assistant</option>
+              <option value="2">Assistant</option>
+            </select>
+          </div>
         </div>
-    </section>
 
-    <div class="grid">
-        <section class="panel">
-            <h2 class="panel-title">发布新岗位</h2>
-            <div class="panel-body">
-                <div class="form-grid">
-                    <div class="form-item">
-                        <label for="jobName">岗位名称</label>
-                        <input id="jobName" type="text" placeholder="例如：软件工程课程助教">
-                    </div>
-                    <div class="form-item">
-                        <label for="jobType">岗位类型</label>
-                        <select id="jobType">
-                            <option value="1">课程助教</option>
-                            <option value="2">监考助教</option>
-                            <option value="3">活动助教</option>
-                        </select>
-                    </div>
-                    <div class="form-item">
-                        <label for="belongModule">所属模块</label>
-                        <input id="belongModule" type="text" placeholder="例如：软件工程基础理论">
-                    </div>
-                    <div class="form-item">
-                        <label for="workHoursWeekly">每周工作时长（小时）</label>
-                        <input id="workHoursWeekly" type="number" min="1" step="0.5" placeholder="10">
-                    </div>
-                    <div class="form-item">
-                        <label for="recruitNum">招聘人数</label>
-                        <input id="recruitNum" type="number" min="1" step="1" placeholder="2">
-                    </div>
-                    <div class="form-item">
-                        <label for="applyDeadline">申请截止日期</label>
-                        <input id="applyDeadline" type="date">
-                    </div>
-                    <div class="form-item full">
-                        <label for="jobDesc">岗位描述</label>
-                        <textarea id="jobDesc" placeholder="请描述岗位职责、任职要求、沟通方式等"></textarea>
-                    </div>
-                </div>
-                <div class="actions" style="margin-top: 12px;">
-                    <button class="btn btn-primary" id="publishBtn">发布岗位</button>
-                    <button class="btn btn-ghost" id="clearFormBtn">清空表单</button>
-                </div>
-            </div>
-        </section>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Module</label>
+            <input id="formBelongModule" type="text" placeholder="e.g., Computer Science" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deadline</label>
+            <input id="formDeadline" type="date" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          </div>
+        </div>
 
-        <section class="panel">
-            <h2 class="panel-title">岗位申请审核</h2>
-            <div class="panel-body">
-                <div class="row">
-                    <input id="queryJobId" type="text" placeholder="输入岗位ID查看申请" style="flex: 1; min-width: 220px;">
-                    <button class="btn btn-primary" id="queryAppBtn">加载申请</button>
-                </div>
-                <div class="muted" style="margin: 8px 0 12px;" id="appSummary">请选择岗位查看申请。</div>
-                <div id="jobApplicationList"></div>
-            </div>
-        </section>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Requirements</label>
+          <textarea id="formRequirements" rows="4" placeholder="Describe responsibilities and requirements..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tags (comma separated)</label>
+          <input id="formTags" type="text" placeholder="e.g., Python, Grading, Office Hours" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          <p class="text-xs text-slate-400 mt-1">Tags are for UI display only. No mapped backend field in current API sample.</p>
+        </div>
+      </div>
+
+      <div class="px-6 py-5 border-t border-slate-100 bg-slate-50/70 flex gap-3">
+        <button data-close="jobModal" class="flex-1 px-4 py-3 font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl">Cancel</button>
+        <button id="btnSaveJob" class="flex-1 px-4 py-3 font-semibold text-white bg-slate-900 rounded-xl">Post Position</button>
+      </div>
     </div>
+  </div>
 
-    <section class="panel" style="margin-top: 20px;">
-        <h2 class="panel-title">我发布的岗位</h2>
-        <div class="panel-body">
-            <div class="row row-end" style="margin-bottom: 12px;">
-                <button class="btn btn-primary" id="refreshJobsBtn">刷新列表</button>
-            </div>
-            <div id="myJobList"></div>
-        </div>
-    </section>
+  <div id="applicantModal" class="modal-mask" role="dialog" aria-modal="true">
+    <div class="modal-card custom-scrollbar">
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-xl font-bold">Applicant Profile</h2>
+        <button data-close="applicantModal" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500">X</button>
+      </div>
 
-    <section class="panel" style="margin-top: 20px;">
-        <h2 class="panel-title">服务器响应</h2>
-        <div class="panel-body">
-            <pre class="response" id="response">等待操作...</pre>
-        </div>
-    </section>
-</div>
-
-<div class="modal-mask" id="jobDetailModal">
-    <div class="modal">
-        <div class="modal-head">
-            <h3 id="modalJobName" style="margin: 0;">岗位详情</h3>
-            <button class="btn btn-ghost" id="closeModalBtn">关闭</button>
-        </div>
-        <div class="modal-body" id="jobDetailContent"></div>
+      <div id="applicantModalBody" class="p-6"></div>
     </div>
-</div>
+  </div>
 
-<script>
-    let BASE_URL = '/tapj';
-    let currentUser = null;
-    let activeJobIdForAudit = '';
+  <div id="deleteModal" class="modal-mask" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="px-6 py-5 border-b border-slate-100">
+        <h2 class="text-xl font-bold">Delete Position</h2>
+      </div>
+      <div class="p-6 text-slate-600">
+        Are you sure you want to delete this position? This action cannot be undone.
+      </div>
+      <div class="px-6 pb-6 flex gap-3">
+        <button data-close="deleteModal" class="flex-1 px-4 py-3 font-semibold text-slate-700 bg-slate-100 rounded-xl">Cancel</button>
+        <button id="btnConfirmDelete" class="flex-1 px-4 py-3 font-semibold text-white bg-red-600 rounded-xl">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
 
-    const el = {
-        userInfo: document.getElementById('userInfo'),
-        response: document.getElementById('response'),
-        baseUrlInput: document.getElementById('baseUrlInput'),
-        baseUrlBtn: document.getElementById('baseUrlBtn'),
-        logoutBtn: document.getElementById('logoutBtn'),
-        publishBtn: document.getElementById('publishBtn'),
-        clearFormBtn: document.getElementById('clearFormBtn'),
-        refreshJobsBtn: document.getElementById('refreshJobsBtn'),
-        myJobList: document.getElementById('myJobList'),
-        queryJobId: document.getElementById('queryJobId'),
-        queryAppBtn: document.getElementById('queryAppBtn'),
-        appSummary: document.getElementById('appSummary'),
-        jobApplicationList: document.getElementById('jobApplicationList'),
-        jobDetailModal: document.getElementById('jobDetailModal'),
-        modalJobName: document.getElementById('modalJobName'),
-        jobDetailContent: document.getElementById('jobDetailContent'),
-        closeModalBtn: document.getElementById('closeModalBtn'),
-        jobName: document.getElementById('jobName'),
-        jobType: document.getElementById('jobType'),
-        belongModule: document.getElementById('belongModule'),
-        jobDesc: document.getElementById('jobDesc'),
-        workHoursWeekly: document.getElementById('workHoursWeekly'),
-        recruitNum: document.getElementById('recruitNum'),
-        applyDeadline: document.getElementById('applyDeadline')
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const BASE_URL = '/tapj';
+
+    const state = {
+      currentUser: null,
+      jobs: [],
+      applicantSearchByJob: {},
+      editingJobId: null,
+      deletingJobId: null,
+      viewingApplicant: null
     };
 
-    function showResponse(data) {
-        el.response.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    const dom = {
+      headerRealName: document.getElementById('headerRealName'),
+      btnLogout: document.getElementById('btnLogout'),
+      btnOpenCreate: document.getElementById('btnOpenCreate'),
+      btnOpenCreateFromPencil: document.getElementById('btnOpenCreateFromPencil'),
+      profileUserLine: document.getElementById('profileUserLine'),
+      statJobCount: document.getElementById('statJobCount'),
+      statPendingCount: document.getElementById('statPendingCount'),
+      jobCards: document.getElementById('jobCards'),
+      emptyJobs: document.getElementById('emptyJobs'),
+      toast: document.getElementById('toast'),
+
+      jobModal: document.getElementById('jobModal'),
+      jobModalTitle: document.getElementById('jobModalTitle'),
+      formCourseName: document.getElementById('formCourseName'),
+      formHoursPerWeek: document.getElementById('formHoursPerWeek'),
+      formMaxCapacity: document.getElementById('formMaxCapacity'),
+      formJobType: document.getElementById('formJobType'),
+      formBelongModule: document.getElementById('formBelongModule'),
+      formDeadline: document.getElementById('formDeadline'),
+      formRequirements: document.getElementById('formRequirements'),
+      formTags: document.getElementById('formTags'),
+      btnSaveJob: document.getElementById('btnSaveJob'),
+
+      applicantModal: document.getElementById('applicantModal'),
+      applicantModalBody: document.getElementById('applicantModalBody'),
+
+      deleteModal: document.getElementById('deleteModal'),
+      btnConfirmDelete: document.getElementById('btnConfirmDelete')
+    };
+
+    function escapeHtml(v) {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function escapeHtml(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    function showToast(message) {
+      dom.toast.textContent = message;
+      dom.toast.classList.add('show');
+      window.setTimeout(() => {
+        dom.toast.classList.remove('show');
+      }, 2600);
     }
 
-    function jobTypeText(type) {
-        if (type === 1) return '课程助教';
-        if (type === 2) return '监考助教';
-        if (type === 3) return '活动助教';
-        return '未知';
+    function openModal(el) {
+      el.classList.add('show');
     }
 
-    function jobStatusChip(status) {
-        if (status === 0) return '<span class="chip chip-open">招聘中</span>';
-        if (status === 1) return '<span class="chip chip-closed">已截止</span>';
-        if (status === 2) return '<span class="chip chip-filled">已招满</span>';
-        return '<span class="chip">未知状态</span>';
+    function closeModal(el) {
+      el.classList.remove('show');
     }
 
-    function applyStatusText(status) {
-        if (status === 0) return { text: '待审核', cls: 'chip-pending' };
-        if (status === 1) return { text: '已通过', cls: 'chip-pass' };
-        if (status === 2) return { text: '已拒绝', cls: 'chip-reject' };
-        return { text: '未知', cls: '' };
+    function bindModalClose() {
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-close');
+          const target = document.getElementById(id);
+          if (target) closeModal(target);
+        });
+      });
+
+      [dom.jobModal, dom.applicantModal, dom.deleteModal].forEach((modal) => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal(modal);
+        });
+      });
     }
 
-    async function request(url, options) {
-        const reqOptions = options || {};
+    async function request(url, options = {}) {
+      try {
+        const res = await fetch(BASE_URL + url, {
+          credentials: 'include',
+          ...options
+        });
+        const text = await res.text();
         try {
-            const res = await fetch(BASE_URL + url, {
-                credentials: 'include',
-                ...reqOptions
-            });
-            const text = await res.text();
-            try {
-                return { ok: true, data: JSON.parse(text) };
-            } catch (e) {
-                return { ok: false, raw: text };
-            }
+          return { ok: true, data: JSON.parse(text) };
         } catch (e) {
-            return { ok: false, error: e.message };
+          return { ok: false, raw: text };
         }
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
     }
 
-    // 已实现后端接口连接：获取当前登录用户 /user?action=getLoginUser
-    async function loadLoginUser() {
-        const r = await request('/user?action=getLoginUser');
-        if (!r.ok || !r.data || r.data.code !== 200) {
-            alert('未登录或会话过期，请先登录。');
-            location.href = 'index.html';
-            return;
-        }
-
-        currentUser = r.data.data;
-        if (!currentUser || currentUser.userType !== 2) {
-            alert('当前账号不是 MO，无权限进入 MO 工作台。');
-            location.href = 'main.html';
-            return;
-        }
-
-        el.userInfo.textContent = '当前用户：' + (currentUser.realName || '-') + '（' + (currentUser.username || '-') + '）';
-        showResponse(r.data);
-        await loadMyJobs();
+    function appStatusToWord(status) {
+      if (status === 0 || status === '0' || status === 'pending') return 'pending';
+      if (status === 1 || status === '1' || status === 'approved') return 'approved';
+      if (status === 2 || status === '2' || status === 'rejected') return 'rejected';
+      return 'pending';
     }
 
-    function validatePublishForm() {
-        const payload = {
-            jobName: el.jobName.value.trim(),
-            jobType: el.jobType.value,
-            belongModule: el.belongModule.value.trim(),
-            jobDesc: el.jobDesc.value.trim(),
-            workHoursWeekly: el.workHoursWeekly.value.trim(),
-            recruitNum: el.recruitNum.value.trim(),
-            applyDeadline: el.applyDeadline.value.trim()
-        };
-
-        if (!payload.jobName || !payload.belongModule || !payload.jobDesc || !payload.workHoursWeekly || !payload.recruitNum || !payload.applyDeadline) {
-            return { ok: false, msg: '请完整填写岗位发布信息。' };
-        }
-
-        if (Number(payload.workHoursWeekly) <= 0) {
-            return { ok: false, msg: '每周工作时长必须大于 0。' };
-        }
-
-        if (!Number.isInteger(Number(payload.recruitNum)) || Number(payload.recruitNum) <= 0) {
-            return { ok: false, msg: '招聘人数必须是大于 0 的整数。' };
-        }
-
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.applyDeadline)) {
-            return { ok: false, msg: '截止日期格式必须为 YYYY-MM-DD。' };
-        }
-
-        return { ok: true, payload: payload };
+    function getRawApplyStatus(app) {
+      if (app && app.status !== undefined && app.status !== null) return app.status;
+      if (app && app.applyStatus !== undefined && app.applyStatus !== null) return app.applyStatus;
+      return null;
     }
 
-    // 已实现后端接口连接：MO发布岗位 /job?action=publish
-    async function publishJob() {
-        const check = validatePublishForm();
-        if (!check.ok) {
-            alert(check.msg);
-            return;
-        }
-
-        const p = new URLSearchParams();
-        p.append('jobName', check.payload.jobName);
-        p.append('jobType', check.payload.jobType);
-        p.append('belongModule', check.payload.belongModule);
-        p.append('jobDesc', check.payload.jobDesc);
-        p.append('workHoursWeekly', check.payload.workHoursWeekly);
-        p.append('recruitNum', check.payload.recruitNum);
-        p.append('applyDeadline', check.payload.applyDeadline);
-
-        el.publishBtn.disabled = true;
-        const r = await request('/job?action=publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: p
-        });
-        el.publishBtn.disabled = false;
-
-        if (!r.ok) {
-            showResponse(r.error || r.raw || '请求失败');
-            alert('发布失败，请检查网络或后端服务。');
-            return;
-        }
-
-        showResponse(r.data);
-        alert(r.data.msg || '已提交');
-        if (r.data.code === 200) {
-            clearPublishForm();
-            await loadMyJobs();
-        }
+    function mapApplicant(rawApp) {
+      const normalizedStatus = appStatusToWord(getRawApplyStatus(rawApp));
+      return {
+        applicationId: rawApp.applicationId,
+        taUserId: rawApp.taUserId || rawApp.taId || '',
+        name: rawApp.taRealName || ('TA #' + (rawApp.taUserId || rawApp.taId || '?')),
+        major: rawApp.major || rawApp.taMajor || 'Major not provided',
+        status: normalizedStatus,
+        remarks: rawApp.remark || rawApp.remarks || '',
+        email: rawApp.email || rawApp.taEmail || 'Email not provided',
+        resumeUrl: rawApp.resumeUrl || rawApp.resume || ''
+      };
     }
 
-    function clearPublishForm() {
-        el.jobName.value = '';
-        el.jobType.value = '1';
-        el.belongModule.value = '';
-        el.jobDesc.value = '';
-        el.workHoursWeekly.value = '';
-        el.recruitNum.value = '';
-        el.applyDeadline.value = '';
+    function mapJob(rawJob, applicants) {
+      const approvedCount = applicants.filter((a) => a.status === 'approved').length;
+      const tags = [];
+      if (rawJob.belongModule) tags.push(rawJob.belongModule);
+      tags.push(rawJob.jobType === 1 ? 'Teaching Assistant' : 'Assistant');
+
+      return {
+        id: String(rawJob.jobId),
+        courseName: rawJob.jobName || 'Untitled Position',
+        hoursPerWeek: Number(rawJob.workHoursWeekly || 0),
+        requirements: rawJob.jobDesc || '',
+        tags,
+        recruitedCount: Number(rawJob.hiredNum || approvedCount),
+        maxCapacity: Number(rawJob.recruitNum || 1),
+        jobType: rawJob.jobType,
+        belongModule: rawJob.belongModule || '',
+        deadline: rawJob.applyDeadline || '',
+        applicants
+      };
     }
 
-    // 已实现后端接口连接：MO查询自己发布岗位 /job?action=listMy
-    async function loadMyJobs() {
-        const r = await request('/job?action=listMy');
-        if (!r.ok || !r.data) {
-            el.myJobList.innerHTML = '<div class="empty">加载失败，请检查服务。</div>';
-            showResponse(r.error || r.raw || '加载失败');
-            return;
-        }
+    // 已实现后端接口连接
+    // GET /user?action=getLoginUser
+    async function loadCurrentUser() {
+      const r = await request('/user?action=getLoginUser');
+      if (!(r.ok && r.data && r.data.code === 200)) {
+        alert('Login expired. Please sign in again.');
+        window.location.href = 'index.html';
+        return false;
+      }
 
-        showResponse(r.data);
-        if (r.data.code !== 200) {
-            el.myJobList.innerHTML = '<div class="empty">' + escapeHtml(r.data.msg || '加载失败') + '</div>';
-            return;
-        }
+      state.currentUser = r.data.data;
+      if (state.currentUser.userType !== 2 && state.currentUser.userType !== 3) {
+        alert('Only MO/Admin can access this page.');
+        window.location.href = 'main.html';
+        return false;
+      }
 
-        const jobs = Array.isArray(r.data.data) ? r.data.data : [];
-        if (jobs.length === 0) {
-            el.myJobList.innerHTML = '<div class="empty">你还没有发布岗位。</div>';
-            return;
-        }
-
-        let html = '';
-        for (const job of jobs) {
-            html +=
-                '<div class="job-card">' +
-                    '<h4 class="job-title">' + escapeHtml(job.jobName) + '</h4>' +
-                    '<div class="meta-list">' +
-                        '<span class="chip">岗位ID: ' + escapeHtml(job.jobId) + '</span>' +
-                        '<span class="chip">类型: ' + escapeHtml(jobTypeText(job.jobType)) + '</span>' +
-                        '<span class="chip">模块: ' + escapeHtml(job.belongModule || '-') + '</span>' +
-                        '<span class="chip">工时: ' + escapeHtml(job.workHoursWeekly) + 'h/周</span>' +
-                        '<span class="chip">招聘: ' + escapeHtml(job.hiredNum) + '/' + escapeHtml(job.recruitNum) + '</span>' +
-                        jobStatusChip(job.jobStatus) +
-                    '</div>' +
-                    '<div class="muted">发布时间: ' + escapeHtml(job.publishTime || '-') + ' | 截止日期: ' + escapeHtml(job.applyDeadline || '-') + '</div>' +
-                    '<div class="desc">' + escapeHtml(job.jobDesc || '暂无描述') + '</div>' +
-                    '<div class="actions">' +
-                        '<button class="btn btn-ghost" onclick="viewJobDetail(\'' + escapeHtml(job.jobId) + '\')">查看详情</button>' +
-                        '<button class="btn btn-primary" onclick="loadJobApplications(\'' + escapeHtml(job.jobId) + '\')">查看申请</button>' +
-                    '</div>' +
-                '</div>';
-        }
-
-        el.myJobList.innerHTML = html;
+      const realName = state.currentUser.realName || state.currentUser.username || 'MO User';
+      dom.headerRealName.textContent = realName;
+      dom.profileUserLine.textContent = realName;
+      return true;
     }
 
-    // 已实现后端接口连接：岗位详情 /job?action=getDetail&jobId=...
-    async function viewJobDetail(jobId) {
-        const r = await request('/job?action=getDetail&jobId=' + encodeURIComponent(jobId));
-        if (!r.ok || !r.data || r.data.code !== 200) {
-            alert('加载岗位详情失败。');
-            showResponse(r.error || r.raw || r.data || '加载失败');
-            return;
-        }
-
-        const job = r.data.data;
-        el.modalJobName.textContent = job.jobName || '岗位详情';
-        el.jobDetailContent.innerHTML =
-            '<div class="detail-grid">' +
-                '<b>岗位ID</b><span>' + escapeHtml(job.jobId) + '</span>' +
-                '<b>岗位类型</b><span>' + escapeHtml(jobTypeText(job.jobType)) + '</span>' +
-                '<b>所属模块</b><span>' + escapeHtml(job.belongModule || '-') + '</span>' +
-                '<b>工作时长</b><span>' + escapeHtml(job.workHoursWeekly) + ' 小时/周</span>' +
-                '<b>招聘人数</b><span>' + escapeHtml(job.hiredNum) + ' / ' + escapeHtml(job.recruitNum) + '</span>' +
-                '<b>岗位状态</b><span>' + jobStatusChip(job.jobStatus) + '</span>' +
-                '<b>截止日期</b><span>' + escapeHtml(job.applyDeadline || '-') + '</span>' +
-                '<b>发布时间</b><span>' + escapeHtml(job.publishTime || '-') + '</span>' +
-                '<b>岗位描述</b><span style="white-space: pre-wrap;">' + escapeHtml(job.jobDesc || '暂无描述') + '</span>' +
-            '</div>';
-        el.jobDetailModal.style.display = 'flex';
-        showResponse(r.data);
-    }
-
-    function closeJobDetail() {
-        el.jobDetailModal.style.display = 'none';
-    }
-
-    // 已实现后端接口连接：MO查看岗位申请 /application?action=listByJob&jobId=...
-    async function loadJobApplications(jobId) {
-        const id = (jobId || el.queryJobId.value).trim();
-        if (!id) {
-            alert('请先输入岗位ID。');
-            return;
-        }
-
-        activeJobIdForAudit = id;
-        el.queryJobId.value = id;
-
-        const r = await request('/application?action=listByJob&jobId=' + encodeURIComponent(id));
-        if (!r.ok || !r.data) {
-            el.jobApplicationList.innerHTML = '<div class="empty">加载申请失败。</div>';
-            showResponse(r.error || r.raw || '加载失败');
-            return;
-        }
-
-        showResponse(r.data);
-        if (r.data.code !== 200) {
-            el.jobApplicationList.innerHTML = '<div class="empty">' + escapeHtml(r.data.msg || '无权限或查询失败') + '</div>';
-            el.appSummary.textContent = '申请加载失败';
-            return;
-        }
-
-        const apps = Array.isArray(r.data.data) ? r.data.data : [];
-        const pending = apps.filter(function(app) { return app.applyStatus === 0; }).length;
-        const passed = apps.filter(function(app) { return app.applyStatus === 1; }).length;
-        const rejected = apps.filter(function(app) { return app.applyStatus === 2; }).length;
-        el.appSummary.textContent = '岗位 ' + id + '：共 ' + apps.length + ' 条申请（待审核 ' + pending + '，通过 ' + passed + '，拒绝 ' + rejected + '）';
-
-        if (apps.length === 0) {
-            el.jobApplicationList.innerHTML = '<div class="empty">该岗位暂无申请记录。</div>';
-            return;
-        }
-
-        let html = '';
-        for (const app of apps) {
-            const status = applyStatusText(app.applyStatus);
-            html +=
-                '<div class="app-card" id="app-' + escapeHtml(app.applicationId) + '">' +
-                    '<div class="meta-list">' +
-                        '<span class="chip">申请ID: ' + escapeHtml(app.applicationId) + '</span>' +
-                        '<span class="chip">TA用户ID: ' + escapeHtml(app.taUserId || '-') + '</span>' +
-                        '<span class="chip">姓名: ' + escapeHtml(app.taRealName || '-') + '</span>' +
-                        '<span class="chip">学号: ' + escapeHtml(app.taStudentId || '-') + '</span>' +
-                        '<span class="chip">专业: ' + escapeHtml(app.taMajor || '-') + '</span>' +
-                        '<span class="chip ' + status.cls + '">状态: ' + escapeHtml(status.text) + '</span>' +
-                    '</div>' +
-                    '<div class="muted">邮箱: ' + escapeHtml(app.taEmail || '-') + ' | 学历: ' + escapeHtml(app.taEducation || '-') + '</div>' +
-                    '<div class="muted">申请时间: ' + escapeHtml(app.applyTime || '-') + ' | 备注: ' + escapeHtml(app.auditRemark || '-') + '</div>';
-
-            if (app.applyStatus === 0) {
-                html +=
-                    '<div class="actions" style="margin-top: 10px;">' +
-                        '<button class="btn btn-success" onclick="auditApplication(\'' + escapeHtml(app.applicationId) + '\', 1)">通过</button>' +
-                        '<button class="btn btn-warning" onclick="auditApplication(\'' + escapeHtml(app.applicationId) + '\', 2)">拒绝</button>' +
-                    '</div>';
-            }
-
-            html += '</div>';
-        }
-
-        el.jobApplicationList.innerHTML = html;
-    }
-
-    // 已实现后端接口连接：MO审核申请 /application?action=audit
-    async function auditApplication(applicationId, auditStatus) {
-        const appCard = document.getElementById('app-' + applicationId);
-        const buttons = appCard ? appCard.querySelectorAll('button') : [];
-        buttons.forEach(function(btn) { btn.disabled = true; });
-
-        const p = new URLSearchParams();
-        p.append('applicationId', applicationId);
-        p.append('auditStatus', String(auditStatus));
-        p.append('remark', auditStatus === 1 ? '通过' : '拒绝');
-
-        const r = await request('/application?action=audit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: p
-        });
-
-        if (!r.ok || !r.data) {
-            showResponse(r.error || r.raw || '审核请求失败');
-            alert('审核失败，请稍后重试。');
-            buttons.forEach(function(btn) { btn.disabled = false; });
-            return;
-        }
-
-        showResponse(r.data);
-        alert(r.data.msg || '审核完成');
-        if (r.data.code === 200) {
-            await loadJobApplications(activeJobIdForAudit);
-            await loadMyJobs();
-            return;
-        }
-
-        buttons.forEach(function(btn) { btn.disabled = false; });
-    }
-
-    // 已实现后端接口连接：退出登录 /user?action=logout
+    // 已实现后端接口连接
+    // POST /user?action=logout
     async function logout() {
-        await request('/user?action=logout', { method: 'POST' });
-        location.href = 'index.html';
+      await request('/user?action=logout', { method: 'POST' });
+      alert('Signed out successfully.');
+      window.location.href = 'index.html';
     }
 
-    function bindEvents() {
-        el.baseUrlBtn.addEventListener('click', function() {
-            const v = el.baseUrlInput.value.trim();
-            if (!v) {
-                alert('BASE_URL 不能为空。');
-                return;
-            }
-            BASE_URL = v;
-            showResponse({ code: 200, msg: 'BASE_URL 已更新', data: BASE_URL });
-        });
+    // 已实现后端接口连接
+    // GET /job?action=listMy
+    // GET /application?action=listByJob&jobId=...
+    async function loadJobsWithApplicants() {
+      const jobsRes = await request('/job?action=listMy');
+      if (!(jobsRes.ok && jobsRes.data && jobsRes.data.code === 200)) {
+        state.jobs = [];
+        renderAll();
+        return;
+      }
 
-        el.logoutBtn.addEventListener('click', logout);
-        el.publishBtn.addEventListener('click', publishJob);
-        el.clearFormBtn.addEventListener('click', clearPublishForm);
-        el.refreshJobsBtn.addEventListener('click', loadMyJobs);
-        el.queryAppBtn.addEventListener('click', function() { loadJobApplications(); });
-        el.closeModalBtn.addEventListener('click', closeJobDetail);
-        el.jobDetailModal.addEventListener('click', function(e) {
-            if (e.target === el.jobDetailModal) {
-                closeJobDetail();
-            }
-        });
+      const rawJobs = jobsRes.data.data || [];
+      const resultJobs = [];
+
+      for (let i = 0; i < rawJobs.length; i += 1) {
+        const rawJob = rawJobs[i];
+        const appRes = await request('/application?action=listByJob&jobId=' + encodeURIComponent(rawJob.jobId));
+        let applicants = [];
+        if (appRes.ok && appRes.data && appRes.data.code === 200) {
+          applicants = (appRes.data.data || []).map(mapApplicant);
+        }
+        resultJobs.push(mapJob(rawJob, applicants));
+      }
+
+      state.jobs = resultJobs;
+      renderAll();
     }
 
-    window.onload = async function() {
-        bindEvents();
-        await loadLoginUser();
-    };
+    function pendingCountAll() {
+      return state.jobs.reduce((sum, j) => {
+        return sum + j.applicants.filter((a) => a.status === 'pending').length;
+      }, 0);
+    }
 
-    window.viewJobDetail = viewJobDetail;
-    window.loadJobApplications = loadJobApplications;
-    window.auditApplication = auditApplication;
-</script>
+    function renderAll() {
+      dom.statJobCount.textContent = String(state.jobs.length);
+      dom.statPendingCount.textContent = String(pendingCountAll());
+
+      if (state.jobs.length === 0) {
+        dom.jobCards.innerHTML = '';
+        dom.emptyJobs.classList.remove('hidden');
+      } else {
+        dom.emptyJobs.classList.add('hidden');
+        renderJobCards();
+      }
+    }
+
+    function applicantStatusBadge(app) {
+      if (app.status === 'approved') {
+        return '<span class="text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 status-approved">' +
+          '<span>OK</span><span>APPROVED</span></span>';
+      }
+      if (app.status === 'rejected') {
+        return '<span class="text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 status-rejected">' +
+          '<span>NO</span><span>REJECTED</span></span>';
+      }
+      return '';
+    }
+
+    function renderJobCards() {
+      dom.jobCards.innerHTML = state.jobs.map((job) => {
+        const currentSearch = (state.applicantSearchByJob[job.id] || '').toLowerCase();
+        const visibleApplicants = job.applicants.filter((app) => {
+          if (!currentSearch) return true;
+          return app.name.toLowerCase().includes(currentSearch)
+            || app.major.toLowerCase().includes(currentSearch)
+            || String(app.taUserId).toLowerCase().includes(currentSearch);
+        });
+
+        const pendingCount = job.applicants.filter((a) => a.status === 'pending').length;
+
+        return ''
+          + '<article class="soft-card rounded-[28px] p-8">'
+          + '  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-5">'
+          + '    <div class="flex items-center gap-4 min-w-0">'
+          + '      <div class="flex items-center gap-1 shrink-0">'
+          + '        <div class="tooltip-anchor"><button class="icon-btn btn-edit-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">ED</button><span class="tooltip">Edit Position</span></div>'
+          + '        <div class="tooltip-anchor"><button class="icon-btn danger btn-delete-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">DEL</button><span class="tooltip">Delete Position</span></div>'
+          + '        <div class="tooltip-anchor"><button class="icon-btn good btn-share-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">SH</button><span class="tooltip">Copy Share Link</span></div>'
+          + '      </div>'
+          + '      <h3 class="text-2xl font-bold tracking-tight truncate">' + escapeHtml(job.courseName) + '</h3>'
+          + '    </div>'
+          + '    <div class="flex items-center gap-2 self-start sm:self-auto">'
+          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all" data-jobid="' + escapeHtml(job.id) + '">Accept All</button>'
+          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-reject-all" data-jobid="' + escapeHtml(job.id) + '">Reject All</button>'
+          + '    </div>'
+          + '  </div>'
+
+          + '  <div class="flex flex-wrap items-center gap-4 mb-6">'
+          + '    <div class="pill"><span class="dot dot-purple"></span><span>' + escapeHtml(state.currentUser.realName || 'MO') + '</span></div>'
+          + '    <div class="pill"><span class="dot dot-green"></span><span>' + escapeHtml(job.hoursPerWeek) + ' hrs/wk</span></div>'
+          + '    <div class="pill"><span class="dot dot-blue"></span><span>' + escapeHtml(job.recruitedCount) + ' / ' + escapeHtml(job.maxCapacity) + ' Recruited</span></div>'
+          + '  </div>'
+
+          + '  <div class="flex flex-wrap items-center gap-2 mb-8">'
+          + job.tags.map((tag) => '<span class="text-[13px] font-medium text-slate-600 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full">' + escapeHtml(tag) + '</span>').join('')
+          + '  </div>'
+
+          + '  <div class="border-t border-slate-100 pt-6">'
+          + '    <div class="flex items-center justify-between mb-4 px-1 gap-3">'
+          + '      <h4 class="text-sm font-bold text-slate-900">Applicants (' + escapeHtml(job.applicants.length) + ')</h4>'
+          + '      <div class="relative">'
+          + '        <input type="text" data-jobid="' + escapeHtml(job.id) + '" value="' + escapeHtml(state.applicantSearchByJob[job.id] || '') + '" placeholder="Search applicants..." class="job-app-search w-48 pl-3 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 text-slate-700" />'
+          + '      </div>'
+          + '    </div>'
+
+          + '    <div class="max-h-[280px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">'
+          + (visibleApplicants.length === 0
+              ? '<div class="text-center py-6 text-sm text-slate-500">No matching applicants.</div>'
+              : visibleApplicants.map((app) => {
+                  return ''
+                    + '<div class="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group app-row" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">'
+                    + '  <div class="flex items-center gap-3 min-w-0">'
+                    + '    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold shadow-inner shrink-0">' + escapeHtml(app.name.charAt(0)) + '</div>'
+                    + '    <div class="min-w-0">'
+                    + '      <div class="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">' + escapeHtml(app.name) + '</div>'
+                    + '      <div class="text-xs text-slate-500 truncate">' + escapeHtml(app.major) + '</div>'
+                    + '    </div>'
+                    + (app.resumeUrl
+                        ? '<div class="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md ml-2 shrink-0">Resume</div>'
+                        : '')
+                    + '  </div>'
+                    + '  <div class="flex items-center gap-2 shrink-0 app-action-zone">'
+                    + (app.status === 'pending'
+                        ? '<button class="icon-btn good btn-approve-app text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">AP</button>'
+                          + '<button class="icon-btn danger btn-reject-app text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">RJ</button>'
+                        : applicantStatusBadge(app))
+                    + '  </div>'
+                    + '</div>';
+                }).join(''))
+          + '    </div>'
+          + '  </div>'
+
+          + (pendingCount > 0
+              ? '<div class="mt-4 text-xs text-slate-500">Pending applications for this job: <span class="mono">' + pendingCount + '</span></div>'
+              : '')
+          + '</article>';
+      }).join('');
+
+      bindJobCardEvents();
+    }
+
+    function findJob(jobId) {
+      return state.jobs.find((j) => String(j.id) === String(jobId));
+    }
+
+    function findApplicant(jobId, appId) {
+      const job = findJob(jobId);
+      if (!job) return null;
+      return job.applicants.find((a) => String(a.applicationId) === String(appId)) || null;
+    }
+
+    function bindJobCardEvents() {
+      dom.jobCards.querySelectorAll('.job-app-search').forEach((input) => {
+        input.addEventListener('input', () => {
+          const jobId = input.getAttribute('data-jobid');
+          state.applicantSearchByJob[jobId] = input.value;
+          renderJobCards();
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-share-job').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
+          const url = window.location.origin + window.location.pathname + '#job-' + jobId;
+          try {
+            await navigator.clipboard.writeText(url);
+            showToast('Share link copied to clipboard.');
+          } catch (e) {
+            showToast('Unable to copy. Please copy manually.');
+          }
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-edit-job').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const jobId = btn.getAttribute('data-jobid');
+          openJobModal(jobId);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-delete-job').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const jobId = btn.getAttribute('data-jobid');
+          state.deletingJobId = jobId;
+          openModal(dom.deleteModal);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-accept-all').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
+          await batchAudit(jobId, 1);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-reject-all').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
+          await batchAudit(jobId, 2);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-approve-app').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const appId = btn.getAttribute('data-appid');
+          await auditApplication(appId, 1);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-reject-app').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const appId = btn.getAttribute('data-appid');
+          await auditApplication(appId, 2);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.app-row').forEach((row) => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.app-action-zone')) return;
+          const jobId = row.getAttribute('data-jobid');
+          const appId = row.getAttribute('data-appid');
+          openApplicantModal(jobId, appId);
+        });
+      });
+    }
+
+    function resetJobForm() {
+      dom.formCourseName.value = '';
+      dom.formHoursPerWeek.value = '10';
+      dom.formMaxCapacity.value = '1';
+      dom.formJobType.value = '1';
+      dom.formBelongModule.value = '';
+      dom.formDeadline.value = '';
+      dom.formRequirements.value = '';
+      dom.formTags.value = '';
+    }
+
+    function openJobModal(jobIdOrNull) {
+      state.editingJobId = jobIdOrNull || null;
+      if (!state.editingJobId) {
+        dom.jobModalTitle.textContent = 'Post a New Position';
+        dom.btnSaveJob.textContent = 'Post Position';
+        resetJobForm();
+      } else {
+        dom.jobModalTitle.textContent = 'Edit Position';
+        dom.btnSaveJob.textContent = 'Save Changes';
+        const job = findJob(state.editingJobId);
+        if (job) {
+          dom.formCourseName.value = job.courseName;
+          dom.formHoursPerWeek.value = String(job.hoursPerWeek);
+          dom.formMaxCapacity.value = String(job.maxCapacity);
+          dom.formJobType.value = String(job.jobType || 1);
+          dom.formBelongModule.value = job.belongModule || '';
+          dom.formDeadline.value = job.deadline || '';
+          dom.formRequirements.value = job.requirements || '';
+          dom.formTags.value = job.tags.join(', ');
+        }
+      }
+      openModal(dom.jobModal);
+    }
+
+    // 已实现后端接口连接
+    // POST /job?action=publish
+    async function saveJob() {
+      if (!dom.formCourseName.value.trim()) {
+        showToast('Course name is required.');
+        return;
+      }
+
+      if (state.editingJobId) {
+        // 未实现后端接口，保留前端展示
+        // The sample APIs do not provide MO-side update job endpoint.
+        showToast('Update endpoint is not available in current API sample.');
+        closeModal(dom.jobModal);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append('jobName', dom.formCourseName.value.trim());
+      params.append('jobType', dom.formJobType.value);
+      params.append('belongModule', dom.formBelongModule.value.trim());
+      params.append('jobDesc', dom.formRequirements.value.trim());
+      params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
+      params.append('recruitNum', dom.formMaxCapacity.value.trim());
+      params.append('applyDeadline', dom.formDeadline.value.trim());
+
+      const r = await request('/job?action=publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+      });
+
+      if (r.ok && r.data) {
+        showToast(r.data.msg || 'Position posted.');
+      } else {
+        showToast('Failed to post position.');
+      }
+
+      if (r.ok && r.data && r.data.code === 200) {
+        closeModal(dom.jobModal);
+        await loadJobsWithApplicants();
+      }
+    }
+
+    function renderApplicantModal(app) {
+      const statusText = app.status.toUpperCase();
+      const statusClass = app.status === 'approved'
+        ? 'status-approved'
+        : app.status === 'rejected'
+          ? 'status-rejected'
+          : 'status-pending';
+
+      dom.applicantModalBody.innerHTML = ''
+        + '<div class="flex items-center gap-5 mb-8">'
+        + '  <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold text-3xl shadow-inner">' + escapeHtml(app.name.charAt(0)) + '</div>'
+        + '  <div>'
+        + '    <h3 class="text-2xl font-bold text-slate-900">' + escapeHtml(app.name) + '</h3>'
+        + '    <p class="text-slate-500 font-medium">' + escapeHtml(app.major) + '</p>'
+        + '    <p class="text-sm text-slate-400 mt-1">' + escapeHtml(app.email) + '</p>'
+        + '    <p class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(app.taUserId || '-') + '</span></p>'
+        + '  </div>'
+        + '</div>'
+
+        + '<div class="space-y-6">'
+        + '  <div>'
+        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Remarks / Cover Letter</h4>'
+        + '    <div class="bg-slate-50 p-4 rounded-xl text-sm text-slate-700 leading-relaxed border border-slate-100">' + escapeHtml(app.remarks || 'No remarks provided.') + '</div>'
+        + '  </div>'
+
+        + '  <div>'
+        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
+        + (app.resumeUrl
+            ? '<button id="btnResumeDownload" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Download Resume</button>'
+            : '<div class="text-sm text-slate-400">Resume not provided.</div>')
+        + '  </div>'
+        + '</div>';
+
+      if (app.status === 'pending') {
+        dom.applicantModalBody.innerHTML += ''
+          + '<div class="mt-8 flex gap-3 pt-6 border-t border-slate-100">'
+          + '  <button id="btnModalReject" class="flex-1 px-4 py-3 font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl">Reject</button>'
+          + '  <button id="btnModalApprove" class="flex-1 px-4 py-3 font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl">Approve</button>'
+          + '</div>';
+      } else {
+        dom.applicantModalBody.innerHTML += ''
+          + '<div class="mt-8 pt-6 border-t border-slate-100 flex justify-center">'
+          + '  <span class="px-4 py-2 rounded-full font-bold text-sm ' + statusClass + '">This applicant is ' + escapeHtml(statusText) + '.</span>'
+          + '</div>';
+      }
+
+      const downloadBtn = document.getElementById('btnResumeDownload');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+          // 未实现后端接口，保留前端展示
+          // Sample APIs do not include resume file download endpoint.
+          showToast('Resume download endpoint is not available in current API sample.');
+        });
+      }
+
+      const rejectBtn = document.getElementById('btnModalReject');
+      if (rejectBtn) {
+        rejectBtn.addEventListener('click', async () => {
+          await auditApplication(app.applicationId, 2);
+          closeModal(dom.applicantModal);
+        });
+      }
+
+      const approveBtn = document.getElementById('btnModalApprove');
+      if (approveBtn) {
+        approveBtn.addEventListener('click', async () => {
+          await auditApplication(app.applicationId, 1);
+          closeModal(dom.applicantModal);
+        });
+      }
+    }
+
+    function openApplicantModal(jobId, appId) {
+      const app = findApplicant(jobId, appId);
+      if (!app) {
+        showToast('Applicant not found.');
+        return;
+      }
+      state.viewingApplicant = { jobId, appId };
+      renderApplicantModal(app);
+      openModal(dom.applicantModal);
+    }
+
+    // 已实现后端接口连接
+    // POST /application?action=audit
+    async function auditApplication(applicationId, auditStatus) {
+      const params = new URLSearchParams();
+      params.append('applicationId', String(applicationId));
+      params.append('auditStatus', String(auditStatus));
+      params.append('remark', auditStatus === 1 ? 'Approved by MO' : 'Rejected by MO');
+
+      const r = await request('/application?action=audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+      });
+
+      if (r.ok && r.data) {
+        showToast(r.data.msg || 'Application audited.');
+      } else {
+        showToast('Audit failed.');
+      }
+
+      if (r.ok && r.data && r.data.code === 200) {
+        await loadJobsWithApplicants();
+      }
+    }
+
+    async function batchAudit(jobId, auditStatus) {
+      const job = findJob(jobId);
+      if (!job) return;
+
+      const pending = job.applicants.filter((a) => a.status === 'pending');
+      if (pending.length === 0) {
+        showToast('No pending applicants.');
+        return;
+      }
+
+      for (let i = 0; i < pending.length; i += 1) {
+        const app = pending[i];
+        const params = new URLSearchParams();
+        params.append('applicationId', String(app.applicationId));
+        params.append('auditStatus', String(auditStatus));
+        params.append('remark', auditStatus === 1 ? 'Approved by MO (batch)' : 'Rejected by MO (batch)');
+
+        await request('/application?action=audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+      }
+
+      showToast(auditStatus === 1 ? 'All pending applicants accepted.' : 'All pending applicants rejected.');
+      await loadJobsWithApplicants();
+    }
+
+    function bindGlobalEvents() {
+      dom.btnLogout.addEventListener('click', logout);
+
+      dom.btnOpenCreate.addEventListener('click', () => openJobModal(null));
+      dom.btnOpenCreateFromPencil.addEventListener('click', () => openJobModal(null));
+      dom.btnSaveJob.addEventListener('click', saveJob);
+
+      dom.btnConfirmDelete.addEventListener('click', () => {
+        // 未实现后端接口，保留前端展示
+        // Sample APIs do not include MO-side delete job endpoint.
+        closeModal(dom.deleteModal);
+        showToast('Delete endpoint is not available in current API sample.');
+      });
+
+      bindModalClose();
+    }
+
+    async function bootstrap() {
+      const ok = await loadCurrentUser();
+      if (!ok) return;
+      bindGlobalEvents();
+      await loadJobsWithApplicants();
+    }
+
+    bootstrap();
+  </script>
 </body>
 </html>
