@@ -190,6 +190,51 @@
     </div>
 </div>
 
+<!-- ========================= -->
+<!-- 所有岗位管理弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="allJobsModalOverlay">
+    <div class="modal-card modal-xl scale-enter">
+        <div class="modal-header">
+            <h2>All Jobs Management</h2>
+            <button class="icon-btn" id="closeAllJobsModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body scrollable" id="allJobsModalBody"></div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- 用户查询弹窗 -->
+<!-- ========================= -->
+<div class="modal-overlay hidden" id="userQueryModalOverlay">
+    <div class="modal-card modal-lg scale-enter">
+        <div class="modal-header">
+            <h2>Query User Details</h2>
+            <button class="icon-btn" id="closeUserQueryModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="userQueryModalBody">
+            <div class="form-group">
+                <label for="queryUserIdInput">Enter User ID</label>
+                <input type="text" id="queryUserIdInput" placeholder="e.g., 1" />
+            </div>
+            <div class="modal-footer" style="padding:0;border:none;margin-top:16px;">
+                <button class="btn btn-primary" id="confirmQueryUserBtn" type="button">Query</button>
+            </div>
+            <div class="detail-grid" id="userQueryResult" style="margin-top:20px;"></div>
+        </div>
+    </div>
+</div>
+
 <script src="./admin.js"></script>
 </body>
 </html>
