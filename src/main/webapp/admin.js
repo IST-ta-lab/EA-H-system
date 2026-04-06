@@ -39,218 +39,63 @@ const state = {
 
     rejectReason: "",
 
+    backendUsers: [], // 已实现后端接口连接
+    backendJobsList: [], // 已实现后端接口连接
+
     stats: {
-        totalUsers: 248,
-        totalTAs: 126,
-        totalMOs: 32,
-        totalPosts: 57,
-        totalApplications: 391,
-        pendingPostReviews: 8,
-        pendingRoleRequests: 3,
-        activeLogsToday: 84
+        totalUsers: 0,
+        totalTAs: 0,
+        totalMOs: 0,
+        totalPosts: 0,
+        totalApplications: 0,
+        pendingPostReviews: 0,
+        pendingRoleRequests: 0,
+        activeLogsToday: 0
     },
 
-    roleRequests: [
-        {
-            id: 1,
-            username: "alice.zhang",
-            realName: "Alice Zhang",
-            currentRole: "TA",
-            targetRole: "MO",
-            reason: "希望参与课程组织与岗位发布管理，已长期协助课程答疑。",
-            submittedAt: "2026-04-03 14:25",
-            status: "pending"
-        },
-        {
-            id: 2,
-            username: "kevin.lee",
-            realName: "Kevin Lee",
-            currentRole: "TA",
-            targetRole: "MO",
-            reason: "希望承担课程协作管理任务，并辅助教师组织实验安排。",
-            submittedAt: "2026-04-04 09:12",
-            status: "pending"
-        },
-        {
-            id: 3,
-            username: "mia.sun",
-            realName: "Mia Sun",
-            currentRole: "MO",
-            targetRole: "Admin",
-            reason: "已负责多个课程岗位流转，希望拥有更高层级管理权限。",
-            submittedAt: "2026-04-05 18:40",
-            status: "pending"
-        }
-    ],
+    roleRequests: [], // 已实现后端接口连接 - 从后端加载
 
-    systemUsers: [
-        {
-            id: 1,
-            username: "admin01",
-            realName: "System Admin",
-            email: "admin@ta-market.edu",
-            role: "Admin",
-            status: "active",
-            createdAt: "2026-01-10",
-            major: "System Control",
-            notes: "核心系统管理员"
-        },
-        {
-            id: 2,
-            username: "li.mo",
-            realName: "Prof. Li",
-            email: "li.mo@ta-market.edu",
-            role: "MO",
-            status: "active",
-            createdAt: "2026-02-02",
-            major: "Software Engineering",
-            notes: "负责软件工程课程岗位管理"
-        },
-        {
-            id: 3,
-            username: "wang.mo",
-            realName: "Prof. Wang",
-            email: "wang.mo@ta-market.edu",
-            role: "MO",
-            status: "active",
-            createdAt: "2026-02-12",
-            major: "Artificial Intelligence",
-            notes: "负责 AI 课程岗位管理"
-        },
-        {
-            id: 4,
-            username: "alex.ta",
-            realName: "Alex Chen",
-            email: "alex.ta@ta-market.edu",
-            role: "TA",
-            status: "active",
-            createdAt: "2026-02-28",
-            major: "Computer Science",
-            notes: "表现稳定，已多次参与课程辅助"
-        },
-        {
-            id: 5,
-            username: "jessica.ta",
-            realName: "Jessica Lin",
-            email: "jessica.ta@ta-market.edu",
-            role: "TA",
-            status: "suspended",
-            createdAt: "2026-03-05",
-            major: "Data Science",
-            notes: "因多次未响应任务暂时冻结"
-        }
-    ],
+    systemUsers: [], // 已实现后端接口连接 - 从后端加载
 
-    taWorkloads: [
-        {
-            id: 101,
-            name: "Alex Chen",
-            username: "alex.ta",
-            course: "SE301: 软件工程",
-            hours: 11,
-            taskCount: 6,
-            status: "healthy",
-            rating: 4.8,
-            skills: ["Java", "Grading", "Office Hours"],
-            summary: "负责课程答疑、作业批改与实验辅导，整体负载稳定。",
-            recentTasks: [
-                "完成第 4 周作业批改",
-                "线下答疑 2 次",
-                "更新实验说明文档"
-            ]
-        },
-        {
-            id: 102,
-            name: "Jessica Lin",
-            username: "jessica.ta",
-            course: "AI202: 人工智能导论",
-            hours: 17,
-            taskCount: 9,
-            status: "warning",
-            rating: 4.2,
-            skills: ["Python", "ML", "Experiment Support"],
-            summary: "当前任务较重，最近有部分处理延迟，需要关注。",
-            recentTasks: [
-                "实验课支持",
-                "批改实验报告",
-                "整理模型测试样例"
-            ]
-        },
-        {
-            id: 103,
-            name: "Ryan Zhou",
-            username: "ryan.ta",
-            course: "DB204: 数据库系统",
-            hours: 8,
-            taskCount: 4,
-            status: "healthy",
-            rating: 4.6,
-            skills: ["SQL", "DB Lab", "Tutoring"],
-            summary: "负载正常，实验课支持情况良好。",
-            recentTasks: [
-                "实验讲解",
-                "处理 SQL 提问",
-                "整理实验数据"
-            ]
-        },
-        {
-            id: 104,
-            name: "Nina Wu",
-            username: "nina.ta",
-            course: "NW210: 计算机网络",
-            hours: 19,
-            taskCount: 10,
-            status: "critical",
-            rating: 3.9,
-            skills: ["Network", "Lab Support", "Debugging"],
-            summary: "当前工作量偏高，且有多个待处理事项，建议调整分配。",
-            recentTasks: [
-                "实验环境排查",
-                "网络抓包讲解",
-                "课后答疑积压"
-            ]
-        }
-    ],
+    taWorkloads: [], // 已实现后端接口连接 - 从backendUsers过滤出TA用户
 
-    moWorkloads: [],
+    moWorkloads: [], // 已实现后端接口连接 - 从backendUsers过滤出MO用户
 
-    logs: [
-        {
-            id: 1,
-            type: "post_review",
-            title: "Post Review Triggered",
-            actor: "admin01",
-            time: "2026-04-06 09:20",
-            detail: "Reviewed pending post 'SE301 Lab Assistant'."
-        },
-        {
-            id: 2,
-            type: "role_change",
-            title: "Role Change Request Submitted",
-            actor: "alice.zhang",
-            time: "2026-04-05 18:20",
-            detail: "Requested role change from TA to MO."
-        },
-        {
-            id: 3,
-            type: "audit",
-            title: "Application Audit Completed",
-            actor: "li.mo",
-            time: "2026-04-05 16:45",
-            detail: "Approved application #3382 for SE301 assignment support."
-        },
-        {
-            id: 4,
-            type: "system",
-            title: "Daily Data Snapshot",
-            actor: "system",
-            time: "2026-04-05 03:00",
-            detail: "Generated daily metrics snapshot for dashboard report."
-        }
-    ]
+    logs: [] // 已实现后端接口连接 - 从后端加载（后端暂无此接口，暂时为空）
 };
 
 const els = {};
+
+// 缓存所有DOM元素
+function cacheElements() {
+    els.heroActions = document.getElementById("heroActions");
+    els.monitorSwitcher = document.getElementById("monitorSwitcher");
+    els.monitorContent = document.getElementById("monitorContent");
+
+    els.openRequestsBtn = document.getElementById("openRequestsBtn");
+    els.requestDot = document.getElementById("requestDot");
+
+    els.taDetailModalOverlay = document.getElementById("taDetailModalOverlay");
+    els.statsModalOverlay = document.getElementById("statsModalOverlay");
+    els.usersModalOverlay = document.getElementById("usersModalOverlay");
+    els.userDetailModalOverlay = document.getElementById("userDetailModalOverlay");
+    els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
+    els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
+    els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
+    els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
+
+    els.taDetailModalBody = document.getElementById("taDetailModalBody");
+    els.statsModalBody = document.getElementById("statsModalBody");
+    els.usersModalBody = document.getElementById("usersModalBody");
+    els.userDetailModalBody = document.getElementById("userDetailModalBody");
+    els.requestsModalBody = document.getElementById("requestsModalBody");
+    els.allJobsModalBody = document.getElementById("allJobsModalBody");
+    els.userQueryModalBody = document.getElementById("userQueryModalBody");
+    els.queryUserIdInput = document.getElementById("queryUserIdInput");
+    els.userQueryResult = document.getElementById("userQueryResult");
+
+    els.rejectReasonInput = document.getElementById("rejectReasonInput");
+}
 
 const Icons = {
     chart: `
@@ -403,35 +248,143 @@ async function loadLoginUser() {
     return false;
 }
 
-// 已实现后端接口连接
+// 已实现后端接口连接 - 加载开放岗位（仅用于后端统计，不直接用于MO视图）
 async function loadOpenJobs() {
     const r = await request("/job?action=listOpen");
     if (r.ok && r.data && r.data.code === 200) {
         const jobs = Array.isArray(r.data.data) ? r.data.data : [];
         state.backendJobs = jobs.map(mapJobForAdmin);
-
-        state.moWorkloads = [
-            {
-                id: 999001,
-                name: "Open Jobs Pool",
-                username: "system.open.jobs",
-                course: "All Courses",
-                publishedPosts: state.backendJobs.length,
-                pendingReviews: 0,
-                status: "stable",
-                summary: "这里展示的是当前后端返回的开放岗位列表，供管理员查看详情与申请情况。",
-                recentPosts: state.backendJobs
-            }
-        ];
-
-        render();
         return;
     }
 
     state.backendJobs = [];
-    state.moWorkloads = [];
-    render();
     showError((r.data && r.data.msg) || r.error || "加载岗位列表失败");
+}
+
+// 已实现后端接口连接 - 加载所有用户
+async function loadAllUsers() {
+    const r = await request("/admin?action=listUsers");
+    if (r.ok && r.data && r.data.code === 200) {
+        // 直接使用后端返回的原始数据
+        state.backendUsers = Array.isArray(r.data.data) ? r.data.data : [];
+
+        // 更新统计数据
+        state.stats.totalUsers = state.backendUsers.length;
+        state.stats.totalTAs = state.backendUsers.filter(u => u.userType === 1).length;
+        state.stats.totalMOs = state.backendUsers.filter(u => u.userType === 2).length;
+
+        // 从用户列表中过滤出MO用户（userType=2），构建MO工作负载视图数据
+        // 确保id统一为字符串类型，防止类型不一致导致查找失败
+        state.moWorkloads = state.backendUsers
+            .filter(u => u.userType === 2) // 只保留MO用户
+            .map(mo => {
+                // 统计该MO发布的岗位数量
+                const moJobs = state.backendJobsList.filter(j => String(j.publisherMoId) === String(mo.userId));
+                return {
+                    id: String(mo.userId), // 统一转换为字符串
+                    name: mo.realName || mo.username || "未命名MO",
+                    username: mo.username || "",
+                    email: mo.email || "",
+                    course: mo.belongModule || "未分配模块",
+                    publishedPosts: moJobs.length,
+                    openPosts: moJobs.filter(j => j.jobStatus === 0).length,
+                    closedPosts: moJobs.filter(j => j.jobStatus !== 0).length,
+                    status: "active",
+                    summary: moJobs.length > 0
+                        ? `该课程组织者共发布了 ${moJobs.length} 个岗位，其中 ${moJobs.filter(j => j.jobStatus === 0).length} 个正在招聘中。`
+                        : "该课程组织者暂未发布任何岗位。",
+                    recentPosts: moJobs.slice(0, 5) // 最多显示5个最近的岗位
+                };
+            });
+
+        // 从用户列表中过滤出TA用户（userType=1），构建TA工作负载视图数据
+        // 确保id统一为字符串类型，防止类型不一致导致查找失败
+        state.taWorkloads = state.backendUsers
+            .filter(u => u.userType === 1) // 只保留TA用户
+            .map(ta => {
+                return {
+                    id: String(ta.userId), // 统一转换为字符串
+                    name: ta.realName || ta.username || "未命名TA",
+                    username: ta.username || "",
+                    course: ta.belongModule || "未分配模块",
+                    status: "healthy",
+                    summary: "该助教用户已注册，可查看其申请记录了解详情。",
+                    skills: [],
+                    hours: "N/A",
+                    taskCount: "N/A",
+                    rating: "N/A",
+                    recentTasks: []
+                };
+            });
+
+        return state.backendUsers;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "加载用户列表失败");
+    return [];
+}
+
+// 已实现后端接口连接 - 删除用户
+async function deleteUser(userId) {
+    if (!confirm("确定要删除该用户吗？")) {
+        return;
+    }
+
+    const r = await request(`/admin?action=deleteUser&userId=${encodeURIComponent(userId)}`, { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "删除成功");
+        await loadAllUsers();
+        await loadAllJobs();
+        render();
+        return;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "删除用户失败");
+}
+
+// 已实现后端接口连接 - 加载所有岗位
+async function loadAllJobs() {
+    const r = await request("/admin?action=listAllJobs");
+    if (r.ok && r.data && r.data.code === 200) {
+        // 直接使用后端返回的原始数据
+        state.backendJobsList = Array.isArray(r.data.data) ? r.data.data : [];
+
+        // 更新统计数据
+        state.stats.totalPosts = state.backendJobsList.length;
+
+        return state.backendJobsList;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "加载岗位列表失败");
+    return [];
+}
+
+// 已实现后端接口连接 - 删除岗位
+async function deleteJob(jobId) {
+    if (!confirm("确定要删除该岗位吗？这将级联删除相关申请！")) {
+        return;
+    }
+
+    const r = await request(`/admin?action=deleteJob&jobId=${encodeURIComponent(jobId)}`, { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "删除成功");
+        await loadAllJobs();
+        render();
+        return;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "删除岗位失败");
+}
+
+// 已实现后端接口连接 - 加载用户详情
+async function loadUserDetail(userId) {
+    const r = await request(`/admin?action=getUserDetail&userId=${encodeURIComponent(userId)}`);
+    if (r.ok && r.data && r.data.code === 200) {
+        return r.data.data;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "获取用户详情失败");
+    return null;
 }
 
 function escapeHtml(value) {
@@ -474,11 +427,8 @@ function getFilteredMOWorkloads() {
             !state.filters.moSearch ||
             item.name.toLowerCase().includes(state.filters.moSearch.toLowerCase()) ||
             item.username.toLowerCase().includes(state.filters.moSearch.toLowerCase()) ||
-            item.course.toLowerCase().includes(state.filters.moSearch.toLowerCase()) ||
-            (item.recentPosts || []).some(post =>
-                String(post.title || "").toLowerCase().includes(state.filters.moSearch.toLowerCase()) ||
-                String(post.publisherName || "").toLowerCase().includes(state.filters.moSearch.toLowerCase())
-            );
+            item.email.toLowerCase().includes(state.filters.moSearch.toLowerCase()) ||
+            item.course.toLowerCase().includes(state.filters.moSearch.toLowerCase());
 
         const matchStatus =
             state.filters.moStatus === "all" ||
@@ -509,11 +459,11 @@ function renderHeroActions() {
     <article class="action-card">
       <div class="action-top">
         <div class="action-icon">${Icons.chart}</div>
-        <span class="badge badge-soft">Local Demo</span>
+        <span class="badge badge-soft">Backend API</span>
       </div>
       <h2 class="action-title">Statistics Report</h2>
       <p class="action-subtitle">
-        查看平台用户、岗位、申请和待处理事项的统计概览。当前统计仍为前端保留逻辑。
+        查看平台用户、岗位、申请和待处理事项的统计概览。统计数据来自后端实时更新。
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openStatsBtn" type="button">
@@ -522,18 +472,50 @@ function renderHeroActions() {
       </div>
     </article>
 
-    <article class="action-card purple">
+    <article class="action-card">
       <div class="action-top">
-        <div class="action-icon">${Icons.users}</div>
-        <span class="badge badge-soft">Local Demo</span>
+        <div class="action-icon" style="background: linear-gradient(135deg, var(--violet) 0%, var(--primary) 100%);">${Icons.users}</div>
+        <span class="badge badge-soft">Backend API</span>
       </div>
       <h2 class="action-title">System Users</h2>
       <p class="action-subtitle">
-        管理全平台用户，查看其角色、状态与基础信息。当前用户列表仍为前端保留逻辑。
+        管理全平台用户，查看其角色、状态与基础信息。用户数据来自后端接口。
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openUsersBtn" type="button">
           Manage Users
+        </button>
+      </div>
+    </article>
+
+    <article class="action-card purple">
+      <div class="action-top">
+        <div class="action-icon">${Icons.briefcase}</div>
+        <span class="badge badge-soft">Backend API</span>
+      </div>
+      <h2 class="action-title">All Jobs</h2>
+      <p class="action-subtitle">
+        查看和管理所有发布的岗位，包括删除岗位操作。岗位数据来自后端接口。
+      </p>
+      <div class="action-button-row">
+        <button class="btn btn-primary action-btn" id="openAllJobsBtn" type="button">
+          Manage Jobs
+        </button>
+      </div>
+    </article>
+
+    <article class="action-card">
+      <div class="action-top">
+        <div class="action-icon" style="background: linear-gradient(135deg, var(--success) 0%, var(--primary-2) 100%);">${Icons.activity}</div>
+        <span class="badge badge-soft">Backend API</span>
+      </div>
+      <h2 class="action-title">User Details</h2>
+      <p class="action-subtitle">
+        根据用户ID查询详细信息，包括用户的申请记录等。
+      </p>
+      <div class="action-button-row">
+        <button class="btn btn-primary action-btn" id="openUserQueryBtn" type="button">
+          Query User
         </button>
       </div>
     </article>
@@ -560,8 +542,8 @@ function renderTAView() {
     els.monitorContent.innerHTML = `
     <section class="section-header">
       <div class="section-title-block">
-        <h2>TA Workload Monitoring</h2>
-        <p>当前 TA 工作负载部分仍保留前端演示数据，因为示例接口未提供全站 TA 负载接口。</p>
+        <h2>Teaching Assistant (TA) Overview</h2>
+        <p>查看所有助教用户的信息，点击查看详情了解其申请记录。</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
@@ -617,7 +599,10 @@ function renderTAView() {
 
                 <div class="workload-actions">
                   <button class="btn btn-soft view-ta-detail-btn" type="button" data-ta-id="${item.id}">
-                    ${Icons.eye} View Details
+                    View Details
+                  </button>
+                  <button class="btn btn-sm btn-danger delete-ta-btn" type="button" data-ta-id="${item.id}">
+                    ${Icons.reject}
                   </button>
                 </div>
               </article>
@@ -639,19 +624,19 @@ function renderMOView() {
     els.monitorContent.innerHTML = `
     <section class="section-header">
       <div class="section-title-block">
-        <h2>Open Jobs Monitoring</h2>
-        <p>查看后端当前开放岗位，并进入详情与申请列表。</p>
+        <h2>Course Organizer (MO) Overview</h2>
+        <p>查看所有课程组织者的信息及其发布的岗位统计。</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
           ${Icons.search}
-          <input id="moSearchInput" type="text" placeholder="Search Job..." value="${escapeHtml(state.filters.moSearch)}" />
+          <input id="moSearchInput" type="text" placeholder="Search MO..." value="${escapeHtml(state.filters.moSearch)}" />
         </div>
 
         <div class="filter-chips">
           <button class="filter-chip ${state.filters.moStatus === "all" ? "active" : ""}" data-mo-status="all" type="button">All</button>
-          <button class="filter-chip ${state.filters.moStatus === "stable" ? "active" : ""}" data-mo-status="stable" type="button">Open</button>
+          <button class="filter-chip ${state.filters.moStatus === "active" ? "active" : ""}" data-mo-status="active" type="button">Active</button>
         </div>
       </div>
     </section>
@@ -669,54 +654,66 @@ function renderMOView() {
                       <span class="badge badge-soft">${escapeHtml(item.course)}</span>
                     </div>
                   </div>
-                  <span class="badge badge-success">open</span>
+                  <span class="badge badge-success">${escapeHtml(item.status)}</span>
                 </div>
 
                 <p class="workload-desc">${escapeHtml(item.summary)}</p>
 
-                <div class="workload-sub" style="margin-bottom:16px;">
-                  <span class="badge badge-soft">Open Posts: ${escapeHtml(item.publishedPosts)}</span>
+                <div class="workload-actions" style="margin-bottom:16px;">
+                  <button class="btn btn-sm btn-danger delete-mo-btn" type="button" data-mo-id="${item.id}">
+                    ${Icons.reject} Delete
+                  </button>
                 </div>
 
+                <div class="workload-sub" style="margin-bottom:16px;">
+                  <span class="badge badge-soft">Total Posts: ${escapeHtml(item.publishedPosts)}</span>
+                  <span class="badge badge-success">Open: ${escapeHtml(item.openPosts)}</span>
+                  <span class="badge badge-soft">Closed: ${escapeHtml(item.closedPosts)}</span>
+                </div>
+
+                ${
+                item.recentPosts && item.recentPosts.length > 0
+                    ? `
                 <div class="table-card">
                   <div class="data-table-wrap">
                     <table class="data-table">
                       <thead>
                         <tr>
-                          <th>Post</th>
-                          <th>Publisher</th>
-                          <th>Hours</th>
+                          <th>Job Name</th>
+                          <th>Status</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        ${item.recentPosts.map(post => `
+                        ${item.recentPosts.map(post => {
+                        const statusText = post.jobStatus === 0 ? "招聘中" : post.jobStatus === 1 ? "已截止" : post.jobStatus === 2 ? "已招满" : "已关闭";
+                        const statusClass = post.jobStatus === 0 ? "badge-success" : post.jobStatus === 1 ? "badge-warning" : post.jobStatus === 2 ? "badge-danger" : "badge-soft";
+                        return `
                           <tr>
-                            <td>${escapeHtml(post.title)}</td>
-                            <td>${escapeHtml(post.publisherName)}</td>
-                            <td>${escapeHtml(post.workHoursWeekly)}</td>
+                            <td>${escapeHtml(post.jobName || "未命名岗位")}</td>
+                            <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
                             <td>
                               <div class="row-actions">
-                                <button class="btn btn-soft open-post-view-btn" type="button" data-post-id="${post.id}" data-mo-id="${item.id}">
+                                <button class="btn btn-soft open-post-view-btn" type="button" data-post-id="${String(post.jobId)}">
                                   View
-                                </button>
-                                <button class="btn btn-primary open-post-applicants-btn" type="button" data-post-id="${post.id}">
-                                  Applicants
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        `).join("")}
+                        `}).join("")}
                       </tbody>
                     </table>
                   </div>
                 </div>
+                        `
+                    : ""
+            }
               </article>
             `).join("")
             : `
             <div class="empty-state">
-              <strong>No job records matched.</strong>
-              <span>Try adjusting your search filter.</span>
+              <strong>No MO records matched.</strong>
+              <span>There are no course organizers in the system yet.</span>
             </div>
           `
     }
@@ -731,7 +728,7 @@ function renderLogsView() {
     <section class="section-header">
       <div class="section-title-block">
         <h2>System Logs</h2>
-        <p>当前日志列表仍为前端保留逻辑，因为示例接口未提供管理员日志查询接口。</p>
+        <p>系统日志数据（后端暂无此接口，当前显示为空）</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
@@ -812,12 +809,18 @@ function cacheElements() {
     els.userDetailModalOverlay = document.getElementById("userDetailModalOverlay");
     els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
+    els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
+    els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
 
     els.taDetailModalBody = document.getElementById("taDetailModalBody");
     els.statsModalBody = document.getElementById("statsModalBody");
     els.usersModalBody = document.getElementById("usersModalBody");
     els.userDetailModalBody = document.getElementById("userDetailModalBody");
     els.requestsModalBody = document.getElementById("requestsModalBody");
+    els.allJobsModalBody = document.getElementById("allJobsModalBody");
+    els.userQueryModalBody = document.getElementById("userQueryModalBody");
+    els.queryUserIdInput = document.getElementById("queryUserIdInput");
+    els.userQueryResult = document.getElementById("userQueryResult");
 
     els.rejectReasonInput = document.getElementById("rejectReasonInput");
 }
@@ -825,6 +828,8 @@ function cacheElements() {
 function bindPageEvents() {
     const openStatsBtn = document.getElementById("openStatsBtn");
     const openUsersBtn = document.getElementById("openUsersBtn");
+    const openAllJobsBtn = document.getElementById("openAllJobsBtn");
+    const openUserQueryBtn = document.getElementById("openUserQueryBtn");
     const switchBtns = document.querySelectorAll("[data-view]");
 
     if (openStatsBtn) {
@@ -833,6 +838,14 @@ function bindPageEvents() {
 
     if (openUsersBtn) {
         openUsersBtn.addEventListener("click", openUsersModal);
+    }
+
+    if (openAllJobsBtn) {
+        openAllJobsBtn.addEventListener("click", openAllJobsModal);
+    }
+
+    if (openUserQueryBtn) {
+        openUserQueryBtn.addEventListener("click", openUserQueryModal);
     }
 
     switchBtns.forEach(btn => {
@@ -870,8 +883,20 @@ function bindTAViewEvents() {
 
     detailBtns.forEach(btn => {
         btn.addEventListener("click", () => {
-            const id = Number(btn.dataset.taId);
+            const id = String(btn.dataset.taId); // 直接使用字符串，避免类型转换问题
             openTADetailModal(id);
+        });
+    });
+
+    // 删除TA按钮事件
+    const deleteBtns = document.querySelectorAll(".delete-ta-btn");
+    deleteBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const taId = String(btn.dataset.taId);
+            const ta = getTAById(taId);
+            if (ta && confirm(`确定要删除TA用户 "${ta.name}" 吗？`)) {
+                await deleteUser(taId);
+            }
         });
     });
 }
@@ -880,7 +905,6 @@ function bindMOViewEvents() {
     const moSearchInput = document.getElementById("moSearchInput");
     const statusBtns = document.querySelectorAll("[data-mo-status]");
     const viewBtns = document.querySelectorAll(".open-post-view-btn");
-    const applicantBtns = document.querySelectorAll(".open-post-applicants-btn");
 
     if (moSearchInput) {
         moSearchInput.addEventListener("input", e => {
@@ -900,15 +924,20 @@ function bindMOViewEvents() {
 
     viewBtns.forEach(btn => {
         btn.addEventListener("click", async () => {
-            const postId = Number(btn.dataset.postId);
+            const postId = String(btn.dataset.postId);
             await openPostPreview(postId);
         });
     });
 
-    applicantBtns.forEach(btn => {
+    // 删除MO按钮事件
+    const deleteMoBtns = document.querySelectorAll(".delete-mo-btn");
+    deleteMoBtns.forEach(btn => {
         btn.addEventListener("click", async () => {
-            const postId = Number(btn.dataset.postId);
-            await openPostApplicantsModal(postId);
+            const moId = String(btn.dataset.moId);
+            const mo = getMOById(moId);
+            if (mo && confirm(`确定要删除MO用户 "${mo.name}" 吗？`)) {
+                await deleteUser(moId);
+            }
         });
     });
 }
@@ -935,22 +964,28 @@ function bindLogsViewEvents() {
 }
 
 function getTAById(id) {
-    return state.taWorkloads.find(item => item.id === id) || null;
+    // 使用严格相等比较字符串类型
+    return state.taWorkloads.find(item => item.id === String(id)) || null;
 }
 
 function getMOById(id) {
-    return state.moWorkloads.find(item => item.id === id) || null;
+    return state.moWorkloads.find(item => item.id === String(id)) || null;
 }
 
 function getPostByIds(postId, moId) {
     const mo = getMOById(moId);
     if (!mo) return null;
-    return mo.recentPosts.find(post => post.id === postId) || null;
+    return mo.recentPosts.find(post => String(post.jobId) === String(postId)) || null;
 }
 
 function openTADetailModal(id) {
+    // 直接使用字符串id进行匹配
     const ta = getTAById(id);
-    if (!ta) return;
+    if (!ta) {
+        console.error("TA not found, id:", id, "available ids:", state.taWorkloads.map(t => t.id));
+        alert("无法找到该TA用户，请刷新页面后重试");
+        return;
+    }
 
     state.selectedTA = ta;
 
@@ -1103,12 +1138,15 @@ function closeStatsModal() {
     els.statsModalOverlay.classList.add("hidden");
 }
 
-function openUsersModal() {
+// 已实现后端接口连接
+async function openUsersModal() {
+    await loadAllUsers();
+
     els.usersModalBody.innerHTML = `
     <div class="section-header">
       <div class="section-title-block">
         <h3>All System Users</h3>
-        <p>查看用户角色、状态并进入详情页。当前为前端保留逻辑。</p>
+        <p>查看用户角色、状态并进入详情页。数据来自后端接口。</p>
       </div>
     </div>
 
@@ -1117,35 +1155,40 @@ function openUsersModal() {
         <table class="data-table">
           <thead>
             <tr>
-              <th>User</th>
-              <th>Email</th>
+              <th>User ID</th>
+              <th>Username</th>
+              <th>Real Name</th>
               <th>Role</th>
-              <th>Status</th>
-              <th>Created</th>
+              <th>Email</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            ${state.systemUsers.map(user => `
+            ${state.backendUsers.length > 0 ? state.backendUsers.map(user => {
+        const roleText = user.userType === 1 ? "TA" : user.userType === 2 ? "MO" : user.userType === 3 ? "Admin" : "Unknown";
+        return `
               <tr>
-                <td>${escapeHtml(user.realName)}<br><span style="color:var(--text-faint);font-size:12px;">@${escapeHtml(user.username)}</span></td>
-                <td>${escapeHtml(user.email)}</td>
-                <td><span class="badge badge-soft">${escapeHtml(user.role)}</span></td>
-                <td>
-                  <span class="badge ${
-        user.status === "active" ? "badge-success" : "badge-danger"
-    }">${escapeHtml(user.status)}</span>
-                </td>
-                <td>${escapeHtml(user.createdAt)}</td>
+                <td>${escapeHtml(user.userId)}</td>
+                <td>${escapeHtml(user.username)}</td>
+                <td>${escapeHtml(user.realName || "-")}</td>
+                <td><span class="badge badge-soft">${escapeHtml(roleText)}</span></td>
+                <td>${escapeHtml(user.email || "-")}</td>
                 <td>
                   <div class="row-actions">
-                    <button class="btn btn-soft open-user-detail-btn" type="button" data-user-id="${user.id}">
+                    <button class="btn btn-soft open-user-detail-btn" type="button" data-user-id="${user.userId}">
                       ${Icons.eye} View
+                    </button>
+                    <button class="btn btn-danger delete-user-btn" type="button" data-user-id="${user.userId}">
+                      Delete
                     </button>
                   </div>
                 </td>
               </tr>
-            `).join("")}
+            `}).join("") : `
+              <tr>
+                <td colspan="6" style="text-align:center;padding:30px;">暂无用户数据</td>
+              </tr>
+            `}
           </tbody>
         </table>
       </div>
@@ -1157,8 +1200,17 @@ function openUsersModal() {
     const detailBtns = els.usersModalBody.querySelectorAll(".open-user-detail-btn");
     detailBtns.forEach(btn => {
         btn.addEventListener("click", () => {
-            const id = Number(btn.dataset.userId);
-            openUserDetailModal(id);
+            const userId = btn.dataset.userId;
+            openUserDetailModal(userId);
+        });
+    });
+
+    const deleteBtns = els.usersModalBody.querySelectorAll(".delete-user-btn");
+    deleteBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const userId = btn.dataset.userId;
+            await deleteUser(userId);
+            await openUsersModal();
         });
     });
 }
@@ -1167,41 +1219,44 @@ function closeUsersModal() {
     els.usersModalOverlay.classList.add("hidden");
 }
 
-function openUserDetailModal(id) {
-    const user = state.systemUsers.find(item => item.id === id);
-    if (!user) return;
+// 已实现后端接口连接
+async function openUserDetailModal(userId) {
+    let user = state.backendUsers.find(item => String(item.userId) === String(userId));
+    if (!user) {
+        // 如果本地找不到，从后端获取
+        const userData = await loadUserDetail(userId);
+        if (!userData) return;
+        user = userData;
+    }
 
     state.selectedUser = user;
+    const roleText = user.userType === 1 ? "TA" : user.userType === 2 ? "MO" : user.userType === 3 ? "Admin" : "Unknown";
 
     els.userDetailModalBody.innerHTML = `
     <div class="user-profile-block">
-      <div class="user-avatar-xl">${escapeHtml(getInitials(user.realName))}</div>
+      <div class="user-avatar-xl">${escapeHtml(getInitials(user.realName || user.username))}</div>
       <div class="user-identity">
-        <h3>${escapeHtml(user.realName)}</h3>
-        <p>@${escapeHtml(user.username)} · ${escapeHtml(user.role)}</p>
+        <h3>${escapeHtml(user.realName || "-")}</h3>
+        <p>@${escapeHtml(user.username)} · ${escapeHtml(roleText)}</p>
       </div>
     </div>
 
     <div class="detail-grid">
       <div class="detail-row">
+        <span>User ID</span>
+        <span>${escapeHtml(user.userId)}</span>
+      </div>
+      <div class="detail-row">
+        <span>Username</span>
+        <span>${escapeHtml(user.username)}</span>
+      </div>
+      <div class="detail-row">
         <span>Email</span>
-        <span>${escapeHtml(user.email)}</span>
+        <span>${escapeHtml(user.email || "-")}</span>
       </div>
       <div class="detail-row">
-        <span>Status</span>
-        <span>${escapeHtml(user.status)}</span>
-      </div>
-      <div class="detail-row">
-        <span>Created At</span>
-        <span>${escapeHtml(user.createdAt)}</span>
-      </div>
-      <div class="detail-row">
-        <span>Major / Department</span>
-        <span>${escapeHtml(user.major)}</span>
-      </div>
-      <div class="detail-row">
-        <span>Notes</span>
-        <span>${escapeHtml(user.notes)}</span>
+        <span>Role</span>
+        <span>${escapeHtml(roleText)}</span>
       </div>
     </div>
   `;
@@ -1404,7 +1459,7 @@ function confirmRejectPost() {
         title: "Post Rejected",
         actor: state.currentAdmin.name,
         time: new Date().toLocaleString("zh-CN"),
-        detail: `Rejected post '${post.title}' with reason: ${reason}`
+        detail: `Rejected post '${post.jobName || post.title}' with reason: ${reason}`
     });
 
     closeRejectPostModal();
@@ -1532,12 +1587,134 @@ function handleRoleRequest(id, nextStatus) {
     });
 
     if (nextStatus === "approved") {
-        const user = state.systemUsers.find(item => item.username === req.username);
-        if (user) user.role = req.targetRole;
+        const user = state.backendUsers.find(item => item.username === req.username);
+        if (user) user.userType = req.targetRole === "TA" ? 1 : req.targetRole === "MO" ? 2 : 3;
     }
 
     renderRequestDot();
     openRequestsModal();
+}
+
+// 已实现后端接口连接 - 加载所有岗位弹窗
+async function openAllJobsModal() {
+    await loadAllJobs();
+
+    els.allJobsModalBody.innerHTML = `
+    <div class="section-header">
+      <div class="section-title-block">
+        <h3>All Jobs Management</h3>
+        <p>查看所有岗位并可执行删除操作。岗位数据来自后端接口。</p>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Job ID</th>
+              <th>Job Name</th>
+              <th>Publisher MO ID</th>
+              <th>Recruit Num</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.backendJobsList.length > 0 ? state.backendJobsList.map(job => {
+        const statusText = job.jobStatus === 0 ? "招聘中" : job.jobStatus === 1 ? "已截止" : job.jobStatus === 2 ? "已招满" : job.jobStatus === 3 ? "已关闭" : "未知";
+        const statusClass = job.jobStatus === 0 ? "badge-success" : job.jobStatus === 1 ? "badge-warning" : job.jobStatus === 2 ? "badge-danger" : "badge-soft";
+        return `
+              <tr>
+                <td>${escapeHtml(job.jobId)}</td>
+                <td>${escapeHtml(job.jobName)}</td>
+                <td>${escapeHtml(job.publisherMoId)}</td>
+                <td>${escapeHtml(job.recruitNum)}</td>
+                <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn btn-danger delete-job-btn" type="button" data-job-id="${job.jobId}">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `}).join("") : `
+              <tr>
+                <td colspan="6" style="text-align:center;padding:30px;">暂无岗位数据</td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+    els.allJobsModalOverlay.classList.remove("hidden");
+
+    const deleteBtns = els.allJobsModalBody.querySelectorAll(".delete-job-btn");
+    deleteBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const jobId = btn.dataset.jobId;
+            await deleteJob(jobId);
+            await openAllJobsModal();
+        });
+    });
+}
+
+function closeAllJobsModal() {
+    els.allJobsModalOverlay.classList.add("hidden");
+}
+
+// 已实现后端接口连接 - 用户查询弹窗
+function openUserQueryModal() {
+    els.queryUserIdInput.value = "";
+    els.userQueryResult.innerHTML = "";
+    els.userQueryModalOverlay.classList.remove("hidden");
+}
+
+function closeUserQueryModal() {
+    els.userQueryModalOverlay.classList.add("hidden");
+}
+
+// 已实现后端接口连接 - 执行用户查询
+async function confirmQueryUser() {
+    const userId = els.queryUserIdInput.value.trim();
+    if (!userId) {
+        alert("请输入用户ID");
+        return;
+    }
+
+    els.userQueryResult.innerHTML = '<p style="color:var(--text-soft);">Loading...</p>';
+
+    const userData = await loadUserDetail(userId);
+    if (userData) {
+        const roleText = userData.userType === 1 ? "TA" : userData.userType === 2 ? "MO" : userData.userType === 3 ? "Admin" : "未知";
+        els.userQueryResult.innerHTML = `
+        <div class="detail-row">
+          <span>User ID</span>
+          <span>${escapeHtml(userData.userId || userId)}</span>
+        </div>
+        <div class="detail-row">
+          <span>Username</span>
+          <span>${escapeHtml(userData.username || "-")}</span>
+        </div>
+        <div class="detail-row">
+          <span>Real Name</span>
+          <span>${escapeHtml(userData.realName || "-")}</span>
+        </div>
+        <div class="detail-row">
+          <span>Email</span>
+          <span>${escapeHtml(userData.email || "-")}</span>
+        </div>
+        <div class="detail-row">
+          <span>User Type</span>
+          <span>${escapeHtml(roleText)}</span>
+        </div>
+      `;
+    } else {
+        els.userQueryResult.innerHTML = '<p style="color:var(--danger);">获取用户详情失败，请检查用户ID是否正确。</p>';
+    }
 }
 
 function bindModalEvents() {
@@ -1549,6 +1726,9 @@ function bindModalEvents() {
     const cancelRejectPostBtn = document.getElementById("cancelRejectPostBtn");
     const confirmRejectPostBtn = document.getElementById("confirmRejectPostBtn");
     const closeRequestsModalBtn = document.getElementById("closeRequestsModalBtn");
+    const closeAllJobsModalBtn = document.getElementById("closeAllJobsModalBtn");
+    const closeUserQueryModalBtn = document.getElementById("closeUserQueryModalBtn");
+    const confirmQueryUserBtn = document.getElementById("confirmQueryUserBtn");
 
     if (closeTaDetailModalBtn) {
         closeTaDetailModalBtn.addEventListener("click", closeTADetailModal);
@@ -1582,6 +1762,18 @@ function bindModalEvents() {
         closeRequestsModalBtn.addEventListener("click", closeRequestsModal);
     }
 
+    if (closeAllJobsModalBtn) {
+        closeAllJobsModalBtn.addEventListener("click", closeAllJobsModal);
+    }
+
+    if (closeUserQueryModalBtn) {
+        closeUserQueryModalBtn.addEventListener("click", closeUserQueryModal);
+    }
+
+    if (confirmQueryUserBtn) {
+        confirmQueryUserBtn.addEventListener("click", confirmQueryUser);
+    }
+
     if (els.openRequestsBtn) {
         els.openRequestsBtn.addEventListener("click", openRequestsModal);
     }
@@ -1598,7 +1790,9 @@ function bindModalEvents() {
         [els.usersModalOverlay, closeUsersModal],
         [els.userDetailModalOverlay, closeUserDetailModal],
         [els.rejectPostModalOverlay, closeRejectPostModal],
-        [els.requestsModalOverlay, closeRequestsModal]
+        [els.requestsModalOverlay, closeRequestsModal],
+        [els.allJobsModalOverlay, closeAllJobsModal],
+        [els.userQueryModalOverlay, closeUserQueryModal]
     ].forEach(([overlay, closer]) => {
         if (!overlay) return;
         overlay.addEventListener("click", e => {
@@ -1615,6 +1809,8 @@ function bindModalEvents() {
         if (!els.userDetailModalOverlay.classList.contains("hidden")) closeUserDetailModal();
         if (!els.rejectPostModalOverlay.classList.contains("hidden")) closeRejectPostModal();
         if (!els.requestsModalOverlay.classList.contains("hidden")) closeRequestsModal();
+        if (!els.allJobsModalOverlay.classList.contains("hidden")) closeAllJobsModal();
+        if (!els.userQueryModalOverlay.classList.contains("hidden")) closeUserQueryModal();
     });
 }
 
@@ -1625,6 +1821,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await loadLoginUser(); // 已实现后端接口连接
     if (!ok) return;
 
-    await loadOpenJobs(); // 已实现后端接口连接
+    // 已实现后端接口连接 - 先加载岗位数据，再加载用户数据
+    // 原因：loadAllUsers()内部需要使用backendJobsList来统计MO发布的岗位数量
+    await loadAllJobs(); // 先加载岗位列表
+    await Promise.all([
+        loadAllUsers(), // 用户列表加载时会构建moWorkloads和taWorkloads
+        loadOpenJobs()  // 开放岗位列表
+    ]);
     render();
 });
