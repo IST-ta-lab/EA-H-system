@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>用户接口测试（调试版）new</title>
+    <title>助教招聘系统 - 登录/注册</title>
     <style>
         body { font-family: Arial; padding: 20px; }
         .section { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; border-radius: 5px; }
@@ -11,8 +11,6 @@
         button:hover { background: #45a049; }
         pre { background: #f4f4f4; padding: 10px; border-radius: 5px; max-height: 300px; overflow: auto; }
         .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-bottom: 20px; }
-        .role-select { margin: 10px 0; }
-        .role-option { margin-right: 15px; }
     </style>
 </head>
 <body>
@@ -58,13 +56,6 @@
     <input type="text" id="loginUsername" placeholder="用户名" value="admin">
     <input type="password" id="loginPassword" placeholder="密码" value="123456">
     <button onclick="login()">登录</button>
-</div>
-
-<!-- 获取当前用户 -->
-<div class="section">
-    <h2>获取登录用户信息</h2>
-    <button onclick="getLoginUser()">获取用户信息</button>
-    <pre id="userInfo">点击按钮获取</pre>
 </div>
 
 <!-- 响应显示区域 -->
@@ -134,26 +125,29 @@
         showResponse(r.data || r.raw);
     }
 
-    // 登录（通用）
+    // ==================== 核心修改：登录后根据角色跳转 ====================
     async function login() {
         const p = new URLSearchParams();
         p.append('username', document.getElementById('loginUsername').value);
         p.append('password', document.getElementById('loginPassword').value);
         const r = await request('/user?action=login', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
+
         if(r.ok && r.data.code === 200) {
+            const user = r.data.data;
             alert("登录成功！");
-            location.href = "main.html";
+
+            // 根据 userType 跳转到不同页面
+            if (user.userType === 1) {
+                location.href = "ta.html";
+            } else if (user.userType === 2) {
+                location.href = "MO.html";
+            } else if (user.userType === 3) {
+                location.href = "admin.html";
+            } else {
+                alert("未知角色类型");
+            }
         } else {
             showResponse(r.data || r.raw);
-        }
-    }
-
-    // 获取登录用户
-    async function getLoginUser() {
-        const r = await request('/user?action=getLoginUser', {method:'GET'});
-        if(r.ok) {
-            document.getElementById('userInfo').textContent = JSON.stringify(r.data, null, 2);
-            showResponse(r.data);
         }
     }
 </script>
