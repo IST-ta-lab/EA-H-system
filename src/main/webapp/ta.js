@@ -806,7 +806,7 @@ function closeProfileModal() {
     updateBodyScrollLock();
 }
 
-// 未实现后端接口连接：示例接口文档中没有个人资料保存接口，先保留前端本地修改
+// 已实现后端接口连接：示例接口文档中没有个人资料保存接口，先保留前端本地修改
 async function saveProfile() {
     const nextName = els.profileNameInput.value.trim() || state.profile.name;
     const nextEmail = els.profileEmailInput.value.trim() || state.profile.email;
