@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TA Market - 游客模式</title>
+    <link rel="stylesheet" href="ta.css" />
+    <style>
+        /* 覆盖原有样式，适配游客模式 */
+        .nav-username {
+            color: #667eea;
+            font-weight: 600;
+        }
+        /* 禁用状态的按钮样式 */
+        .btn-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* 游客提示弹窗的样式（如果原有样式不够） */
+        .guest-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+        .guest-modal-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: scaleIn 0.3s ease-out;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .guest-modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .guest-modal-desc {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .guest-modal-btns {
+            display: flex;
+            gap: 12px;
+        }
+        .guest-modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .guest-modal-btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+        }
+        .guest-modal-btn-cancel:hover {
+            background: #e0e0e0;
+        }
+        .guest-modal-btn-register {
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            color: white;
+            border: none;
+        }
+        .guest-modal-btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102,126,234,0.3);
+        }
+    </style>
+</head>
+<body>
+<div class="page-shell">
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+        <div class="bg-blob bg-blob-3"></div>
+    </div>
+
+    <header class="top-nav">
+        <div class="container nav-inner">
+            <div class="brand">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 6.5 12 3l8 3.5-8 3.5L4 6.5Zm2 3.1V15c0 1.2 2.7 3 6 3s6-1.8 6-3V9.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="brand-name">TA Market</span>
+            </div>
+
+            <div class="nav-right">
+                <!-- 核心修改：游客模式的用户名 -->
+                <span class="nav-username" id="navUserName">👤 游客模式</span>
+                <!-- 头像按钮保留，但点击提示注册 -->
+                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="打开个人资料" onclick="showGuestPrompt()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-layout">
+        <section class="main-content" id="mainContent">
+            <!-- 只保留岗位列表视图 -->
+            <div id="feedView" class="view-panel active"></div>
+            <!-- 隐藏个人资料视图 -->
+            <div id="profileView" class="view-panel" style="display: none;"></div>
+        </section>
+
+        <!-- 侧边栏保留，但点击提示注册 -->
+        <aside class="sidebar" id="sidebar" onclick="showGuestPrompt(event)"></aside>
+    </main>
+</div>
+
+<!-- 岗位详情弹窗（保留，但修改提交申请按钮） -->
+<div class="modal-overlay hidden" id="jobModalOverlay">
+    <div class="modal-card modal-xl scale-enter" id="jobModalCard">
+        <div class="modal-header job-header">
+            <div>
+                <h2 id="jobModalTitle"></h2>
+                <div class="job-meta-row" id="jobModalMeta"></div>
+            </div>
+            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body scrollable" id="jobModalBody">
+            <section class="job-section">
+                <h3>岗位说明</h3>
+                <p id="jobDescriptionText"></p>
+            </section>
+
+            <section class="match-card" id="matchCard"></section>
+
+            <section class="job-section">
+                <h3>所需技能</h3>
+                <div class="tag-list" id="jobRequiredTags"></div>
+            </section>
+
+            <hr class="divider" />
+
+            <!-- 核心修改：提交申请区域改为提示注册 -->
+            <section class="job-section">
+                <h3>申请岗位</h3>
+                <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
+                    您当前处于游客模式，无法提交申请。注册成为 TA 后即可申请心仪的岗位！
+                </p>
+                <button class="btn btn-primary" id="submitApplicationBtn" type="button" onclick="showGuestPrompt()">注册后申请</button>
+            </section>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 游客提示弹窗（新增） -->
+<div class="guest-modal-overlay hidden" id="guestModalOverlay">
+    <div class="guest-modal-card">
+        <h3 class="guest-modal-title">🔒 游客模式限制</h3>
+        <p class="guest-modal-desc">
+            您当前处于游客模式，仅可浏览岗位列表和查看岗位详情。<br>
+            注册成为 TA 后，即可提交申请、查看申请记录、编辑个人资料！
+        </p>
+        <div class="guest-modal-btns">
+            <button class="guest-modal-btn guest-modal-btn-cancel" onclick="closeGuestModal()">继续浏览</button>
+            <button class="guest-modal-btn guest-modal-btn-register" onclick="goToRegister()">立即注册</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = '/tapj';
+
+    // ==================== 核心：游客提示弹窗 ====================
+    function showGuestPrompt(event) {
+        // 阻止事件冒泡（如果是侧边栏点击）
+        if (event) event.stopPropagation();
+        document.getElementById('guestModalOverlay').classList.remove('hidden');
+    }
+
+    function closeGuestModal() {
+        document.getElementById('guestModalOverlay').classList.add('hidden');
+    }
+
+    function goToRegister() {
+        // 跳转到 index.html 的注册 tab
+        location.href = 'index.html?tab=register';
+    }
+
+    // ==================== 核心：加载岗位列表（和 TA 一样的接口） ====================
+    async function loadOpenJobs() {
+        const feedView = document.getElementById('feedView');
+        feedView.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">加载中...</p>';
+
+        try {
+            const res = await fetch(BASE_URL + '/job?action=listOpen', {
+                credentials: 'include'
+            });
+            const text = await res.text();
+            const data = JSON.parse(text);
+
+            if (data.code === 200 && data.data) {
+                const jobs = data.data;
+                let html = '';
+
+                if (jobs.length > 0) {
+                    jobs.forEach(job => {
+                        // 这里的 HTML 结构要和 ta.html 里的岗位卡片一致
+                        // 假设 ta.html 里的岗位卡片结构如下（如果不一致，请根据实际情况修改）
+                        html += `
+                            <div class="job-card" onclick="viewJobDetail('${job.jobId}')">
+                                <div class="job-card-header">
+                                    <h4 class="job-card-title">${job.jobName}</h4>
+                                    <span class="job-card-type">${job.jobType === 1 ? '助教' : '助理'}</span>
+                                </div>
+                                <div class="job-card-meta">
+                                    <span>📚 ${job.belongModule}</span>
+                                    <span>⏰ ${job.workHoursWeekly}h/周</span>
+                                    <span>👥 ${job.hiredNum}/${job.recruitNum}</span>
+                                    <span>📅 ${job.applyDeadline}</span>
+                                </div>
+                                <p class="job-card-desc">${job.jobDesc.substring(0, 100)}${job.jobDesc.length > 100 ? '...' : ''}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p style="text-align: center; color: #666; padding: 40px;">暂无招聘中岗位</p>';
+                }
+
+                feedView.innerHTML = html;
+            } else {
+                feedView.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 40px;">加载失败：' + (data.msg || '未知错误') + '</p>';
+            }
+        } catch (e) {
+            console.error(e);
+            feedView.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 40px;">网络错误，请稍后重试</p>';
+        }
+    }
+
+    // ==================== 核心：查看岗位详情（和 TA 一样的接口） ====================
+    async function viewJobDetail(jobId) {
+        const overlay = document.getElementById('jobModalOverlay');
+        const title = document.getElementById('jobModalTitle');
+        const meta = document.getElementById('jobModalMeta');
+        const desc = document.getElementById('jobDescriptionText');
+        const tags = document.getElementById('jobRequiredTags');
+
+        overlay.classList.remove('hidden');
+        title.textContent = '加载中...';
+        meta.innerHTML = '';
+        desc.textContent = '';
+        tags.innerHTML = '';
+
+        try {
+            const res = await fetch(BASE_URL + `/job?action=getDetail&jobId=${jobId}`, {
+                credentials: 'include'
+            });
+            const text = await res.text();
+            const data = JSON.parse(text);
+
+            if (data.code === 200 && data.data) {
+                const job = data.data;
+                title.textContent = job.jobName;
+                meta.innerHTML = `
+                    <span>📚 ${job.belongModule}</span>
+                    <span>⏰ ${job.workHoursWeekly}h/周</span>
+                    <span>👥 ${job.hiredNum}/${job.recruitNum}</span>
+                    <span>📅 ${job.applyDeadline}</span>
+                `;
+                desc.textContent = job.jobDesc;
+                // 假设 job 里有 requiredSkills 字段，如果没有可以去掉
+                if (job.requiredSkills && job.requiredSkills.length > 0) {
+                    let tagsHtml = '';
+                    job.requiredSkills.forEach(skill => {
+                        tagsHtml += `<span class="tag">${skill}</span>`;
+                    });
+                    tags.innerHTML = tagsHtml;
+                } else {
+                    tags.innerHTML = '<span style="color: #666;">暂无技能要求</span>';
+                }
+            } else {
+                title.textContent = '加载失败';
+                desc.textContent = data.msg || '未知错误';
+            }
+        } catch (e) {
+            console.error(e);
+            title.textContent = '网络错误';
+            desc.textContent = '请稍后重试';
+        }
+    }
+
+    // ==================== 关闭岗位详情弹窗 ====================
+    function closeJobModal() {
+        document.getElementById('jobModalOverlay').classList.add('hidden');
+    }
+
+    // ==================== 页面加载时初始化 ====================
+    window.onload = function() {
+        // 加载岗位列表
+        loadOpenJobs();
+
+        // 绑定关闭岗位详情弹窗的按钮
+        document.getElementById('closeJobModalBtn').addEventListener('click', closeJobModal);
+        document.getElementById('cancelJobModalBtn').addEventListener('click', closeJobModal);
+        document.getElementById('jobModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeJobModal();
+        });
+
+        // 绑定关闭游客提示弹窗的按钮
+        document.getElementById('guestModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeGuestModal();
+        });
+
+        // 如果是从 index.html 跳过来的，不需要做额外处理
+    };
+</script>
+</body>
+</html>

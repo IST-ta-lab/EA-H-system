@@ -5,10 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>助教招聘系统 - 登录/注册</title>
     <style>
+        /* 原有所有样式完全保留，只在登录按钮区域加一个游客按钮的样式 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #4facfe;
+            --accent-color: #764ba2;
+            --light-bg: #f5f7fa;
+            --white: #ffffff;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --moveX: 0px;
+            --moveY: 0px;
+            --spotlightX: 50%;
+            --spotlightY: 50%;
         }
 
         body {
@@ -19,9 +34,20 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 50%, #c3dafe 100%);
             position: relative;
             overflow-x: hidden;
+            &::after {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle 600px at var(--spotlightX) var(--spotlightY), rgba(102, 126, 234, 0.08) 0%, transparent 60%);
+                pointer-events: none;
+                z-index: 0;
+                transition: all 0.1s ease-out;
+            }
         }
 
-        /* 背景装饰：科技感网格 */
         body::before {
             content: '';
             position: fixed;
@@ -34,9 +60,14 @@
                     linear-gradient(90deg, rgba(102, 126, 234, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
+            animation: gridMove 20s linear infinite;
         }
 
-        /* 背景装饰：浮动渐变球 */
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+
         .bg-blob {
             position: fixed;
             border-radius: 50%;
@@ -53,6 +84,7 @@
             top: -100px;
             right: -100px;
             animation: float1 20s ease-in-out infinite;
+            transform: translate(calc(var(--moveX) * 0.02), calc(var(--moveY) * 0.02));
         }
 
         .blob-2 {
@@ -62,21 +94,38 @@
             bottom: -50px;
             left: -50px;
             animation: float2 25s ease-in-out infinite;
+            transform: translate(calc(var(--moveX) * -0.02), calc(var(--moveY) * -0.02));
         }
 
         @keyframes float1 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.05); }
-            66% { transform: translate(-20px, 20px) scale(0.95); }
+            0%, 100% { transform: translate(calc(var(--moveX) * 0.02), calc(var(--moveY) * 0.02)) scale(1); }
+            33% { transform: translate(calc(var(--moveX) * 0.02 + 30px), calc(var(--moveY) * 0.02 - 30px)) scale(1.05); }
+            66% { transform: translate(calc(var(--moveX) * 0.02 - 20px), calc(var(--moveY) * 0.02 + 20px)) scale(0.95); }
         }
 
         @keyframes float2 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(-30px, 20px) scale(1.05); }
-            66% { transform: translate(20px, -20px) scale(0.95); }
+            0%, 100% { transform: translate(calc(var(--moveX) * -0.02), calc(var(--moveY) * -0.02)) scale(1); }
+            33% { transform: translate(calc(var(--moveX) * -0.02 - 30px), calc(var(--moveY) * -0.02 + 20px)) scale(1.05); }
+            66% { transform: translate(calc(var(--moveX) * -0.02 + 20px), calc(var(--moveY) * -0.02 - 20px)) scale(0.95); }
         }
 
-        /* 顶部栏 */
+        .typing-text {
+            overflow: hidden;
+            border-right: 3px solid var(--white);
+            white-space: nowrap;
+            animation: typing 3s steps(12, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--white); }
+        }
+
         .top-bar {
             position: relative;
             z-index: 10;
@@ -88,14 +137,15 @@
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-            animation: slideDown 0.6s ease-out;
+            animation: slideDown 0.8s ease-out;
             flex-shrink: 0;
+            transform: translate(calc(var(--moveX) * 0.01), calc(var(--moveY) * 0.01));
         }
 
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-50px);
             }
             to {
                 opacity: 1;
@@ -121,6 +171,12 @@
             color: white;
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
             animation: pulse 2s ease-in-out infinite;
+            transition: transform 0.3s ease;
+            transform: translate(calc(var(--moveX) * 0.03), calc(var(--moveY) * 0.03));
+        }
+
+        .logo-icon:hover {
+            transform: translate(calc(var(--moveX) * 0.03), calc(var(--moveY) * 0.03)) scale(1.1) rotate(5deg);
         }
 
         @keyframes pulse {
@@ -150,7 +206,6 @@
             margin-top: 4px;
         }
 
-        /* 主内容区 */
         .main-content {
             flex: 1;
             display: flex;
@@ -160,9 +215,9 @@
             position: relative;
             z-index: 1;
             width: 100%;
+            perspective: 1000px;
         }
 
-        /* 主容器 */
         .container {
             width: 90%;
             max-width: 1100px;
@@ -175,21 +230,23 @@
                     0 0 0 1px rgba(102, 126, 234, 0.1);
             overflow: hidden;
             display: flex;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
+            animation: fadeInUp 1s ease-out 0.2s both;
+            transform-style: preserve-3d;
+            transform: translate(calc(var(--moveX) * 0.015), calc(var(--moveY) * 0.015)) rotateY(calc(var(--moveX) * 0.005)) rotateX(calc(var(--moveY) * -0.005));
+            transition: transform 0.1s ease-out;
         }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(50px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
-        /* 左侧：项目介绍 */
         .intro-section {
             flex: 1;
             background: linear-gradient(135deg, #667eea 0%, #4facfe 50%, #764ba2 100%);
@@ -201,6 +258,19 @@
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
+            transform: translate(calc(var(--moveX) * -0.02), calc(var(--moveY) * -0.02));
+            animation: slideInLeft 1s ease-out 0.3s both;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .intro-section::before {
@@ -225,18 +295,6 @@
             margin-bottom: 20px;
             position: relative;
             z-index: 1;
-            animation: slideInLeft 0.8s ease-out;
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
         }
 
         .intro-desc {
@@ -246,14 +304,18 @@
             opacity: 0.95;
             position: relative;
             z-index: 1;
-            animation: slideInLeft 0.8s ease-out 0.2s both;
+            animation: fadeIn 1s ease-out 0.5s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .feature-list {
             list-style: none;
             position: relative;
             z-index: 1;
-            animation: slideInLeft 0.8s ease-out 0.4s both;
         }
 
         .feature-item {
@@ -261,6 +323,18 @@
             align-items: center;
             margin-bottom: 15px;
             font-size: 15px;
+            transition: all 0.3s ease;
+            transform: translateX(0);
+            animation: slideInUp 0.5s ease-out both;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.6s; }
+        .feature-item:nth-child(2) { animation-delay: 0.7s; }
+        .feature-item:nth-child(3) { animation-delay: 0.8s; }
+        .feature-item:nth-child(4) { animation-delay: 0.9s; }
+
+        .feature-item:hover {
+            transform: translateX(10px);
         }
 
         .feature-icon {
@@ -273,31 +347,55 @@
             justify-content: center;
             margin-right: 12px;
             font-size: 14px;
+            transition: all 0.3s ease;
         }
 
-        /* 右侧：登录/注册表单 */
+        .feature-item:hover .feature-icon {
+            transform: scale(1.2);
+            background: rgba(255,255,255,0.3);
+        }
+
         .form-section {
             flex: 1;
             padding: 40px 50px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            animation: slideInRight 1s ease-out 0.3s both;
+            transform-style: preserve-3d;
         }
 
-        /* 切换按钮 */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         .tab-container {
             display: flex;
             margin-bottom: 30px;
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
             border-radius: 10px;
             padding: 5px;
-            animation: fadeIn 0.8s ease-out 0.3s both;
+            position: relative;
             flex-shrink: 0;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .tab-slider {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: calc(50% - 5px);
+            height: calc(100% - 10px);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .tab-btn {
@@ -311,26 +409,23 @@
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
         }
 
         .tab-btn.active {
-            background: white;
             color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
         }
 
-        /* ==================== 核心修复：表单滚动区域 ==================== */
         .form-scroll-wrapper {
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
             padding-right: 8px;
-            /* 自定义滚动条 */
             scrollbar-width: thin;
             scrollbar-color: #667eea #f0f0f0;
         }
 
-        /* 自定义滚动条样式 */
         .form-scroll-wrapper::-webkit-scrollbar {
             width: 6px;
         }
@@ -346,27 +441,33 @@
             background: #667eea;
         }
 
-        /* 表单容器 */
         .form-container {
             position: relative;
             min-height: 500px;
             width: 100%;
+            transform-style: preserve-3d;
         }
 
         .form-box {
             position: absolute;
             width: 100%;
             opacity: 0;
-            transform: translateX(20px);
-            transition: all 0.4s ease;
+            transform: rotateY(90deg) scale(0.9);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
             padding-bottom: 20px;
+            backface-visibility: hidden;
         }
 
         .form-box.active {
             opacity: 1;
-            transform: translateX(0);
+            transform: rotateY(0deg) scale(1);
             pointer-events: auto;
+        }
+
+        .form-box.exit {
+            opacity: 0;
+            transform: rotateY(-90deg) scale(0.9);
         }
 
         .form-title {
@@ -381,35 +482,21 @@
 
         .input-group {
             margin-bottom: 18px;
-            animation: slideInUp 0.5s ease-out both;
-        }
-
-        .input-group:nth-child(2) { animation-delay: 0.1s; }
-        .input-group:nth-child(3) { animation-delay: 0.2s; }
-        .input-group:nth-child(4) { animation-delay: 0.3s; }
-        .input-group:nth-child(5) { animation-delay: 0.4s; }
-        .input-group:nth-child(6) { animation-delay: 0.5s; }
-        .input-group:nth-child(7) { animation-delay: 0.6s; }
-        .input-group:nth-child(8) { animation-delay: 0.7s; }
-        .input-group:nth-child(9) { animation-delay: 0.8s; }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            position: relative;
         }
 
         .input-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 8px;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 15px;
+            font-weight: 500;
+            color: #999;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--white);
+            padding: 0 4px;
         }
 
         .input-field {
@@ -420,13 +507,41 @@
             font-size: 15px;
             transition: all 0.3s ease;
             background: #fafafa;
+            position: relative;
         }
 
-        .input-field:focus {
+        .input-field:focus,
+        .input-field:not(:placeholder-shown) {
             outline: none;
             border-color: #667eea;
             background: white;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-field:focus + .input-label,
+        .input-field:not(:placeholder-shown) + .input-label {
+            top: 0;
+            left: 12px;
+            font-size: 12px;
+            color: #667eea;
+        }
+
+        .input-group::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: calc(100% - 20px);
+            height: 2px;
+            background: linear-gradient(90deg, #667eea 0%, #4facfe 50%, #764ba2 100%);
+            border-radius: 2px;
+            transition: transform 0.4s ease;
+            transform-origin: center;
+        }
+
+        .input-field:focus ~ ::after {
+            transform: translateX(-50%) scaleX(1);
         }
 
         .input-row {
@@ -438,8 +553,15 @@
             flex: 1;
         }
 
+        /* ==================== 新增：登录按钮区域的样式调整 ==================== */
+        .login-btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
         .submit-btn {
-            width: 100%;
+            flex: 1;
             padding: 16px;
             background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
             color: white;
@@ -449,8 +571,9 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
         .submit-btn:hover {
@@ -462,7 +585,72 @@
             transform: translateY(0);
         }
 
-        /* 响应显示区域 */
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ==================== 新增：游客登录按钮的样式 ==================== */
+        .guest-btn {
+            flex: 1;
+            padding: 16px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .guest-btn:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(79, 172, 254, 0.05) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .guest-btn:active {
+            transform: translateY(0);
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        .guest-btn .ripple {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .btn-loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .response-section {
             margin-top: 25px;
             padding: 20px;
@@ -487,7 +675,6 @@
             word-wrap: break-word;
         }
 
-        /* 响应式适配 */
         @media (max-width: 900px) {
             .top-bar {
                 padding: 15px 20px;
@@ -514,6 +701,14 @@
             }
             .form-container {
                 min-height: auto;
+            }
+            .typing-text {
+                white-space: normal;
+                border-right: none;
+                animation: none;
+            }
+            .login-btn-group {
+                flex-direction: column;
             }
         }
 
@@ -552,7 +747,7 @@
     <div class="container">
         <!-- 左侧：项目介绍 -->
         <div class="intro-section">
-            <h1 class="intro-title">高效招聘，精准匹配</h1>
+            <h1 class="intro-title typing-text">高效招聘，精准匹配</h1>
             <p class="intro-desc">
                 一个现代化的助教招聘管理平台，为教师和学生提供一站式的招聘与申请服务，让招聘流程更简单、更高效。
             </p>
@@ -571,7 +766,7 @@
                 </li>
                 <li class="feature-item">
                     <span class="feature-icon">✓</span>
-                    <span>科技感界面，流畅操作体验</span>
+                    <span>游客模式，浏览岗位详情</span>
                 </li>
             </ul>
         </div>
@@ -580,11 +775,12 @@
         <div class="form-section">
             <!-- 切换按钮 -->
             <div class="tab-container">
-                <button class="tab-btn active" onclick="switchTab('login')">登录</button>
-                <button class="tab-btn" onclick="switchTab('register')">注册</button>
+                <div class="tab-slider" id="tabSlider"></div>
+                <button class="tab-btn active" data-tab="login" onclick="switchTab('login')">登录</button>
+                <button class="tab-btn" data-tab="register" onclick="switchTab('register')">注册</button>
             </div>
 
-            <!-- 核心修复：滚动包装容器 -->
+            <!-- 滚动包装容器 -->
             <div class="form-scroll-wrapper">
                 <div class="form-container">
                     <!-- 登录表单 -->
@@ -592,16 +788,20 @@
                         <h2 class="form-title">欢迎回来 👋</h2>
 
                         <div class="input-group">
+                            <input type="text" class="input-field" id="loginUsername" placeholder=" " value="admin">
                             <label class="input-label">用户名</label>
-                            <input type="text" class="input-field" id="loginUsername" placeholder="请输入用户名" value="admin">
                         </div>
 
                         <div class="input-group">
+                            <input type="password" class="input-field" id="loginPassword" placeholder=" " value="123456">
                             <label class="input-label">密码</label>
-                            <input type="password" class="input-field" id="loginPassword" placeholder="请输入密码" value="123456">
                         </div>
 
-                        <button class="submit-btn" onclick="login()">立即登录</button>
+                        <!-- ==================== 核心修改：登录按钮区域加游客登录 ==================== -->
+                        <div class="login-btn-group">
+                            <button class="submit-btn" id="loginBtn" onclick="login(event)">立即登录</button>
+                            <button class="guest-btn" id="guestBtn" onclick="guestLogin(event)">游客登录</button>
+                        </div>
                     </div>
 
                     <!-- 注册表单 -->
@@ -609,32 +809,32 @@
                         <h2 class="form-title">创建账号 🚀</h2>
 
                         <div class="input-group">
-                            <label class="input-label">注册身份</label>
                             <select class="input-field" id="registerRole" onchange="updateRegisterForm()">
                                 <option value="ta">TA（助教申请者）</option>
                                 <option value="mo">MO（教师/发布者）</option>
                             </select>
+                            <label class="input-label">注册身份</label>
                         </div>
 
                         <div class="input-row">
                             <div class="input-group">
+                                <input type="text" class="input-field" id="regUsername" placeholder=" ">
                                 <label class="input-label">用户名</label>
-                                <input type="text" class="input-field" id="regUsername" placeholder="请输入用户名">
                             </div>
                             <div class="input-group">
+                                <input type="password" class="input-field" id="regPassword" placeholder=" ">
                                 <label class="input-label">密码</label>
-                                <input type="password" class="input-field" id="regPassword" placeholder="请输入密码">
                             </div>
                         </div>
 
                         <div class="input-row">
                             <div class="input-group">
+                                <input type="text" class="input-field" id="regRealName" placeholder=" ">
                                 <label class="input-label">真实姓名</label>
-                                <input type="text" class="input-field" id="regRealName" placeholder="请输入真实姓名">
                             </div>
                             <div class="input-group">
+                                <input type="email" class="input-field" id="regEmail" placeholder=" ">
                                 <label class="input-label">邮箱</label>
-                                <input type="email" class="input-field" id="regEmail" placeholder="请输入邮箱">
                             </div>
                         </div>
 
@@ -642,22 +842,22 @@
                         <div id="taFields">
                             <div class="input-row">
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regStudentId" placeholder=" ">
                                     <label class="input-label">学号</label>
-                                    <input type="text" class="input-field" id="regStudentId" placeholder="请输入学号">
                                 </div>
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regMajor" placeholder=" ">
                                     <label class="input-label">专业</label>
-                                    <input type="text" class="input-field" id="regMajor" placeholder="请输入专业">
                                 </div>
                             </div>
                             <div class="input-row">
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regEducation" placeholder=" ">
                                     <label class="input-label">学历</label>
-                                    <input type="text" class="input-field" id="regEducation" placeholder="请输入学历">
                                 </div>
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regGrade" placeholder=" ">
                                     <label class="input-label">年级</label>
-                                    <input type="text" class="input-field" id="regGrade" placeholder="请输入年级">
                                 </div>
                             </div>
                         </div>
@@ -666,17 +866,17 @@
                         <div id="moFields" style="display: none;">
                             <div class="input-row">
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regStaffId" placeholder=" ">
                                     <label class="input-label">工号</label>
-                                    <input type="text" class="input-field" id="regStaffId" placeholder="请输入工号">
                                 </div>
                                 <div class="input-group">
+                                    <input type="text" class="input-field" id="regDepartment" placeholder=" ">
                                     <label class="input-label">部门</label>
-                                    <input type="text" class="input-field" id="regDepartment" placeholder="请输入部门">
                                 </div>
                             </div>
                         </div>
 
-                        <button class="submit-btn" onclick="register()">立即注册</button>
+                        <button class="submit-btn" id="registerBtn" onclick="register(event)">立即注册</button>
                     </div>
                 </div>
             </div>
@@ -692,24 +892,72 @@
 
 <script>
     const BASE_URL = '/tapj';
+    let isSubmitting = false;
+
+    // 视差效果
+    document.addEventListener('mousemove', (e) => {
+        const x = e.clientX - window.innerWidth / 2;
+        const y = e.clientY - window.innerHeight / 2;
+
+        document.documentElement.style.setProperty('--moveX', `${x}px`);
+        document.documentElement.style.setProperty('--moveY', `${y}px`);
+
+        const spotlightX = (e.clientX / window.innerWidth) * 100;
+        const spotlightY = (e.clientY / window.innerHeight) * 100;
+        document.documentElement.style.setProperty('--spotlightX', `${spotlightX}%`);
+        document.documentElement.style.setProperty('--spotlightY', `${spotlightY}%`);
+    });
+
+    // 按钮涟漪效果
+    function createRipple(event) {
+        const button = event.currentTarget;
+        const ripple = document.createElement('span');
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
+
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('ripple');
+
+        button.appendChild(ripple);
+
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
+    }
+
+    document.querySelectorAll('.submit-btn, .tab-btn, .guest-btn').forEach(btn => {
+        btn.addEventListener('click', createRipple);
+    });
 
     // 切换登录/注册
     function switchTab(tab) {
         const tabs = document.querySelectorAll('.tab-btn');
         const forms = document.querySelectorAll('.form-box');
+        const slider = document.getElementById('tabSlider');
+        const activeTab = document.querySelector(`[data-tab="${tab}"]`);
 
         tabs.forEach(t => t.classList.remove('active'));
-        forms.forEach(f => f.classList.remove('active'));
+        activeTab.classList.add('active');
 
         if (tab === 'login') {
-            tabs[0].classList.add('active');
-            document.getElementById('loginForm').classList.add('active');
+            slider.style.left = '5px';
         } else {
-            tabs[1].classList.add('active');
-            document.getElementById('registerForm').classList.add('active');
-            // 切换到注册时，滚动到顶部
-            document.querySelector('.form-scroll-wrapper').scrollTop = 0;
+            slider.style.left = 'calc(50% + 2px)';
         }
+
+        forms.forEach(f => f.classList.remove('active', 'exit'));
+        const currentForm = document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm');
+        const exitForm = document.getElementById(tab === 'login' ? 'registerForm' : 'loginForm');
+
+        exitForm.classList.add('exit');
+        setTimeout(() => {
+            currentForm.classList.add('active');
+            document.querySelector('.form-scroll-wrapper').scrollTop = 0;
+        }, 300);
     }
 
     // 根据注册角色显示/隐藏字段
@@ -746,7 +994,16 @@
     }
 
     // 登录
-    async function login() {
+    async function login(event) {
+        if (isSubmitting) return;
+        createRipple(event);
+        isSubmitting = true;
+
+        const btn = document.getElementById('loginBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="btn-loader"></span> 登录中...';
+        btn.disabled = true;
+
         const p = new URLSearchParams();
         p.append('username', document.getElementById('loginUsername').value);
         p.append('password', document.getElementById('loginPassword').value);
@@ -759,23 +1016,44 @@
 
         if(r.ok && r.data.code === 200) {
             const user = r.data.data;
-            alert("登录成功！");
+            btn.innerHTML = '登录成功！正在跳转...';
 
-            if (user.userType === 1) {
-                location.href = "ta.html";
-            } else if (user.userType === 2) {
-                location.href = "mo.html";
-            } else if (user.userType === 3) {
-                location.href = "admin.html";
-            }
+            setTimeout(() => {
+                if (user.userType === 1) {
+                    location.href = "ta.html";
+                } else if (user.userType === 2) {
+                    location.href = "mo.html";
+                } else if (user.userType === 3) {
+                    location.href = "admin.html";
+                }
+            }, 800);
         } else {
             showResponse(r.data || r.raw);
             alert("登录失败：" + (r.data?.msg || "未知错误"));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            isSubmitting = false;
         }
     }
 
+    // ==================== 核心新增：游客登录 ====================
+    function guestLogin(event) {
+        createRipple(event);
+        // 直接跳转到 guest.html，不需要调用后端
+        location.href = "guest.html";
+    }
+
     // 注册
-    async function register() {
+    async function register(event) {
+        if (isSubmitting) return;
+        createRipple(event);
+        isSubmitting = true;
+
+        const btn = document.getElementById('registerBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="btn-loader"></span> 注册中...';
+        btn.disabled = true;
+
         const role = document.getElementById('registerRole').value;
         const p = new URLSearchParams();
 
@@ -806,12 +1084,29 @@
         showResponse(r.data || r.raw);
 
         if(r.ok && r.data.code === 200) {
-            alert("注册成功！请登录");
-            switchTab('login');
+            btn.innerHTML = '注册成功！';
+            alert("注册成功！即将跳转到登录页");
+            setTimeout(() => {
+                switchTab('login');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                isSubmitting = false;
+            }, 1000);
         } else {
             alert("注册失败：" + (r.data?.msg || "未知错误"));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            isSubmitting = false;
         }
     }
+
+    window.addEventListener('load', () => {
+        const title = document.querySelector('.typing-text');
+        title.style.animation = 'none';
+        setTimeout(() => {
+            title.style.animation = 'typing 3s steps(12, end), blink-caret 0.75s step-end infinite';
+        }, 100);
+    });
 </script>
 
 </body>
