@@ -14,6 +14,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用户相关接口
@@ -102,6 +105,65 @@ public class UserServlet extends BaseServlet {
             return;
         }
         writeJson(response, Result.success(loginUser));
+    }
+
+    /**
+     * 更新TA个人资料
+     * 访问：POST /user?action=updateProfile
+     * 参数：realName, email, major, selfIntro, skills(英文逗号分隔), profileVisible(true/false 或 1/0)
+     */
+    public void updateProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "未登录"));
+            return;
+        }
+        if (!(loginUser instanceof TA)) {
+            writeJson(response, Result.error(403, "仅TA可更新个人资料"));
+            return;
+        }
+
+        TA ta = (TA) loginUser;
+        String realName = request.getParameter("realName");
+        String email = request.getParameter("email");
+        String major = request.getParameter("major");
+        String selfIntro = request.getParameter("selfIntro");
+        String skills = request.getParameter("skills");
+        String profileVisible = request.getParameter("profileVisible");
+
+        if (realName != null) {
+            ta.setRealName(realName);
+        }
+        if (email != null) {
+            ta.setEmail(email);
+        }
+        if (major != null) {
+            ta.setMajor(major);
+        }
+        if (selfIntro != null) {
+            ta.setSelfIntro(selfIntro);
+        }
+        if (profileVisible != null) {
+            boolean visible = "1".equals(profileVisible) || "true".equalsIgnoreCase(profileVisible);
+            ta.setProfileVisible(visible);
+        }
+        if (skills != null) {
+            List<String> skillList = Arrays.stream(skills.split(","))
+                    .map(String::trim)
+                    .filter(item -> !item.isEmpty())
+                    .collect(Collectors.toList());
+            ta.setSkillIds(skillList);
+        }
+
+        boolean ok = userService.updateTAProfile(ta);
+        if (!ok) {
+            writeJson(response, Result.error(500, "更新失败"));
+            return;
+        }
+
+        session.setAttribute("loginUser", ta);
+        writeJson(response, Result.success("更新成功", ta));
     }
 
     /**

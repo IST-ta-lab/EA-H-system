@@ -23,4 +23,7 @@ public interface UserService {
 
     // 根据userId查询用户
     User getUserById(String userId);
+
+    // 更新TA个人资料
+    boolean updateTAProfile(TA ta);
 }

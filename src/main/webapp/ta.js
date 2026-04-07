@@ -179,6 +179,15 @@ function mapUserToProfile(user) {
     state.profile.name = user.realName || user.username || "未命名用户";
     state.profile.email = user.email || "";
     state.profile.major = user.major || user.course || "暂未填写";
+    if (typeof user.selfIntro !== "undefined") {
+        state.profile.bio = user.selfIntro || "";
+    }
+    if (Array.isArray(user.skillIds)) {
+        state.profile.skills = user.skillIds;
+    }
+    if (typeof user.profileVisible === "boolean") {
+        state.profile.isVisible = user.profileVisible;
+    }
 }
 
 // 已实现后端接口连接
@@ -798,20 +807,41 @@ function closeProfileModal() {
 }
 
 // 未实现后端接口连接：示例接口文档中没有个人资料保存接口，先保留前端本地修改
-function saveProfile() {
-    state.profile.name = els.profileNameInput.value.trim() || state.profile.name;
-    state.profile.email = els.profileEmailInput.value.trim() || state.profile.email;
-    state.profile.major = els.profileMajorInput.value.trim() || state.profile.major;
-    state.profile.bio = els.profileBioInput.value.trim();
-
+async function saveProfile() {
+    const nextName = els.profileNameInput.value.trim() || state.profile.name;
+    const nextEmail = els.profileEmailInput.value.trim() || state.profile.email;
+    const nextMajor = els.profileMajorInput.value.trim() || state.profile.major;
+    const nextBio = els.profileBioInput.value.trim();
     const nextSkills = els.profileSkillsInput.value
         .split(",")
         .map(item => item.trim())
         .filter(Boolean);
 
-    state.profile.skills = nextSkills;
-    closeProfileModal();
-    render();
+    const payload = new URLSearchParams({
+        realName: nextName,
+        email: nextEmail,
+        major: nextMajor,
+        selfIntro: nextBio,
+        skills: nextSkills.join(","),
+        profileVisible: state.profile.isVisible ? "1" : "0"
+    });
+
+    const r = await request("/user?action=updateProfile", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body: payload.toString()
+    });
+
+    if (r.ok && r.data && r.data.code === 200) {
+        mapUserToProfile(r.data.data);
+        closeProfileModal();
+        render();
+        return;
+    }
+
+    showError((r.data && r.data.msg) || r.error || "保存失败");
 }
 
 // 已实现后端接口连接
