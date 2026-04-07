@@ -15,43 +15,167 @@
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-direction: column;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 50%, #c3dafe 100%);
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        /* 背景装饰 */
+        /* 背景装饰：科技感网格 */
         body::before {
             content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: rotate 30s linear infinite;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                    linear-gradient(rgba(102, 126, 234, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(102, 126, 234, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        /* 背景装饰：浮动渐变球 */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            top: -100px;
+            right: -100px;
+            animation: float1 20s ease-in-out infinite;
+        }
+
+        .blob-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            bottom: -50px;
+            left: -50px;
+            animation: float2 25s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-30px, 20px) scale(1.05); }
+            66% { transform: translate(20px, -20px) scale(0.95); }
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+            animation: slideDown 0.6s ease-out;
+            flex-shrink: 0;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5); }
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .top-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: 2px;
+        }
+
+        .top-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
         }
 
         /* 主容器 */
         .container {
-            position: relative;
-            z-index: 1;
             width: 90%;
             max-width: 1100px;
+            max-height: 85vh;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow:
+                    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(102, 126, 234, 0.1);
             overflow: hidden;
             display: flex;
-            animation: fadeInUp 0.8s ease-out;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
         @keyframes fadeInUp {
@@ -68,18 +192,39 @@
         /* 左侧：项目介绍 */
         .intro-section {
             flex: 1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 50%, #764ba2 100%);
             color: white;
             padding: 60px 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .intro-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .intro-title {
             font-size: 32px;
             font-weight: 700;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
             animation: slideInLeft 0.8s ease-out;
         }
 
@@ -98,12 +243,16 @@
             font-size: 16px;
             line-height: 1.8;
             margin-bottom: 30px;
-            opacity: 0.9;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
             animation: slideInLeft 0.8s ease-out 0.2s both;
         }
 
         .feature-list {
             list-style: none;
+            position: relative;
+            z-index: 1;
             animation: slideInLeft 0.8s ease-out 0.4s both;
         }
 
@@ -129,19 +278,21 @@
         /* 右侧：登录/注册表单 */
         .form-section {
             flex: 1;
-            padding: 60px 50px;
+            padding: 40px 50px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         /* 切换按钮 */
         .tab-container {
             display: flex;
-            margin-bottom: 40px;
-            background: #f0f0f0;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
             border-radius: 10px;
             padding: 5px;
             animation: fadeIn 0.8s ease-out 0.3s both;
+            flex-shrink: 0;
         }
 
         @keyframes fadeIn {
@@ -165,13 +316,41 @@
         .tab-btn.active {
             background: white;
             color: #667eea;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
         }
 
-        /* 表单 */
+        /* ==================== 核心修复：表单滚动区域 ==================== */
+        .form-scroll-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 8px;
+            /* 自定义滚动条 */
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f0f0f0;
+        }
+
+        /* 自定义滚动条样式 */
+        .form-scroll-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        .form-scroll-wrapper::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        .form-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            border-radius: 10px;
+        }
+        .form-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #667eea;
+        }
+
+        /* 表单容器 */
         .form-container {
             position: relative;
-            min-height: 400px;
+            min-height: 500px;
+            width: 100%;
         }
 
         .form-box {
@@ -181,6 +360,7 @@
             transform: translateX(20px);
             transition: all 0.4s ease;
             pointer-events: none;
+            padding-bottom: 20px;
         }
 
         .form-box.active {
@@ -192,12 +372,15 @@
         .form-title {
             font-size: 28px;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
         }
 
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             animation: slideInUp 0.5s ease-out both;
         }
 
@@ -207,6 +390,8 @@
         .input-group:nth-child(5) { animation-delay: 0.4s; }
         .input-group:nth-child(6) { animation-delay: 0.5s; }
         .input-group:nth-child(7) { animation-delay: 0.6s; }
+        .input-group:nth-child(8) { animation-delay: 0.7s; }
+        .input-group:nth-child(9) { animation-delay: 0.8s; }
 
         @keyframes slideInUp {
             from {
@@ -256,7 +441,7 @@
         .submit-btn {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -265,42 +450,26 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
         }
 
         .submit-btn:active {
             transform: translateY(0);
         }
 
-        /* 响应式 */
-        @media (max-width: 900px) {
-            .container {
-                flex-direction: column;
-                width: 95%;
-            }
-            .intro-section {
-                padding: 40px 30px;
-            }
-            .form-section {
-                padding: 40px 30px;
-            }
-            .input-row {
-                flex-direction: column;
-                gap: 0;
-            }
-        }
-
         /* 响应显示区域 */
         .response-section {
-            margin-top: 30px;
+            margin-top: 25px;
             padding: 20px;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
             border-radius: 10px;
             border-left: 4px solid #667eea;
+            flex-shrink: 0;
         }
 
         .response-title {
@@ -317,143 +486,206 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+
+        /* 响应式适配 */
+        @media (max-width: 900px) {
+            .top-bar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .container {
+                flex-direction: column;
+                width: 95%;
+                max-height: none;
+            }
+            .intro-section {
+                padding: 40px 30px;
+            }
+            .form-section {
+                padding: 30px 20px;
+                max-height: 70vh;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            .form-container {
+                min-height: auto;
+            }
+        }
+
+        @media (max-height: 800px) {
+            .container {
+                max-height: 90vh;
+            }
+            .form-section {
+                padding: 30px 50px;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- 左侧：项目介绍 -->
-    <div class="intro-section">
-        <h1 class="intro-title">🎓 助教招聘系统</h1>
-        <p class="intro-desc">
-            一个高效、便捷的助教招聘管理平台，为教师和学生提供一站式的招聘与申请服务。
-        </p>
-        <ul class="feature-list">
-            <li class="feature-item">
-                <span class="feature-icon">✓</span>
-                <span>TA 在线申请岗位，实时查看申请状态</span>
-            </li>
-            <li class="feature-item">
-                <span class="feature-icon">✓</span>
-                <span>MO 发布岗位，便捷审核申请</span>
-            </li>
-            <li class="feature-item">
-                <span class="feature-icon">✓</span>
-                <span>Admin 统一管理用户和岗位</span>
-            </li>
-            <li class="feature-item">
-                <span class="feature-icon">✓</span>
-                <span>简洁美观的界面，流畅的操作体验</span>
-            </li>
-        </ul>
+<!-- 背景装饰 -->
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<!-- 顶部栏 -->
+<div class="top-bar">
+    <div class="logo-section">
+        <div class="logo-icon">🎓</div>
+        <div>
+            <div class="logo-text">TA Hiring System</div>
+        </div>
     </div>
+    <div style="text-align: right;">
+        <div class="top-title">助教招聘系统</div>
+        <div class="top-subtitle">Teaching Assistant Recruitment Platform</div>
+    </div>
+</div>
 
-    <!-- 右侧：登录/注册表单 -->
-    <div class="form-section">
-        <!-- 切换按钮 -->
-        <div class="tab-container">
-            <button class="tab-btn active" onclick="switchTab('login')">登录</button>
-            <button class="tab-btn" onclick="switchTab('register')">注册</button>
+<!-- 主内容区 -->
+<div class="main-content">
+    <div class="container">
+        <!-- 左侧：项目介绍 -->
+        <div class="intro-section">
+            <h1 class="intro-title">高效招聘，精准匹配</h1>
+            <p class="intro-desc">
+                一个现代化的助教招聘管理平台，为教师和学生提供一站式的招聘与申请服务，让招聘流程更简单、更高效。
+            </p>
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    <span>TA 在线申请，实时查看状态</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    <span>MO 发布岗位，便捷审核申请</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    <span>Admin 统一管理用户和岗位</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">✓</span>
+                    <span>科技感界面，流畅操作体验</span>
+                </li>
+            </ul>
         </div>
 
-        <div class="form-container">
-            <!-- 登录表单 -->
-            <div class="form-box active" id="loginForm">
-                <h2 class="form-title">欢迎回来 👋</h2>
-
-                <div class="input-group">
-                    <label class="input-label">用户名</label>
-                    <input type="text" class="input-field" id="loginUsername" placeholder="请输入用户名" value="admin">
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">密码</label>
-                    <input type="password" class="input-field" id="loginPassword" placeholder="请输入密码" value="123456">
-                </div>
-
-                <button class="submit-btn" onclick="login()">立即登录</button>
+        <!-- 右侧：登录/注册表单 -->
+        <div class="form-section">
+            <!-- 切换按钮 -->
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchTab('login')">登录</button>
+                <button class="tab-btn" onclick="switchTab('register')">注册</button>
             </div>
 
-            <!-- 注册表单 -->
-            <div class="form-box" id="registerForm">
-                <h2 class="form-title">创建账号 🚀</h2>
+            <!-- 核心修复：滚动包装容器 -->
+            <div class="form-scroll-wrapper">
+                <div class="form-container">
+                    <!-- 登录表单 -->
+                    <div class="form-box active" id="loginForm">
+                        <h2 class="form-title">欢迎回来 👋</h2>
 
-                <div class="input-group">
-                    <label class="input-label">注册身份</label>
-                    <select class="input-field" id="registerRole" onchange="updateRegisterForm()">
-                        <option value="ta">TA（助教申请者）</option>
-                        <option value="mo">MO（教师/发布者）</option>
-                    </select>
+                        <div class="input-group">
+                            <label class="input-label">用户名</label>
+                            <input type="text" class="input-field" id="loginUsername" placeholder="请输入用户名" value="admin">
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">密码</label>
+                            <input type="password" class="input-field" id="loginPassword" placeholder="请输入密码" value="123456">
+                        </div>
+
+                        <button class="submit-btn" onclick="login()">立即登录</button>
+                    </div>
+
+                    <!-- 注册表单 -->
+                    <div class="form-box" id="registerForm">
+                        <h2 class="form-title">创建账号 🚀</h2>
+
+                        <div class="input-group">
+                            <label class="input-label">注册身份</label>
+                            <select class="input-field" id="registerRole" onchange="updateRegisterForm()">
+                                <option value="ta">TA（助教申请者）</option>
+                                <option value="mo">MO（教师/发布者）</option>
+                            </select>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label class="input-label">用户名</label>
+                                <input type="text" class="input-field" id="regUsername" placeholder="请输入用户名">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">密码</label>
+                                <input type="password" class="input-field" id="regPassword" placeholder="请输入密码">
+                            </div>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label class="input-label">真实姓名</label>
+                                <input type="text" class="input-field" id="regRealName" placeholder="请输入真实姓名">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">邮箱</label>
+                                <input type="email" class="input-field" id="regEmail" placeholder="请输入邮箱">
+                            </div>
+                        </div>
+
+                        <!-- TA 专属字段 -->
+                        <div id="taFields">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label class="input-label">学号</label>
+                                    <input type="text" class="input-field" id="regStudentId" placeholder="请输入学号">
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">专业</label>
+                                    <input type="text" class="input-field" id="regMajor" placeholder="请输入专业">
+                                </div>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label class="input-label">学历</label>
+                                    <input type="text" class="input-field" id="regEducation" placeholder="请输入学历">
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">年级</label>
+                                    <input type="text" class="input-field" id="regGrade" placeholder="请输入年级">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MO 专属字段 -->
+                        <div id="moFields" style="display: none;">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label class="input-label">工号</label>
+                                    <input type="text" class="input-field" id="regStaffId" placeholder="请输入工号">
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">部门</label>
+                                    <input type="text" class="input-field" id="regDepartment" placeholder="请输入部门">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="submit-btn" onclick="register()">立即注册</button>
+                    </div>
                 </div>
-
-                <div class="input-row">
-                    <div class="input-group">
-                        <label class="input-label">用户名</label>
-                        <input type="text" class="input-field" id="regUsername" placeholder="请输入用户名">
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">密码</label>
-                        <input type="password" class="input-field" id="regPassword" placeholder="请输入密码">
-                    </div>
-                </div>
-
-                <div class="input-row">
-                    <div class="input-group">
-                        <label class="input-label">真实姓名</label>
-                        <input type="text" class="input-field" id="regRealName" placeholder="请输入真实姓名">
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">邮箱</label>
-                        <input type="email" class="input-field" id="regEmail" placeholder="请输入邮箱">
-                    </div>
-                </div>
-
-                <!-- TA 专属字段 -->
-                <div id="taFields">
-                    <div class="input-row">
-                        <div class="input-group">
-                            <label class="input-label">学号</label>
-                            <input type="text" class="input-field" id="regStudentId" placeholder="请输入学号">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">专业</label>
-                            <input type="text" class="input-field" id="regMajor" placeholder="请输入专业">
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <div class="input-group">
-                            <label class="input-label">学历</label>
-                            <input type="text" class="input-field" id="regEducation" placeholder="请输入学历">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">年级</label>
-                            <input type="text" class="input-field" id="regGrade" placeholder="请输入年级">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MO 专属字段 -->
-                <div id="moFields" style="display: none;">
-                    <div class="input-row">
-                        <div class="input-group">
-                            <label class="input-label">工号</label>
-                            <input type="text" class="input-field" id="regStaffId" placeholder="请输入工号">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">部门</label>
-                            <input type="text" class="input-field" id="regDepartment" placeholder="请输入部门">
-                        </div>
-                    </div>
-                </div>
-
-                <button class="submit-btn" onclick="register()">立即注册</button>
             </div>
-        </div>
 
-        <!-- 响应显示区域 -->
-        <div class="response-section" id="responseSection" style="display: none;">
-            <div class="response-title">📡 服务器响应</div>
-            <pre id="response"></pre>
+            <!-- 响应显示区域 -->
+            <div class="response-section" id="responseSection" style="display: none;">
+                <div class="response-title">📡 服务器响应</div>
+                <pre id="response"></pre>
+            </div>
         </div>
     </div>
 </div>
@@ -475,6 +707,8 @@
         } else {
             tabs[1].classList.add('active');
             document.getElementById('registerForm').classList.add('active');
+            // 切换到注册时，滚动到顶部
+            document.querySelector('.form-scroll-wrapper').scrollTop = 0;
         }
     }
 
