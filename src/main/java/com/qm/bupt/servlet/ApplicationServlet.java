@@ -1,7 +1,7 @@
 package com.qm.bupt.servlet;
 
 import com.qm.bupt.dto.ApplicationDetailDTO;
-import com.qm.bupt.entity.Application;
+import com.qm.bupt.dto.MyApplicationDTO;
 import com.qm.bupt.entity.User;
 import com.qm.bupt.service.ApplicationService;
 import com.qm.bupt.service.impl.ApplicationServiceImpl;
@@ -101,8 +101,30 @@ public class ApplicationServlet extends BaseServlet {
             return;
         }
 
-        List<Application> apps = applicationService.listMyApplications(loginUser.getUserId());
+        List<MyApplicationDTO> apps = applicationService.listMyApplications(loginUser.getUserId());
         writeJson(response, Result.success(apps));
+    }
+
+    /**
+     * 5. TA取消申请
+     * POST /application?action=cancel&applicationId=xxx
+     */
+    public void cancel(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "未登录"));
+            return;
+        }
+        if (loginUser.getUserType() != 1) {
+            writeJson(response, Result.error(403, "无权限，仅TA可取消申请"));
+            return;
+        }
+
+        String applicationId = request.getParameter("applicationId");
+        boolean success = applicationService.cancelApplication(loginUser.getUserId(), applicationId);
+        writeJson(response, success ? Result.success("已取消申请") : Result.error(400, "取消失败（申请不存在、已通过或无权限）"));
     }
 
 }
