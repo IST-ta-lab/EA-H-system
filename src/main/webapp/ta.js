@@ -368,7 +368,7 @@ function renderFeedView() {
       </button>
     </div>
 
-    <div class="job-list">
+    <div class="job-list" id="jobList">
       ${
         filteredJobs.length > 0
             ? filteredJobs.map(job => renderJobCard(job)).join("")
@@ -383,6 +383,29 @@ function renderFeedView() {
   `;
 
     bindFeedEvents();
+    renderJobList();
+}
+
+function renderJobList() {
+    const jobListEl = document.getElementById("jobList");
+    if (!jobListEl) return;
+
+    const filteredJobs = getFilteredJobs();
+
+    jobListEl.innerHTML = `
+      ${
+        filteredJobs.length > 0
+            ? filteredJobs.map(job => renderJobCard(job)).join("")
+            : `
+            <div class="empty-state glass-card">
+              <strong>No positions match your current criteria.</strong>
+              <span>Try adjusting the search text or selected tags.</span>
+            </div>
+          `
+    }
+    `;
+
+    bindJobListEvents();
 }
 
 function renderJobCard(job) {
@@ -645,7 +668,7 @@ function bindFeedEvents() {
     if (searchInput) {
         searchInput.addEventListener("input", event => {
             state.searchQuery = event.target.value;
-            renderFeedView();
+            renderJobList();
         });
     }
 
@@ -727,15 +750,51 @@ function syncProfileModalState() {
     els.profileVisibleIcon.classList.toggle("active", !!state.profile.isVisible);
 }
 
+function bindJobListEvents() {
+    const openButtons = els.feedView.querySelectorAll(".open-job-btn");
+    const applyButtons = els.feedView.querySelectorAll(".apply-job-btn");
+
+    openButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await openJobModal(id);
+        });
+    });
+
+    applyButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await handleApply(id);
+        });
+    });
+
+    const cards = els.feedView.querySelectorAll(".job-card");
+    cards.forEach(card => {
+        card.addEventListener("click", async () => {
+            await openJobModal(card.dataset.jobId);
+        });
+    });
+}
+
+function updateBodyScrollLock() {
+    const isProfileOpen = els.profileModalOverlay && !els.profileModalOverlay.classList.contains("hidden");
+    const isJobOpen = els.jobModalOverlay && !els.jobModalOverlay.classList.contains("hidden");
+    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen);
+}
+
 function openProfileModal() {
     state.isProfileModalOpen = true;
     syncProfileModalState();
     els.profileModalOverlay.classList.remove("hidden");
+    updateBodyScrollLock();
 }
 
 function closeProfileModal() {
     state.isProfileModalOpen = false;
     els.profileModalOverlay.classList.add("hidden");
+    updateBodyScrollLock();
 }
 
 // 未实现后端接口连接：示例接口文档中没有个人资料保存接口，先保留前端本地修改
@@ -800,6 +859,7 @@ async function openJobModal(jobId) {
 
         renderJobModal();
         els.jobModalOverlay.classList.remove("hidden");
+        updateBodyScrollLock();
         return;
     }
 
@@ -809,6 +869,7 @@ async function openJobModal(jobId) {
 function closeJobModal() {
     state.selectedJob = null;
     els.jobModalOverlay.classList.add("hidden");
+    updateBodyScrollLock();
 }
 
 function renderJobModal() {
