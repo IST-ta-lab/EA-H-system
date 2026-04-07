@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>助教招聘系统 - 登录/注册</title>
     <style>
-        /* 原有所有样式完全保留，只在登录按钮区域加一个游客按钮的样式 */
+        /* 原有所有样式完全保留，只修改 JS 逻辑 */
         * {
             margin: 0;
             padding: 0;
@@ -553,7 +553,6 @@
             flex: 1;
         }
 
-        /* ==================== 新增：登录按钮区域的样式调整 ==================== */
         .login-btn-group {
             display: flex;
             gap: 12px;
@@ -591,7 +590,6 @@
             transform: none;
         }
 
-        /* ==================== 新增：游客登录按钮的样式 ==================== */
         .guest-btn {
             flex: 1;
             padding: 16px;
@@ -797,7 +795,6 @@
                             <label class="input-label">密码</label>
                         </div>
 
-                        <!-- ==================== 核心修改：登录按钮区域加游客登录 ==================== -->
                         <div class="login-btn-group">
                             <button class="submit-btn" id="loginBtn" onclick="login(event)">立即登录</button>
                             <button class="guest-btn" id="guestBtn" onclick="guestLogin(event)">游客登录</button>
@@ -993,7 +990,22 @@
         }
     }
 
-    // 登录
+    // ==================== 登录函数（保留，供注册成功后调用） ====================
+    async function doLogin(username, password) {
+        const p = new URLSearchParams();
+        p.append('username', username);
+        p.append('password', password);
+
+        const r = await request('/user?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: p
+        });
+
+        return r;
+    }
+
+    // 登录按钮点击
     async function login(event) {
         if (isSubmitting) return;
         createRipple(event);
@@ -1004,15 +1016,10 @@
         btn.innerHTML = '<span class="btn-loader"></span> 登录中...';
         btn.disabled = true;
 
-        const p = new URLSearchParams();
-        p.append('username', document.getElementById('loginUsername').value);
-        p.append('password', document.getElementById('loginPassword').value);
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
 
-        const r = await request('/user?action=login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: p
-        });
+        const r = await doLogin(username, password);
 
         if(r.ok && r.data.code === 200) {
             const user = r.data.data;
@@ -1036,14 +1043,13 @@
         }
     }
 
-    // ==================== 核心新增：游客登录 ====================
+    // 游客登录
     function guestLogin(event) {
         createRipple(event);
-        // 直接跳转到 guest.html，不需要调用后端
         location.href = "guest.html";
     }
 
-    // 注册
+    // ==================== 核心修改：注册成功后自动登录 ====================
     async function register(event) {
         if (isSubmitting) return;
         createRipple(event);
@@ -1054,11 +1060,15 @@
         btn.innerHTML = '<span class="btn-loader"></span> 注册中...';
         btn.disabled = true;
 
+        // 保存用户输入的账号密码，用于后续自动登录
+        const regUsername = document.getElementById('regUsername').value;
+        const regPassword = document.getElementById('regPassword').value;
+
         const role = document.getElementById('registerRole').value;
         const p = new URLSearchParams();
 
-        p.append('username', document.getElementById('regUsername').value);
-        p.append('password', document.getElementById('regPassword').value);
+        p.append('username', regUsername);
+        p.append('password', regPassword);
         p.append('realName', document.getElementById('regRealName').value);
         p.append('email', document.getElementById('regEmail').value);
 
@@ -1084,14 +1094,34 @@
         showResponse(r.data || r.raw);
 
         if(r.ok && r.data.code === 200) {
-            btn.innerHTML = '注册成功！';
-            alert("注册成功！即将跳转到登录页");
-            setTimeout(() => {
+            // 注册成功！直接自动登录
+            btn.innerHTML = '注册成功！正在登录...';
+
+            // 调用登录接口
+            const loginResult = await doLogin(regUsername, regPassword);
+
+            if(loginResult.ok && loginResult.data.code === 200) {
+                const user = loginResult.data.data;
+                btn.innerHTML = '登录成功！正在跳转...';
+
+                setTimeout(() => {
+                    if (user.userType === 1) {
+                        location.href = "ta.html";
+                    } else if (user.userType === 2) {
+                        location.href = "mo.html";
+                    }
+                }, 800);
+            } else {
+                // 自动登录失败，提示手动登录
+                alert("注册成功，但自动登录失败，请手动登录");
                 switchTab('login');
+                // 把刚才注册的账号密码填到登录框里
+                document.getElementById('loginUsername').value = regUsername;
+                document.getElementById('loginPassword').value = regPassword;
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 isSubmitting = false;
-            }, 1000);
+            }
         } else {
             alert("注册失败：" + (r.data?.msg || "未知错误"));
             btn.innerHTML = originalText;
