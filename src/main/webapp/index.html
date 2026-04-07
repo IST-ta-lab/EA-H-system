@@ -2,85 +2,498 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>助教招聘系统 - 登录/注册</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        .section { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; border-radius: 5px; }
-        input { margin: 5px; padding: 8px; width: 200px; display: block; }
-        button { margin-top: 10px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #45a049; }
-        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; max-height: 300px; overflow: auto; }
-        .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-bottom: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 背景装饰 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 主容器 */
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 左侧：项目介绍 */
+        .intro-section {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .intro-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .intro-desc {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            animation: slideInLeft 0.8s ease-out 0.2s both;
+        }
+
+        .feature-list {
+            list-style: none;
+            animation: slideInLeft 0.8s ease-out 0.4s both;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+        }
+
+        /* 右侧：登录/注册表单 */
+        .form-section {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 切换按钮 */
+        .tab-container {
+            display: flex;
+            margin-bottom: 40px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 5px;
+            animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* 表单 */
+        .form-container {
+            position: relative;
+            min-height: 400px;
+        }
+
+        .form-box {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .form-box.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .form-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            animation: slideInUp 0.5s ease-out both;
+        }
+
+        .input-group:nth-child(2) { animation-delay: 0.1s; }
+        .input-group:nth-child(3) { animation-delay: 0.2s; }
+        .input-group:nth-child(4) { animation-delay: 0.3s; }
+        .input-group:nth-child(5) { animation-delay: 0.4s; }
+        .input-group:nth-child(6) { animation-delay: 0.5s; }
+        .input-group:nth-child(7) { animation-delay: 0.6s; }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                width: 95%;
+            }
+            .intro-section {
+                padding: 40px 30px;
+            }
+            .form-section {
+                padding: 40px 30px;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        /* 响应显示区域 */
+        .response-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .response-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        pre {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
-<h1>助教招聘系统 - 登录/注册</h1>
 
-<div class="note">
-    <strong>⚠️ 配置提示：</strong> 上下文路径默认 /tapj<br>
-    当前 BASE_URL: <span id="baseUrlDisplay"></span>
-</div>
-<div>
-    <input type="text" id="baseUrlInput" placeholder="例如 /tapj" value="/tapj">
-    <button onclick="updateBaseUrl()">更新BASE_URL</button>
-</div>
+<div class="container">
+    <!-- 左侧：项目介绍 -->
+    <div class="intro-section">
+        <h1 class="intro-title">🎓 助教招聘系统</h1>
+        <p class="intro-desc">
+            一个高效、便捷的助教招聘管理平台，为教师和学生提供一站式的招聘与申请服务。
+        </p>
+        <ul class="feature-list">
+            <li class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>TA 在线申请岗位，实时查看申请状态</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>MO 发布岗位，便捷审核申请</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>Admin 统一管理用户和岗位</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>简洁美观的界面，流畅的操作体验</span>
+            </li>
+        </ul>
+    </div>
 
-<!-- TA 注册 -->
-<div class="section">
-    <h2>TA 注册</h2>
-    <input type="text" id="regUsername" placeholder="用户名" value="ta001">
-    <input type="password" id="regPassword" placeholder="密码" value="123456">
-    <input type="text" id="regRealName" placeholder="真实姓名" value="张三">
-    <input type="email" id="regEmail" placeholder="邮箱" value="zhangsan@example.com">
-    <input type="text" id="regStudentId" placeholder="学号" value="2024001">
-    <input type="text" id="regMajor" placeholder="专业" value="计算机科学">
-    <input type="text" id="regEducation" placeholder="学历" value="硕士">
-    <input type="text" id="regGrade" placeholder="年级" value="研二">
-    <button onclick="registerTA()">注册 TA</button>
-</div>
+    <!-- 右侧：登录/注册表单 -->
+    <div class="form-section">
+        <!-- 切换按钮 -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('login')">登录</button>
+            <button class="tab-btn" onclick="switchTab('register')">注册</button>
+        </div>
 
-<!-- MO 注册 -->
-<div class="section">
-    <h2>MO 注册（教师/管理员）</h2>
-    <input type="text" id="moRegUsername" placeholder="用户名" value="mo001">
-    <input type="password" id="moRegPassword" placeholder="密码" value="123456">
-    <input type="text" id="moRegRealName" placeholder="真实姓名" value="李老师">
-    <input type="email" id="moRegEmail" placeholder="邮箱" value="mo@bupt.edu.cn">
-    <input type="text" id="moRegCourse" placeholder="负责课程" value="软件工程">
-    <button onclick="registerMO()">注册 MO</button>
-</div>
+        <div class="form-container">
+            <!-- 登录表单 -->
+            <div class="form-box active" id="loginForm">
+                <h2 class="form-title">欢迎回来 👋</h2>
 
-<!-- 登录（通用） -->
-<div class="section">
-    <h2>登录（TA/MO/Admin通用）</h2>
-    <input type="text" id="loginUsername" placeholder="用户名" value="admin">
-    <input type="password" id="loginPassword" placeholder="密码" value="123456">
-    <button onclick="login()">登录</button>
-</div>
+                <div class="input-group">
+                    <label class="input-label">用户名</label>
+                    <input type="text" class="input-field" id="loginUsername" placeholder="请输入用户名" value="admin">
+                </div>
 
-<!-- 响应显示区域 -->
-<div class="section">
-    <h2>服务器响应（原始）</h2>
-    <pre id="response">等待操作...</pre>
+                <div class="input-group">
+                    <label class="input-label">密码</label>
+                    <input type="password" class="input-field" id="loginPassword" placeholder="请输入密码" value="123456">
+                </div>
+
+                <button class="submit-btn" onclick="login()">立即登录</button>
+            </div>
+
+            <!-- 注册表单 -->
+            <div class="form-box" id="registerForm">
+                <h2 class="form-title">创建账号 🚀</h2>
+
+                <div class="input-group">
+                    <label class="input-label">注册身份</label>
+                    <select class="input-field" id="registerRole" onchange="updateRegisterForm()">
+                        <option value="ta">TA（助教申请者）</option>
+                        <option value="mo">MO（教师/发布者）</option>
+                    </select>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">用户名</label>
+                        <input type="text" class="input-field" id="regUsername" placeholder="请输入用户名">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">密码</label>
+                        <input type="password" class="input-field" id="regPassword" placeholder="请输入密码">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">真实姓名</label>
+                        <input type="text" class="input-field" id="regRealName" placeholder="请输入真实姓名">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">邮箱</label>
+                        <input type="email" class="input-field" id="regEmail" placeholder="请输入邮箱">
+                    </div>
+                </div>
+
+                <!-- TA 专属字段 -->
+                <div id="taFields">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">学号</label>
+                            <input type="text" class="input-field" id="regStudentId" placeholder="请输入学号">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">专业</label>
+                            <input type="text" class="input-field" id="regMajor" placeholder="请输入专业">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">学历</label>
+                            <input type="text" class="input-field" id="regEducation" placeholder="请输入学历">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">年级</label>
+                            <input type="text" class="input-field" id="regGrade" placeholder="请输入年级">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MO 专属字段 -->
+                <div id="moFields" style="display: none;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">工号</label>
+                            <input type="text" class="input-field" id="regStaffId" placeholder="请输入工号">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">部门</label>
+                            <input type="text" class="input-field" id="regDepartment" placeholder="请输入部门">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="submit-btn" onclick="register()">立即注册</button>
+            </div>
+        </div>
+
+        <!-- 响应显示区域 -->
+        <div class="response-section" id="responseSection" style="display: none;">
+            <div class="response-title">📡 服务器响应</div>
+            <pre id="response"></pre>
+        </div>
+    </div>
 </div>
 
 <script>
-    let BASE_URL = '/tapj';
-    updateBaseUrlDisplay();
+    const BASE_URL = '/tapj';
 
-    function updateBaseUrlDisplay() {
-        document.getElementById('baseUrlDisplay').innerText = BASE_URL;
-    }
-    function updateBaseUrl() {
-        BASE_URL = document.getElementById('baseUrlInput').value.trim();
-        updateBaseUrlDisplay();
-        showResponse({info:"更新成功："+BASE_URL});
+    // 切换登录/注册
+    function switchTab(tab) {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const forms = document.querySelectorAll('.form-box');
+
+        tabs.forEach(t => t.classList.remove('active'));
+        forms.forEach(f => f.classList.remove('active'));
+
+        if (tab === 'login') {
+            tabs[0].classList.add('active');
+            document.getElementById('loginForm').classList.add('active');
+        } else {
+            tabs[1].classList.add('active');
+            document.getElementById('registerForm').classList.add('active');
+        }
     }
 
+    // 根据注册角色显示/隐藏字段
+    function updateRegisterForm() {
+        const role = document.getElementById('registerRole').value;
+        document.getElementById('taFields').style.display = role === 'ta' ? 'block' : 'none';
+        document.getElementById('moFields').style.display = role === 'mo' ? 'block' : 'none';
+    }
+
+    // 显示响应
     function showResponse(data) {
-        document.getElementById('response').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        const section = document.getElementById('responseSection');
+        const pre = document.getElementById('response');
+        section.style.display = 'block';
+        pre.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     }
 
+    // 通用请求
     async function request(url, options = {}) {
         try {
             const res = await fetch(BASE_URL + url, {
@@ -98,58 +511,74 @@
         }
     }
 
-    // TA注册
-    async function registerTA() {
-        const p = new URLSearchParams();
-        p.append('username', document.getElementById('regUsername').value);
-        p.append('password', document.getElementById('regPassword').value);
-        p.append('realName', document.getElementById('regRealName').value);
-        p.append('email', document.getElementById('regEmail').value);
-        p.append('studentId', document.getElementById('regStudentId').value);
-        p.append('major', document.getElementById('regMajor').value);
-        p.append('education', document.getElementById('regEducation').value);
-        p.append('grade', document.getElementById('regGrade').value);
-        const r = await request('/user?action=registerTA', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
-        showResponse(r.data || r.raw);
-    }
-
-    // MO注册
-    async function registerMO() {
-        const p = new URLSearchParams();
-        p.append('username', document.getElementById('moRegUsername').value);
-        p.append('password', document.getElementById('moRegPassword').value);
-        p.append('realName', document.getElementById('moRegRealName').value);
-        p.append('email', document.getElementById('moRegEmail').value);
-        p.append('course', document.getElementById('moRegCourse').value);
-        const r = await request('/user?action=registerMO', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
-        showResponse(r.data || r.raw);
-    }
-
-    // ==================== 核心修改：登录后根据角色跳转 ====================
+    // 登录
     async function login() {
         const p = new URLSearchParams();
         p.append('username', document.getElementById('loginUsername').value);
         p.append('password', document.getElementById('loginPassword').value);
-        const r = await request('/user?action=login', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p});
+
+        const r = await request('/user?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: p
+        });
 
         if(r.ok && r.data.code === 200) {
             const user = r.data.data;
             alert("登录成功！");
 
-            // 根据 userType 跳转到不同页面
             if (user.userType === 1) {
                 location.href = "ta.html";
             } else if (user.userType === 2) {
-                location.href = "MO.html";
+                location.href = "mo.html";
             } else if (user.userType === 3) {
                 location.href = "admin.html";
-            } else {
-                alert("未知角色类型");
             }
         } else {
             showResponse(r.data || r.raw);
+            alert("登录失败：" + (r.data?.msg || "未知错误"));
+        }
+    }
+
+    // 注册
+    async function register() {
+        const role = document.getElementById('registerRole').value;
+        const p = new URLSearchParams();
+
+        p.append('username', document.getElementById('regUsername').value);
+        p.append('password', document.getElementById('regPassword').value);
+        p.append('realName', document.getElementById('regRealName').value);
+        p.append('email', document.getElementById('regEmail').value);
+
+        let action = '';
+        if (role === 'ta') {
+            action = 'registerTA';
+            p.append('studentId', document.getElementById('regStudentId').value);
+            p.append('major', document.getElementById('regMajor').value);
+            p.append('education', document.getElementById('regEducation').value);
+            p.append('grade', document.getElementById('regGrade').value);
+        } else {
+            action = 'registerMO';
+            p.append('staffId', document.getElementById('regStaffId').value);
+            p.append('department', document.getElementById('regDepartment').value);
+        }
+
+        const r = await request(`/user?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: p
+        });
+
+        showResponse(r.data || r.raw);
+
+        if(r.ok && r.data.code === 200) {
+            alert("注册成功！请登录");
+            switchTab('login');
+        } else {
+            alert("注册失败：" + (r.data?.msg || "未知错误"));
         }
     }
 </script>
+
 </body>
 </html>
