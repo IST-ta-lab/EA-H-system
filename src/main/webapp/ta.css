@@ -1,18 +1,18 @@
 :root {
-    --bg: #07111f;
-    --bg-soft: #0c1729;
-    --panel: rgba(15, 23, 42, 0.72);
-    --panel-strong: rgba(15, 23, 42, 0.9);
-    --panel-border: rgba(148, 163, 184, 0.16);
-    --text: #e5eefb;
-    --text-soft: #9fb0c9;
-    --text-faint: #6f84a3;
+    --bg: #f8fafc;
+    --bg-soft: #f1f5f9;
+    --panel: rgba(255, 255, 255, 0.86);
+    --panel-strong: rgba(255, 255, 255, 0.96);
+    --panel-border: rgba(148, 163, 184, 0.28);
+    --text: #0f172a;
+    --text-soft: #475569;
+    --text-faint: #64748b;
     --primary: #60a5fa;
     --primary-2: #22d3ee;
     --success: #34d399;
     --warning: #fbbf24;
     --danger: #fb7185;
-    --shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+    --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
     --radius-xl: 24px;
     --radius-lg: 18px;
     --radius-md: 14px;
@@ -32,9 +32,9 @@ body {
     font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
     color: var(--text);
     background:
-            radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 24%),
-            radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 26%),
-            linear-gradient(180deg, #08111f 0%, #0b1324 48%, #09101c 100%);
+            radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 28%),
+            radial-gradient(circle at top right, rgba(34, 211, 238, 0.14), transparent 30%),
+            linear-gradient(180deg, #f8fafc 0%, #eef2f7 48%, #e9eff6 100%);
 }
 
 body {
@@ -77,8 +77,8 @@ button {
     position: absolute;
     inset: 0;
     background-image:
-            linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+            linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
     background-size: 36px 36px;
     mask-image: radial-gradient(circle at center, black 38%, transparent 82%);
 }
@@ -87,7 +87,7 @@ button {
     position: absolute;
     border-radius: 999px;
     filter: blur(80px);
-    opacity: 0.35;
+    opacity: 0.45;
 }
 
 .bg-blob-1 {
@@ -95,7 +95,7 @@ button {
     height: 320px;
     top: 60px;
     left: -60px;
-    background: rgba(34, 211, 238, 0.24);
+    background: rgba(34, 211, 238, 0.2);
     animation: floatBlob1 16s ease-in-out infinite;
 }
 
@@ -104,7 +104,7 @@ button {
     height: 420px;
     top: 20%;
     right: -90px;
-    background: rgba(96, 165, 250, 0.22);
+    background: rgba(96, 165, 250, 0.18);
     animation: floatBlob2 18s ease-in-out infinite;
 }
 
@@ -113,7 +113,7 @@ button {
     height: 280px;
     bottom: 50px;
     left: 30%;
-    background: rgba(52, 211, 153, 0.18);
+    background: rgba(52, 211, 153, 0.16);
     animation: floatBlob3 14s ease-in-out infinite;
 }
 
@@ -122,8 +122,8 @@ button {
     top: 0;
     z-index: 30;
     backdrop-filter: blur(14px);
-    background: rgba(8, 17, 31, 0.58);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    background: rgba(248, 250, 252, 0.82);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .nav-inner {
@@ -147,9 +147,9 @@ button {
     border-radius: 14px;
     display: grid;
     place-items: center;
-    color: white;
+    color: #ffffff;
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-    box-shadow: 0 10px 25px rgba(34, 211, 238, 0.18);
+    box-shadow: 0 10px 22px rgba(59, 130, 246, 0.18);
 }
 
 .brand-logo svg {
@@ -178,8 +178,8 @@ button {
 .icon-btn {
     display: inline-grid;
     place-items: center;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    background: rgba(255, 255, 255, 0.7);
     color: var(--text);
     transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
@@ -187,8 +187,8 @@ button {
 .avatar-btn:hover,
 .icon-btn:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(96, 165, 250, 0.36);
+    background: #ffffff;
+    border-color: rgba(96, 165, 250, 0.4);
 }
 
 .avatar-btn {
@@ -235,7 +235,7 @@ button {
 }
 
 .glass-card {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.7));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.88));
     border: 1px solid var(--panel-border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow);
@@ -305,21 +305,21 @@ button {
 }
 
 .btn-primary {
-    color: #06111f;
+    color: #0b1220;
     background: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
-    box-shadow: 0 12px 30px rgba(96, 165, 250, 0.2);
+    box-shadow: 0 12px 26px rgba(96, 165, 250, 0.22);
 }
 
 .btn-ghost {
     color: var(--text);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .btn-soft {
     color: var(--primary);
-    background: rgba(96, 165, 250, 0.1);
-    border: 1px solid rgba(96, 165, 250, 0.18);
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.24);
 }
 
 .btn-danger {
@@ -343,17 +343,17 @@ button {
     height: 52px;
     padding: 0 18px 0 48px;
     border-radius: 16px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.24);
     outline: none;
     color: var(--text);
-    background: rgba(255, 255, 255, 0.045);
+    background: rgba(255, 255, 255, 0.92);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .search-box input:focus {
     border-color: rgba(96, 165, 250, 0.46);
     box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.12);
-    background: rgba(255, 255, 255, 0.06);
+    background: #ffffff;
 }
 
 .search-box .search-icon {
@@ -375,9 +375,9 @@ button {
 }
 
 .filter-chip {
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.22);
     color: var(--text-soft);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.8);
     padding: 10px 14px;
     border-radius: 999px;
     transition: all 0.2s ease;
@@ -390,7 +390,7 @@ button {
 }
 
 .filter-chip.active {
-    color: #06111f;
+    color: #0b1220;
     border-color: transparent;
     background: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
 }
@@ -405,10 +405,10 @@ button {
     overflow: hidden;
     padding: 22px;
     border-radius: 22px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.22);
     background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(15, 23, 42, 0.74));
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.2);
+            linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.92));
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
     transition:
             transform 0.22s ease,
             border-color 0.22s ease,
@@ -420,14 +420,14 @@ button {
 .job-card:hover {
     transform: translateY(-4px);
     border-color: rgba(96, 165, 250, 0.3);
-    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 24px 52px rgba(15, 23, 42, 0.18);
 }
 
 .job-card::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.035) 45%, transparent 100%);
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 45%, transparent 100%);
     transform: translateX(-100%);
     transition: transform 0.55s ease;
 }
@@ -471,7 +471,7 @@ button {
 }
 
 .badge-primary {
-    color: #06111f;
+    color: #0b1220;
     background: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
 }
 
@@ -492,8 +492,8 @@ button {
 
 .badge-soft {
     color: var(--text-soft);
-    background: rgba(255, 255, 255, 0.055);
-    border-color: rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(148, 163, 184, 0.22);
 }
 
 .job-desc {
@@ -512,9 +512,9 @@ button {
 .tag {
     padding: 8px 10px;
     border-radius: 999px;
-    background: rgba(96, 165, 250, 0.1);
-    color: #bfe0ff;
-    border: 1px solid rgba(96, 165, 250, 0.16);
+    background: rgba(96, 165, 250, 0.14);
+    color: #1d4ed8;
+    border: 1px solid rgba(96, 165, 250, 0.24);
     font-size: 12px;
 }
 
@@ -569,7 +569,7 @@ button {
     border-radius: 18px;
     display: grid;
     place-items: center;
-    color: #06111f;
+    color: #0b1220;
     font-weight: 800;
     background: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
 }
@@ -612,8 +612,8 @@ button {
 .status-box {
     padding: 16px;
     border-radius: 18px;
-    border: 1px dashed rgba(148, 163, 184, 0.18);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(148, 163, 184, 0.32);
+    background: rgba(255, 255, 255, 0.82);
 }
 
 .resume-box p,
@@ -632,8 +632,8 @@ button {
 .application-item {
     padding: 14px;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .application-item h5 {
@@ -692,8 +692,8 @@ button {
     border-radius: 20px;
     text-align: center;
     color: var(--text-soft);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px dashed rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px dashed rgba(148, 163, 184, 0.28);
 }
 
 .empty-state strong {
@@ -727,7 +727,7 @@ button {
     border-radius: 24px;
     display: grid;
     place-items: center;
-    color: #06111f;
+    color: #0b1220;
     font-size: 24px;
     font-weight: 800;
     background: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
@@ -754,8 +754,8 @@ button {
 .kpi-card {
     padding: 18px;
     border-radius: 18px;
-    background: rgba(255,255,255,0.035);
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .kpi-card strong {
@@ -779,8 +779,8 @@ button {
 .skill-box {
     padding: 18px;
     border-radius: 18px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .bio-box h3,
@@ -804,15 +804,15 @@ button {
     padding: 0 12px;
     border-radius: 999px;
     font-size: 13px;
-    background: rgba(52, 211, 153, 0.12);
-    color: #7cf0c8;
-    border: 1px solid rgba(52, 211, 153, 0.22);
+    background: rgba(52, 211, 153, 0.18);
+    color: #0f766e;
+    border: 1px solid rgba(52, 211, 153, 0.3);
 }
 
 .status-pill.off {
-    background: rgba(251, 191, 36, 0.12);
-    color: #ffd66c;
-    border-color: rgba(251, 191, 36, 0.22);
+    background: rgba(251, 191, 36, 0.18);
+    color: #b45309;
+    border-color: rgba(251, 191, 36, 0.3);
 }
 
 .modal-overlay {
@@ -823,7 +823,7 @@ button {
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(2, 6, 23, 0.64);
+    background: rgba(148, 163, 184, 0.45);
     backdrop-filter: blur(12px);
 }
 
@@ -836,9 +836,9 @@ button {
     max-height: calc(100vh - 48px);
     overflow: hidden;
     border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94));
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.96));
+    box-shadow: 0 30px 70px rgba(15, 23, 42, 0.18);
 }
 
 .modal-large {
@@ -859,7 +859,7 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .modal-header h2 {
@@ -880,7 +880,7 @@ button {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .form-layout {
@@ -901,8 +901,8 @@ button {
 .form-group input,
 .form-group textarea {
     width: 100%;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.95);
     color: var(--text);
     border-radius: 16px;
     outline: none;
@@ -923,8 +923,8 @@ button {
     align-items: center;
     gap: 14px;
     text-align: left;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(255, 255, 255, 0.86);
     color: var(--text);
     border-radius: 18px;
     padding: 14px 16px;
@@ -933,7 +933,7 @@ button {
 
 .check-row:hover {
     border-color: rgba(96, 165, 250, 0.28);
-    background: rgba(255, 255, 255, 0.05);
+    background: #ffffff;
 }
 
 .check-row small {
@@ -944,7 +944,7 @@ button {
 
 .check-row.active {
     border-color: rgba(96, 165, 250, 0.34);
-    background: rgba(96, 165, 250, 0.08);
+    background: rgba(96, 165, 250, 0.12);
 }
 
 .check-icon {
@@ -952,8 +952,8 @@ button {
     height: 22px;
     flex: 0 0 22px;
     border-radius: 7px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    background: rgba(255, 255, 255, 0.9);
     position: relative;
 }
 
@@ -969,7 +969,7 @@ button {
     top: 4px;
     width: 5px;
     height: 10px;
-    border: solid #05111f;
+    border: solid #0b1220;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -1000,8 +1000,8 @@ button {
 .match-card {
     padding: 16px;
     border-radius: 18px;
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(96, 165, 250, 0.08));
-    border: 1px solid rgba(96, 165, 250, 0.16);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(96, 165, 250, 0.12));
+    border: 1px solid rgba(96, 165, 250, 0.24);
 }
 
 .match-card strong {
@@ -1025,7 +1025,23 @@ button {
 .divider {
     margin: 24px 0;
     border: none;
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.badge svg,
+.filter-chip svg,
+.side-title svg,
+.btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.badge svg {
+    margin-right: 2px;
+}
+
+.btn svg {
+    vertical-align: -2px;
 }
 
 .fade-in {
