@@ -22,7 +22,7 @@
             </div>
 
             <div class="nav-right">
-                <button class="nav-icon-btn" id="openRequestsBtn" type="button" aria-label="打开角色申请通知">
+                <button class="nav-icon-btn" id="openRequestsBtn" type="button" aria-label="Open role change requests">
                     <span class="nav-dot hidden" id="requestDot"></span>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0"
@@ -32,7 +32,14 @@
 
                 <span class="nav-username" id="navUserName">Admin User</span>
 
-                <div class="avatar-btn" id="adminAvatar" aria-label="管理员头像">
+                <button class="nav-icon-btn" id="logoutBtn" type="button" aria-label="Logout">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m-5 5H9"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <div class="avatar-btn" id="adminAvatar" aria-label="Admin avatar">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
                               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>

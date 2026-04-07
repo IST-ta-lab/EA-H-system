@@ -243,7 +243,7 @@ async function loadLoginUser() {
         return true;
     }
 
-    alert("未登录或登录已过期，请重新登录");
+    alert("Not logged in or session expired. Please login again.");
     location.href = "index.html";
     return false;
 }
@@ -258,7 +258,7 @@ async function loadOpenJobs() {
     }
 
     state.backendJobs = [];
-    showError((r.data && r.data.msg) || r.error || "加载岗位列表失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load job list");
 }
 
 // 已实现后端接口连接 - 加载所有用户
@@ -282,37 +282,39 @@ async function loadAllUsers() {
                 const moJobs = state.backendJobsList.filter(j => String(j.publisherMoId) === String(mo.userId));
                 return {
                     id: String(mo.userId), // 统一转换为字符串
-                    name: mo.realName || mo.username || "未命名MO",
+                    name: mo.realName || mo.username || "Unnamed MO",
                     username: mo.username || "",
                     email: mo.email || "",
-                    course: mo.belongModule || "未分配模块",
+                    course: mo.belongModule || "No Module Assigned",
                     publishedPosts: moJobs.length,
                     openPosts: moJobs.filter(j => j.jobStatus === 0).length,
                     closedPosts: moJobs.filter(j => j.jobStatus !== 0).length,
                     status: "active",
                     summary: moJobs.length > 0
-                        ? `该课程组织者共发布了 ${moJobs.length} 个岗位，其中 ${moJobs.filter(j => j.jobStatus === 0).length} 个正在招聘中。`
-                        : "该课程组织者暂未发布任何岗位。",
+                        ? `This course organizer has published ${moJobs.length} job(s), with ${moJobs.filter(j => j.jobStatus === 0).length} currently recruiting.`
+                        : "This course organizer has not published any jobs yet.",
                     recentPosts: moJobs.slice(0, 5) // 最多显示5个最近的岗位
                 };
             });
 
         // 从用户列表中过滤出TA用户（userType=1），构建TA工作负载视图数据
         // 确保id统一为字符串类型，防止类型不一致导致查找失败
+        // 同时获取TA的申请记录和工作负荷信息
         state.taWorkloads = state.backendUsers
             .filter(u => u.userType === 1) // 只保留TA用户
             .map(ta => {
                 return {
                     id: String(ta.userId), // 统一转换为字符串
-                    name: ta.realName || ta.username || "未命名TA",
+                    name: ta.realName || ta.username || "Unnamed TA",
                     username: ta.username || "",
-                    course: ta.belongModule || "未分配模块",
+                    course: ta.belongModule || "No Module Assigned",
+                    email: ta.email || "",
                     status: "healthy",
-                    summary: "该助教用户已注册，可查看其申请记录了解详情。",
-                    skills: [],
-                    hours: "N/A",
-                    taskCount: "N/A",
-                    rating: "N/A",
+                    summary: "This TA has registered. View application records for more details.",
+                    skills: ta.skills || [],
+                    hours: ta.workHoursWeekly || ta.hoursPerWeek || "N/A",
+                    taskCount: ta.assignedJobs || ta.taskCount || "0",
+                    rating: ta.rating || "N/A",
                     recentTasks: []
                 };
             });
@@ -320,26 +322,43 @@ async function loadAllUsers() {
         return state.backendUsers;
     }
 
-    showError((r.data && r.data.msg) || r.error || "加载用户列表失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load user list");
     return [];
 }
 
 // 已实现后端接口连接 - 删除用户
 async function deleteUser(userId) {
-    if (!confirm("确定要删除该用户吗？")) {
+    if (!confirm("Are you sure you want to delete this user?")) {
         return;
     }
 
     const r = await request(`/admin?action=deleteUser&userId=${encodeURIComponent(userId)}`, { method: "POST" });
     if (r.ok && r.data && r.data.code === 200) {
-        alert(r.data.msg || "删除成功");
+        alert(r.data.msg || "Deleted successfully");
         await loadAllUsers();
         await loadAllJobs();
         render();
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "删除用户失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to delete user");
+}
+
+// 已实现后端接口连接 - 退出登录
+async function logout() {
+    if (!confirm("Are you sure you want to logout?")) {
+        return;
+    }
+
+    const r = await request("/user?action=logout", { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "Logged out successfully");
+        location.href = "index.html";
+        return;
+    }
+
+    // 即使后端接口失败，也跳转到登录页
+    location.href = "index.html";
 }
 
 // 已实现后端接口连接 - 加载所有岗位
@@ -355,25 +374,27 @@ async function loadAllJobs() {
         return state.backendJobsList;
     }
 
-    showError((r.data && r.data.msg) || r.error || "加载岗位列表失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load job list");
     return [];
 }
 
 // 已实现后端接口连接 - 删除岗位
 async function deleteJob(jobId) {
-    if (!confirm("确定要删除该岗位吗？这将级联删除相关申请！")) {
+    if (!confirm("Are you sure you want to delete this job? This will also delete all related applications!")) {
         return;
     }
 
     const r = await request(`/admin?action=deleteJob&jobId=${encodeURIComponent(jobId)}`, { method: "POST" });
     if (r.ok && r.data && r.data.code === 200) {
-        alert(r.data.msg || "删除成功");
+        alert(r.data.msg || "Deleted successfully");
+        // 重新加载岗位和用户数据，确保MO视图中的岗位列表也更新
         await loadAllJobs();
+        await loadAllUsers();
         render();
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "删除岗位失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to delete job");
 }
 
 // 已实现后端接口连接 - 加载用户详情
@@ -383,7 +404,7 @@ async function loadUserDetail(userId) {
         return r.data.data;
     }
 
-    showError((r.data && r.data.msg) || r.error || "获取用户详情失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to get user details");
     return null;
 }
 
@@ -543,13 +564,14 @@ function renderTAView() {
     <section class="section-header">
       <div class="section-title-block">
         <h2>Teaching Assistant (TA) Overview</h2>
-        <p>查看所有助教用户的信息，点击查看详情了解其申请记录。</p>
+        <p>View all TA users. Click View Details to see their application records.</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
           ${Icons.search}
           <input id="taSearchInput" type="text" placeholder="Search TA..." value="${escapeHtml(state.filters.taSearch)}" />
+          <button id="taSearchBtn" class="search-btn" type="button">Search</button>
         </div>
 
         <div class="filter-chips">
@@ -598,7 +620,7 @@ function renderTAView() {
                 </div>
 
                 <div class="workload-actions">
-                  <button class="btn btn-soft view-ta-detail-btn" type="button" data-ta-id="${item.id}">
+                  <button class="btn btn-sm btn-soft view-ta-detail-btn" type="button" data-ta-id="${item.id}">
                     View Details
                   </button>
                   <button class="btn btn-sm btn-danger delete-ta-btn" type="button" data-ta-id="${item.id}">
@@ -625,13 +647,14 @@ function renderMOView() {
     <section class="section-header">
       <div class="section-title-block">
         <h2>Course Organizer (MO) Overview</h2>
-        <p>查看所有课程组织者的信息及其发布的岗位统计。</p>
+        <p>View all course organizers and their published job statistics.</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
           ${Icons.search}
           <input id="moSearchInput" type="text" placeholder="Search MO..." value="${escapeHtml(state.filters.moSearch)}" />
+          <button id="moSearchBtn" class="search-btn" type="button">Search</button>
         </div>
 
         <div class="filter-chips">
@@ -660,8 +683,11 @@ function renderMOView() {
                 <p class="workload-desc">${escapeHtml(item.summary)}</p>
 
                 <div class="workload-actions" style="margin-bottom:16px;">
+                  <button class="btn btn-sm btn-soft view-mo-detail-btn" type="button" data-mo-id="${item.id}">
+                    ${Icons.eye} View Details
+                  </button>
                   <button class="btn btn-sm btn-danger delete-mo-btn" type="button" data-mo-id="${item.id}">
-                    ${Icons.reject} Delete
+                    ${Icons.reject} Delete MO
                   </button>
                 </div>
 
@@ -686,16 +712,19 @@ function renderMOView() {
                       </thead>
                       <tbody>
                         ${item.recentPosts.map(post => {
-                        const statusText = post.jobStatus === 0 ? "招聘中" : post.jobStatus === 1 ? "已截止" : post.jobStatus === 2 ? "已招满" : "已关闭";
+                        const statusText = post.jobStatus === 0 ? "Open" : post.jobStatus === 1 ? "Closed" : post.jobStatus === 2 ? "Filled" : "Cancelled";
                         const statusClass = post.jobStatus === 0 ? "badge-success" : post.jobStatus === 1 ? "badge-warning" : post.jobStatus === 2 ? "badge-danger" : "badge-soft";
                         return `
                           <tr>
-                            <td>${escapeHtml(post.jobName || "未命名岗位")}</td>
+                            <td>${escapeHtml(post.jobName || "Unnamed Job")}</td>
                             <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
                             <td>
                               <div class="row-actions">
-                                <button class="btn btn-soft open-post-view-btn" type="button" data-post-id="${String(post.jobId)}">
+                                <button class="btn btn-sm btn-soft open-post-view-btn" type="button" data-post-id="${String(post.jobId)}">
                                   View
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-post-btn" type="button" data-post-id="${String(post.jobId)}">
+                                  Delete Post
                                 </button>
                               </div>
                             </td>
@@ -735,6 +764,7 @@ function renderLogsView() {
         <div class="search-box">
           ${Icons.search}
           <input id="logSearchInput" type="text" placeholder="Search logs..." value="${escapeHtml(state.filters.logSearch)}" />
+          <button id="logSearchBtn" class="search-btn" type="button">Search</button>
         </div>
 
         <div class="filter-chips">
@@ -861,106 +891,207 @@ function bindPageEvents() {
 }
 
 function bindTAViewEvents() {
-    const taSearchInput = document.getElementById("taSearchInput");
-    const statusBtns = document.querySelectorAll("[data-ta-status]");
-    const detailBtns = document.querySelectorAll(".view-ta-detail-btn");
+    // 使用事件委托避免重新渲染时丢失事件监听器
+    const parent = els.monitorContent;
+    if (!parent) return;
 
-    if (taSearchInput) {
+    // TA搜索框 - 使用事件委托
+    const taSearchInput = parent.querySelector("#taSearchInput");
+    if (taSearchInput && taSearchInput.dataset.bound !== "true") {
         taSearchInput.addEventListener("input", e => {
             state.filters.taSearch = e.target.value;
-            renderTAView();
-            bindTAViewEvents();
         });
-    }
-
-    statusBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            state.filters.taStatus = btn.dataset.taStatus;
-            renderTAView();
-            bindTAViewEvents();
-        });
-    });
-
-    detailBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const id = String(btn.dataset.taId); // 直接使用字符串，避免类型转换问题
-            openTADetailModal(id);
-        });
-    });
-
-    // 删除TA按钮事件
-    const deleteBtns = document.querySelectorAll(".delete-ta-btn");
-    deleteBtns.forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const taId = String(btn.dataset.taId);
-            const ta = getTAById(taId);
-            if (ta && confirm(`确定要删除TA用户 "${ta.name}" 吗？`)) {
-                await deleteUser(taId);
+        taSearchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                renderTAView();
+                bindTAViewEvents();
             }
         });
+        taSearchInput.dataset.bound = "true";
+    }
+
+    // TA搜索按钮
+    const taSearchBtn = parent.querySelector("#taSearchBtn");
+    if (taSearchBtn && taSearchBtn.dataset.bound !== "true") {
+        taSearchBtn.addEventListener("click", () => {
+            renderTAView();
+            bindTAViewEvents();
+        });
+        taSearchBtn.dataset.bound = "true";
+    }
+
+    // TA状态过滤按钮
+    if (parent.dataset.statusBound !== "true") {
+        parent.addEventListener("click", e => {
+            const btn = e.target.closest("[data-ta-status]");
+            if (btn) {
+                state.filters.taStatus = btn.dataset.taStatus;
+                renderTAView();
+                bindTAViewEvents(); // 重新绑定，因为DOM被重新渲染了
+            }
+        });
+        parent.dataset.statusBound = "true";
+    }
+
+    // TA详情按钮
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".view-ta-detail-btn");
+        if (btn) {
+            const id = String(btn.dataset.taId);
+            openTADetailModal(id);
+        }
+    });
+
+    // 删除TA按钮
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".delete-ta-btn");
+        if (btn && btn.dataset.bound !== "true") {
+            btn.addEventListener("click", async () => {
+                const taId = String(btn.dataset.taId);
+                const ta = getTAById(taId);
+                if (ta && confirm(`Are you sure you want to delete TA "${ta.name}"?`)) {
+                    await deleteUser(taId);
+                }
+            });
+            btn.dataset.bound = "true";
+        }
     });
 }
 
 function bindMOViewEvents() {
-    const moSearchInput = document.getElementById("moSearchInput");
-    const statusBtns = document.querySelectorAll("[data-mo-status]");
-    const viewBtns = document.querySelectorAll(".open-post-view-btn");
+    // 使用事件委托避免重新渲染时丢失事件监听器
+    const parent = els.monitorContent;
+    if (!parent) return;
 
-    if (moSearchInput) {
+    // MO搜索框 - 使用事件委托
+    const moSearchInput = parent.querySelector("#moSearchInput");
+    if (moSearchInput && moSearchInput.dataset.bound !== "true") {
         moSearchInput.addEventListener("input", e => {
             state.filters.moSearch = e.target.value;
-            renderMOView();
-            bindMOViewEvents();
         });
-    }
-
-    statusBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            state.filters.moStatus = btn.dataset.moStatus;
-            renderMOView();
-            bindMOViewEvents();
-        });
-    });
-
-    viewBtns.forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const postId = String(btn.dataset.postId);
-            await openPostPreview(postId);
-        });
-    });
-
-    // 删除MO按钮事件
-    const deleteMoBtns = document.querySelectorAll(".delete-mo-btn");
-    deleteMoBtns.forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const moId = String(btn.dataset.moId);
-            const mo = getMOById(moId);
-            if (mo && confirm(`确定要删除MO用户 "${mo.name}" 吗？`)) {
-                await deleteUser(moId);
+        moSearchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                renderMOView();
+                bindMOViewEvents();
             }
         });
+        moSearchInput.dataset.bound = "true";
+    }
+
+    // MO搜索按钮
+    const moSearchBtn = parent.querySelector("#moSearchBtn");
+    if (moSearchBtn && moSearchBtn.dataset.bound !== "true") {
+        moSearchBtn.addEventListener("click", () => {
+            renderMOView();
+            bindMOViewEvents();
+        });
+        moSearchBtn.dataset.bound = "true";
+    }
+
+    // MO状态过滤按钮
+    if (parent.dataset.moStatusBound !== "true") {
+        parent.addEventListener("click", e => {
+            const btn = e.target.closest("[data-mo-status]");
+            if (btn) {
+                state.filters.moStatus = btn.dataset.moStatus;
+                renderMOView();
+                bindMOViewEvents(); // 重新绑定，因为DOM被重新渲染了
+            }
+        });
+        parent.dataset.moStatusBound = "true";
+    }
+
+    // MO详情按钮
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".view-mo-detail-btn");
+        if (btn) {
+            const moId = String(btn.dataset.moId);
+            openUserDetailModal(moId);
+        }
+    });
+
+    // 查看岗位按钮
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".open-post-view-btn");
+        if (btn) {
+            const postId = String(btn.dataset.postId);
+            openPostPreview(postId);
+        }
+    });
+
+    // 删除岗位按钮（MO发布的岗位）
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".delete-post-btn");
+        if (btn && btn.dataset.bound !== "true") {
+            btn.addEventListener("click", async () => {
+                const jobId = String(btn.dataset.postId);
+                if (confirm(`Are you sure you want to delete this job?`)) {
+                    await deleteJob(jobId);
+                    render(); // 刷新视图
+                }
+            });
+            btn.dataset.bound = "true";
+        }
+    });
+
+    // 删除MO按钮
+    parent.addEventListener("click", e => {
+        const btn = e.target.closest(".delete-mo-btn");
+        if (btn && btn.dataset.bound !== "true") {
+            btn.addEventListener("click", async () => {
+                const moId = String(btn.dataset.moId);
+                const mo = getMOById(moId);
+                if (mo && confirm(`Are you sure you want to delete MO "${mo.name}"?`)) {
+                    await deleteUser(moId);
+                }
+            });
+            btn.dataset.bound = "true";
+        }
     });
 }
 
 function bindLogsViewEvents() {
-    const logSearchInput = document.getElementById("logSearchInput");
-    const typeBtns = document.querySelectorAll("[data-log-type]");
+    // 使用事件委托避免重新渲染时丢失事件监听器
+    const parent = els.monitorContent;
+    if (!parent) return;
 
-    if (logSearchInput) {
+    // Logs搜索框 - 使用事件委托
+    const logSearchInput = parent.querySelector("#logSearchInput");
+    if (logSearchInput && logSearchInput.dataset.bound !== "true") {
         logSearchInput.addEventListener("input", e => {
             state.filters.logSearch = e.target.value;
-            renderLogsView();
-            bindLogsViewEvents();
         });
+        logSearchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                renderLogsView();
+                bindLogsViewEvents();
+            }
+        });
+        logSearchInput.dataset.bound = "true";
     }
 
-    typeBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            state.filters.logType = btn.dataset.logType;
+    // Logs搜索按钮
+    const logSearchBtn = parent.querySelector("#logSearchBtn");
+    if (logSearchBtn && logSearchBtn.dataset.bound !== "true") {
+        logSearchBtn.addEventListener("click", () => {
             renderLogsView();
             bindLogsViewEvents();
         });
-    });
+        logSearchBtn.dataset.bound = "true";
+    }
+
+    // Logs类型过滤按钮
+    if (parent.dataset.logTypeBound !== "true") {
+        parent.addEventListener("click", e => {
+            const btn = e.target.closest("[data-log-type]");
+            if (btn) {
+                state.filters.logType = btn.dataset.logType;
+                renderLogsView();
+                bindLogsViewEvents(); // 重新绑定，因为DOM被重新渲染了
+            }
+        });
+        parent.dataset.logTypeBound = "true";
+    }
 }
 
 function getTAById(id) {
@@ -1139,14 +1270,55 @@ function closeStatsModal() {
 }
 
 // 已实现后端接口连接
+// 添加用户筛选状态
+state.filters.usersRole = "all";
+state.filters.usersSearch = "";
+
 async function openUsersModal() {
     await loadAllUsers();
+    renderUsersModal();
+    els.usersModalOverlay.classList.remove("hidden");
+}
+
+function renderUsersModal() {
+    // 根据筛选条件过滤用户
+    const filteredUsers = state.backendUsers.filter(user => {
+        // 角色筛选
+        const matchRole = state.filters.usersRole === "all" ||
+            (state.filters.usersRole === "TA" && user.userType === 1) ||
+            (state.filters.usersRole === "MO" && user.userType === 2) ||
+            (state.filters.usersRole === "Admin" && user.userType === 3);
+
+        // 搜索筛选
+        const searchLower = state.filters.usersSearch.toLowerCase();
+        const matchSearch = !state.filters.usersSearch ||
+            (user.username && user.username.toLowerCase().includes(searchLower)) ||
+            (user.realName && user.realName.toLowerCase().includes(searchLower)) ||
+            (user.email && user.email.toLowerCase().includes(searchLower));
+
+        return matchRole && matchSearch;
+    });
 
     els.usersModalBody.innerHTML = `
     <div class="section-header">
       <div class="section-title-block">
         <h3>All System Users</h3>
-        <p>查看用户角色、状态并进入详情页。数据来自后端接口。</p>
+        <p>View all users by role. Click username to see details.</p>
+      </div>
+    </div>
+
+    <div class="users-filter-bar">
+      <div class="search-box">
+        ${Icons.search}
+        <input id="usersSearchInput" type="text" placeholder="Search users..." value="${escapeHtml(state.filters.usersSearch)}" />
+        <button id="usersSearchBtn" class="search-btn" type="button">Search</button>
+      </div>
+
+      <div class="filter-chips">
+        <button class="filter-chip ${state.filters.usersRole === "all" ? "active" : ""}" data-user-role="all" type="button">All (${state.backendUsers.length})</button>
+        <button class="filter-chip ${state.filters.usersRole === "TA" ? "active" : ""}" data-user-role="TA" type="button">TA (${state.backendUsers.filter(u => u.userType === 1).length})</button>
+        <button class="filter-chip ${state.filters.usersRole === "MO" ? "active" : ""}" data-user-role="MO" type="button">MO (${state.backendUsers.filter(u => u.userType === 2).length})</button>
+        <button class="filter-chip ${state.filters.usersRole === "Admin" ? "active" : ""}" data-user-role="Admin" type="button">Admin (${state.backendUsers.filter(u => u.userType === 3).length})</button>
       </div>
     </div>
 
@@ -1164,21 +1336,22 @@ async function openUsersModal() {
             </tr>
           </thead>
           <tbody>
-            ${state.backendUsers.length > 0 ? state.backendUsers.map(user => {
+            ${filteredUsers.length > 0 ? filteredUsers.map(user => {
         const roleText = user.userType === 1 ? "TA" : user.userType === 2 ? "MO" : user.userType === 3 ? "Admin" : "Unknown";
+        const roleClass = user.userType === 1 ? "badge-primary" : user.userType === 2 ? "badge-warning" : user.userType === 3 ? "badge-success" : "badge-soft";
         return `
               <tr>
                 <td>${escapeHtml(user.userId)}</td>
-                <td>${escapeHtml(user.username)}</td>
+                <td><a href="#" class="username-link" data-user-id="${escapeHtml(user.userId)}">${escapeHtml(user.username)}</a></td>
                 <td>${escapeHtml(user.realName || "-")}</td>
-                <td><span class="badge badge-soft">${escapeHtml(roleText)}</span></td>
+                <td><span class="badge ${roleClass}">${escapeHtml(roleText)}</span></td>
                 <td>${escapeHtml(user.email || "-")}</td>
                 <td>
                   <div class="row-actions">
-                    <button class="btn btn-soft open-user-detail-btn" type="button" data-user-id="${user.userId}">
+                    <button class="btn btn-sm btn-soft open-user-detail-btn" type="button" data-user-id="${user.userId}">
                       ${Icons.eye} View
                     </button>
-                    <button class="btn btn-danger delete-user-btn" type="button" data-user-id="${user.userId}">
+                    <button class="btn btn-sm btn-danger delete-user-btn" type="button" data-user-id="${user.userId}">
                       Delete
                     </button>
                   </div>
@@ -1186,7 +1359,7 @@ async function openUsersModal() {
               </tr>
             `}).join("") : `
               <tr>
-                <td colspan="6" style="text-align:center;padding:30px;">暂无用户数据</td>
+                <td colspan="6" style="text-align:center;padding:30px;">No users matched your criteria</td>
               </tr>
             `}
           </tbody>
@@ -1195,9 +1368,55 @@ async function openUsersModal() {
     </div>
   `;
 
-    els.usersModalOverlay.classList.remove("hidden");
+    // 绑定事件
+    bindUsersModalEvents();
+}
 
-    const detailBtns = els.usersModalBody.querySelectorAll(".open-user-detail-btn");
+function bindUsersModalEvents() {
+    const modalBody = els.usersModalBody;
+
+    // 搜索框事件
+    const searchInput = modalBody.querySelector("#usersSearchInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", e => {
+            state.filters.usersSearch = e.target.value;
+        });
+        searchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                renderUsersModal();
+            }
+        });
+    }
+
+    // 搜索按钮
+    const searchBtn = modalBody.querySelector("#usersSearchBtn");
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+            renderUsersModal();
+        });
+    }
+
+    // 角色筛选按钮
+    const roleBtns = modalBody.querySelectorAll("[data-user-role]");
+    roleBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            state.filters.usersRole = btn.dataset.userRole;
+            renderUsersModal();
+        });
+    });
+
+    // 用户名点击事件
+    const usernameLinks = modalBody.querySelectorAll(".username-link");
+    usernameLinks.forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+            const userId = link.dataset.userId;
+            openUserDetailModal(userId);
+        });
+    });
+
+    // View按钮
+    const detailBtns = modalBody.querySelectorAll(".open-user-detail-btn");
     detailBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             const userId = btn.dataset.userId;
@@ -1205,7 +1424,8 @@ async function openUsersModal() {
         });
     });
 
-    const deleteBtns = els.usersModalBody.querySelectorAll(".delete-user-btn");
+    // Delete按钮
+    const deleteBtns = modalBody.querySelectorAll(".delete-user-btn");
     deleteBtns.forEach(btn => {
         btn.addEventListener("click", async () => {
             const userId = btn.dataset.userId;
@@ -1217,6 +1437,86 @@ async function openUsersModal() {
 
 function closeUsersModal() {
     els.usersModalOverlay.classList.add("hidden");
+}
+
+// 已实现后端接口连接 - All Jobs 弹窗
+async function openAllJobsModal() {
+    await loadAllJobs();
+    renderAllJobsModal();
+    els.allJobsModalOverlay.classList.remove("hidden");
+}
+
+function renderAllJobsModal() {
+    els.allJobsModalBody.innerHTML = `
+    <div class="section-header">
+      <div class="section-title-block">
+        <h3>All Jobs Management</h3>
+        <p>View all jobs and perform delete operations. Data from backend API.</p>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Job ID</th>
+              <th>Job Name</th>
+              <th>Publisher MO ID</th>
+              <th>Recruit Num</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.backendJobsList.length > 0 ? state.backendJobsList.map(job => {
+        const statusText = job.jobStatus === 0 ? "Open" : job.jobStatus === 1 ? "Closed" : job.jobStatus === 2 ? "Filled" : job.jobStatus === 3 ? "Cancelled" : "Unknown";
+        const statusClass = job.jobStatus === 0 ? "badge-success" : job.jobStatus === 1 ? "badge-warning" : job.jobStatus === 2 ? "badge-danger" : "badge-soft";
+        return `
+              <tr>
+                <td>${escapeHtml(job.jobId)}</td>
+                <td>${escapeHtml(job.jobName)}</td>
+                <td>${escapeHtml(job.publisherMoId)}</td>
+                <td>${escapeHtml(job.recruitNum)}</td>
+                <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn btn-danger delete-alljob-btn" type="button" data-job-id="${job.jobId}">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `}).join("") : `
+              <tr>
+                <td colspan="6" style="text-align:center;padding:30px;">No job data available</td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+    bindAllJobsModalEvents();
+}
+
+function bindAllJobsModalEvents() {
+    const modalBody = els.allJobsModalBody;
+
+    // 删除岗位按钮
+    const deleteBtns = modalBody.querySelectorAll(".delete-alljob-btn");
+    deleteBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const jobId = btn.dataset.jobId;
+            await deleteJob(jobId);
+            renderAllJobsModal();
+        });
+    });
+}
+
+function closeAllJobsModal() {
+    els.allJobsModalOverlay.classList.add("hidden");
 }
 
 // 已实现后端接口连接
@@ -1280,19 +1580,19 @@ async function openPostPreview(postId) {
       <div class="detail-grid" style="margin-bottom:18px;">
         <div class="detail-row">
           <span>Post Title</span>
-          <span>${escapeHtml(detail.jobName || "未命名岗位")}</span>
+          <span>${escapeHtml(detail.jobName || "Unnamed Job")}</span>
         </div>
         <div class="detail-row">
           <span>Publisher</span>
-          <span>${escapeHtml(detail.publisherName || detail.moName || "课程负责人")}</span>
+          <span>${escapeHtml(detail.publisherName || detail.moName || "Course Organizer")}</span>
         </div>
         <div class="detail-row">
           <span>Type</span>
-          <span>${detail.jobType === 1 ? "助教" : "助理"}</span>
+          <span>${detail.jobType === 1 ? "TA" : "Assistant"}</span>
         </div>
         <div class="detail-row">
           <span>Module</span>
-          <span>${escapeHtml(detail.belongModule || "未分类")}</span>
+          <span>${escapeHtml(detail.belongModule || "Uncategorized")}</span>
         </div>
         <div class="detail-row">
           <span>Weekly Hours</span>
@@ -1306,7 +1606,7 @@ async function openPostPreview(postId) {
 
       <div>
         <h3 style="margin:0 0 12px;">Description</h3>
-        <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(detail.jobDesc || "暂无岗位描述")}</p>
+        <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(detail.jobDesc || "No job description available")}</p>
       </div>
     `;
 
@@ -1317,7 +1617,7 @@ async function openPostPreview(postId) {
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "获取岗位详情失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to get job details");
 }
 
 // 已实现后端接口连接
@@ -1332,7 +1632,7 @@ async function openPostApplicantsModal(jobId) {
       <div class="section-header">
         <div class="section-title-block">
           <h3>Applicants of Job ${escapeHtml(jobId)}</h3>
-          <p>查看该岗位的申请记录，并执行通过或拒绝。</p>
+          <p>View application records and approve or reject.</p>
         </div>
       </div>
 
@@ -1358,9 +1658,9 @@ async function openPostApplicantsModal(jobId) {
                         <td>${escapeHtml(app.taId)}</td>
                         <td>
                           <span class="badge ${
-                    String(app.status).toLowerCase().includes("pass") || String(app.status).includes("通过")
+                    String(app.status).toLowerCase().includes("pass") || String(app.status).includes("approved")
                         ? "badge-success"
-                        : String(app.status).toLowerCase().includes("reject") || String(app.status).includes("拒绝")
+                        : String(app.status).toLowerCase().includes("reject") || String(app.status).includes("rejected")
                             ? "badge-danger"
                             : "badge-warning"
                 }">${escapeHtml(app.status || "pending")}</span>
@@ -1402,20 +1702,20 @@ async function openPostApplicantsModal(jobId) {
 
         passBtns.forEach(btn => {
             btn.addEventListener("click", async () => {
-                await auditApplication(btn.dataset.applicationId, 1, "通过", btn.dataset.jobId);
+                await auditApplication(btn.dataset.applicationId, 1, "Approved", btn.dataset.jobId);
             });
         });
 
         rejectBtns.forEach(btn => {
             btn.addEventListener("click", async () => {
-                await auditApplication(btn.dataset.applicationId, 2, "拒绝", btn.dataset.jobId);
+                await auditApplication(btn.dataset.applicationId, 2, "Rejected", btn.dataset.jobId);
             });
         });
 
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "加载申请人列表失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load applicants list");
 }
 
 // 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
@@ -1480,14 +1780,14 @@ async function auditApplication(applicationId, auditStatus, remark, jobId) {
     });
 
     if (r.ok && r.data && r.data.code === 200) {
-        alert(r.data.msg || "审核成功");
+        alert(r.data.msg || "Audit successful");
 
         state.logs.unshift({
             id: Date.now(),
             type: "audit",
             title: auditStatus === 1 ? "Application Approved" : "Application Rejected",
             actor: state.currentAdmin.name,
-            time: new Date().toLocaleString("zh-CN"),
+            time: new Date().toLocaleString(),
             detail: `Application ${applicationId} for job ${jobId} was ${auditStatus === 1 ? "approved" : "rejected"}.`
         });
 
@@ -1496,7 +1796,7 @@ async function auditApplication(applicationId, auditStatus, remark, jobId) {
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "审核失败");
+    showError((r.data && r.data.msg) || r.error || "Audit failed");
 }
 
 // 未实现后端接口连接：示例接口文档中没有管理员角色申请通知接口，先保留前端演示逻辑
@@ -1582,7 +1882,7 @@ function handleRoleRequest(id, nextStatus) {
         type: "role_change",
         title: `Role Change Request ${nextStatus === "approved" ? "Approved" : "Rejected"}`,
         actor: state.currentAdmin.name,
-        time: new Date().toLocaleString("zh-CN"),
+        time: new Date().toLocaleString(),
         detail: `${req.realName}'s request from ${req.currentRole} to ${req.targetRole} was ${nextStatus}.`
     });
 
@@ -1593,77 +1893,6 @@ function handleRoleRequest(id, nextStatus) {
 
     renderRequestDot();
     openRequestsModal();
-}
-
-// 已实现后端接口连接 - 加载所有岗位弹窗
-async function openAllJobsModal() {
-    await loadAllJobs();
-
-    els.allJobsModalBody.innerHTML = `
-    <div class="section-header">
-      <div class="section-title-block">
-        <h3>All Jobs Management</h3>
-        <p>查看所有岗位并可执行删除操作。岗位数据来自后端接口。</p>
-      </div>
-    </div>
-
-    <div class="table-card">
-      <div class="data-table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Job ID</th>
-              <th>Job Name</th>
-              <th>Publisher MO ID</th>
-              <th>Recruit Num</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.backendJobsList.length > 0 ? state.backendJobsList.map(job => {
-        const statusText = job.jobStatus === 0 ? "招聘中" : job.jobStatus === 1 ? "已截止" : job.jobStatus === 2 ? "已招满" : job.jobStatus === 3 ? "已关闭" : "未知";
-        const statusClass = job.jobStatus === 0 ? "badge-success" : job.jobStatus === 1 ? "badge-warning" : job.jobStatus === 2 ? "badge-danger" : "badge-soft";
-        return `
-              <tr>
-                <td>${escapeHtml(job.jobId)}</td>
-                <td>${escapeHtml(job.jobName)}</td>
-                <td>${escapeHtml(job.publisherMoId)}</td>
-                <td>${escapeHtml(job.recruitNum)}</td>
-                <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
-                <td>
-                  <div class="row-actions">
-                    <button class="btn btn-danger delete-job-btn" type="button" data-job-id="${job.jobId}">
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `}).join("") : `
-              <tr>
-                <td colspan="6" style="text-align:center;padding:30px;">暂无岗位数据</td>
-              </tr>
-            `}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-    els.allJobsModalOverlay.classList.remove("hidden");
-
-    const deleteBtns = els.allJobsModalBody.querySelectorAll(".delete-job-btn");
-    deleteBtns.forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const jobId = btn.dataset.jobId;
-            await deleteJob(jobId);
-            await openAllJobsModal();
-        });
-    });
-}
-
-function closeAllJobsModal() {
-    els.allJobsModalOverlay.classList.add("hidden");
 }
 
 // 已实现后端接口连接 - 用户查询弹窗
@@ -1681,7 +1910,7 @@ function closeUserQueryModal() {
 async function confirmQueryUser() {
     const userId = els.queryUserIdInput.value.trim();
     if (!userId) {
-        alert("请输入用户ID");
+        alert("Please enter user ID");
         return;
     }
 
@@ -1689,7 +1918,7 @@ async function confirmQueryUser() {
 
     const userData = await loadUserDetail(userId);
     if (userData) {
-        const roleText = userData.userType === 1 ? "TA" : userData.userType === 2 ? "MO" : userData.userType === 3 ? "Admin" : "未知";
+        const roleText = userData.userType === 1 ? "TA" : userData.userType === 2 ? "MO" : userData.userType === 3 ? "Admin" : "Unknown";
         els.userQueryResult.innerHTML = `
         <div class="detail-row">
           <span>User ID</span>
@@ -1713,7 +1942,7 @@ async function confirmQueryUser() {
         </div>
       `;
     } else {
-        els.userQueryResult.innerHTML = '<p style="color:var(--danger);">获取用户详情失败，请检查用户ID是否正确。</p>';
+        els.userQueryResult.innerHTML = '<p style="color:var(--danger);">Failed to get user details. Please check if the user ID is correct.</p>';
     }
 }
 
@@ -1776,6 +2005,11 @@ function bindModalEvents() {
 
     if (els.openRequestsBtn) {
         els.openRequestsBtn.addEventListener("click", openRequestsModal);
+    }
+
+    // 退出登录按钮
+    if (document.getElementById("logoutBtn")) {
+        document.getElementById("logoutBtn").addEventListener("click", logout);
     }
 
     if (els.rejectReasonInput) {
