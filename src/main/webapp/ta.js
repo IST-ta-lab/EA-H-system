@@ -1,4 +1,4 @@
-const BASE_URL = "/tapj"; // 已实现后端接口连接
+﻿const BASE_URL = "/tapj"; // Backend API connected
 
 const AVAILABLE_JOBS = [];
 
@@ -26,11 +26,11 @@ const state = {
     isProfileModalOpen: false,
     selectedJob: null,
 
-    currentUser: null, // 已实现后端接口连接
+    currentUser: null, // Backend API connected
 
     profile: {
-        name: "未登录用户",
-        major: "暂未获取",
+        name: "Guest User",
+        major: "Not provided",
         bio: "Passionate about teaching and helping others learn programming.",
         email: "",
         isVisible: true,
@@ -147,12 +147,12 @@ function getInitials(name) {
         .join("");
 }
 
-// 已实现后端接口连接
+// Backend API connected
 function showError(message) {
-    alert(message || "请求失败");
+    alert(message || "Request failed");
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function request(url, options = {}) {
     try {
         const res = await fetch(BASE_URL + url, {
@@ -171,14 +171,14 @@ async function request(url, options = {}) {
     }
 }
 
-// 已实现后端接口连接
+// Backend API connected
 function mapUserToProfile(user) {
     if (!user) return;
 
     state.currentUser = user;
-    state.profile.name = user.realName || user.username || "未命名用户";
+    state.profile.name = user.realName || user.username || "Unnamed User";
     state.profile.email = user.email || "";
-    state.profile.major = user.major || user.course || "暂未填写";
+    state.profile.major = user.major || user.course || "Not specified";
     if (typeof user.selfIntro !== "undefined") {
         state.profile.bio = user.selfIntro || "";
     }
@@ -190,23 +190,23 @@ function mapUserToProfile(user) {
     }
 }
 
-// 已实现后端接口连接
+// Backend API connected
 function mapJobFromBackend(job) {
     return {
         id: job.jobId,
-        course: job.jobName || "未命名岗位",
-        prof: job.publisherName || job.moName || "课程负责人",
+        course: job.jobName || "Untitled Role",
+        prof: job.publisherName || job.moName || "Course Lead",
         hours: job.workHoursWeekly || 0,
         tags: [
-            job.jobType === 1 ? "助教" : "助理",
-            job.belongModule || "未分类"
+            job.jobType === 1 ? "TA" : "Assistant",
+            job.belongModule || "Uncategorized"
         ],
-        description: job.jobDesc || "暂无岗位描述",
+        description: job.jobDesc || "No description available",
         raw: job
     };
 }
 
-// 已实现后端接口连接
+// Backend API connected
 function mapApplicationFromBackend(app) {
     const statusCode = typeof app.applyStatus === "number" ? app.applyStatus : Number(app.status);
     return {
@@ -216,10 +216,10 @@ function mapApplicationFromBackend(app) {
         statusCode,
         raw: app,
         job: {
-            course: app.jobName ? app.jobName : `岗位ID: ${app.jobId}`,
-            module: app.belongModule || "未分类",
+            course: app.jobName ? app.jobName : `RoleID: ${app.jobId}`,
+            module: app.belongModule || "Uncategorized",
             typeLabel: formatJobType(app.jobType),
-            description: app.jobDesc || "暂无岗位描述",
+            description: app.jobDesc || "No description available",
             hours: typeof app.workHoursWeekly === "number" ? app.workHoursWeekly : null
         }
     };
@@ -228,40 +228,40 @@ function mapApplicationFromBackend(app) {
 function formatApplyStatus(statusCode) {
     switch (Number(statusCode)) {
         case 0:
-            return "待审核";
+            return "Pending";
         case 1:
-            return "已通过";
+            return "Approved";
         case 2:
-            return "已拒绝";
+            return "Rejected";
         default:
-            return "未知状态";
+            return "Unknown";
     }
 }
 
 function getApplicationStatusMeta(statusCode) {
     const code = Number(statusCode);
     if (code === 1) {
-        return { label: "已通过", className: "badge-success", canCancel: false };
+        return { label: "Approved", className: "badge-success", canCancel: false };
     }
     if (code === 2) {
-        return { label: "已拒绝", className: "badge-danger", canCancel: false };
+        return { label: "Rejected", className: "badge-danger", canCancel: false };
     }
     if (code === 0) {
-        return { label: "待审核", className: "badge-warning", canCancel: true };
+        return { label: "Pending", className: "badge-warning", canCancel: true };
     }
-    return { label: "未知状态", className: "badge-soft", canCancel: false };
+    return { label: "Unknown", className: "badge-soft", canCancel: false };
 }
 
 function formatJobType(jobType) {
     switch (Number(jobType)) {
         case 1:
-            return "课程助教";
+            return "Course TA";
         case 2:
-            return "监考助教";
+            return "Exam Proctor TA";
         case 3:
-            return "活动助教";
+            return "Activity TA";
         default:
-            return "岗位";
+            return "Role";
     }
 }
 
@@ -296,6 +296,10 @@ function getMatchData(job) {
     return { score, matched, missing };
 }
 
+function isJobApplied(jobId) {
+    return state.applications.some(app => String(app.jobId) === String(jobId));
+}
+
 function setView(viewName) {
     state.currentView = viewName;
     render();
@@ -310,7 +314,7 @@ function toggleTag(tag) {
     renderFeedView();
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function loadLoginUser() {
     const r = await request("/user?action=getLoginUser");
     if (r.ok && r.data.code === 200) {
@@ -319,12 +323,12 @@ async function loadLoginUser() {
         return true;
     }
 
-    alert("未登录或登录已过期，请重新登录");
+    alert("Not logged in or session expired. Please log in again.");
     location.href = "index.html";
     return false;
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function loadOpenJobs() {
     const r = await request("/job?action=listOpen");
     if (r.ok && r.data.code === 200) {
@@ -336,10 +340,10 @@ async function loadOpenJobs() {
 
     state.jobs = [];
     renderFeedView();
-    showError((r.data && r.data.msg) || r.error || "加载岗位失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load roles");
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function loadMyApplications() {
     const r = await request("/application?action=listMy");
     if (r.ok && r.data.code === 200) {
@@ -356,7 +360,7 @@ async function loadMyApplications() {
     renderSidebar();
 }
 
-// 未实现后端接口连接：示例接口文档中没有简历上传接口，先保留前端演示逻辑
+// Backend not connected: resume upload is not available in the sample API, so this stays as a front-end demo.
 function handleUploadResume() {
     if (state.hasResume) return;
 
@@ -417,7 +421,7 @@ function renderFeedView() {
           ${escapeHtml(tag)}
         </button>
       `).join("")}
-      <button class="filter-chip" id="filterStubBtn" type="button" title="当前仅保留交互外观">
+      <button class="filter-chip" id="filterStubBtn" type="button" title="UI only in this version">
         ${Icons.sliders}
       </button>
     </div>
@@ -463,6 +467,10 @@ function renderJobList() {
 }
 
 function renderJobCard(job) {
+    const applied = isJobApplied(job.id);
+    const applyLabel = applied ? "Applied" : "Apply";
+    const applyIcon = applied ? "" : Icons.chevronRight;
+    const applyDisabled = applied ? "disabled" : "";
     return `
     <article class="job-card" data-job-id="${job.id}">
       <div class="job-top">
@@ -484,15 +492,15 @@ function renderJobCard(job) {
 
       <div class="job-footer">
         <div class="job-stats">
-          <span>岗位ID: ${job.id}</span>
+          <span>RoleID: ${job.id}</span>
           <span>${(job.tags || []).length} required skills</span>
         </div>
         <div class="job-actions">
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
             View Details
           </button>
-          <button class="btn btn-primary apply-job-btn" type="button" data-job-id="${job.id}">
-            Apply ${Icons.chevronRight}
+          <button class="btn btn-primary apply-job-btn" type="button" data-job-id="${job.id}" ${applyDisabled}>
+            ${applyLabel}${applyIcon ? " " + applyIcon : ""}
           </button>
         </div>
       </div>
@@ -589,13 +597,13 @@ function renderSidebar() {
                     <div class="application-head">
                       <div>
                         <h5>${escapeHtml(app.job.course)}</h5>
-                        <p class="application-sub">${escapeHtml(app.job.module)} · ${escapeHtml(app.job.typeLabel)}</p>
+                        <p class="application-sub">${escapeHtml(app.job.module)} - ${escapeHtml(app.job.typeLabel)}</p>
                       </div>
                     </div>
                     <p class="application-desc">${escapeHtml(app.job.description)}</p>
                     <div class="application-meta">
-                      <span>岗位ID: ${escapeHtml(app.jobId)}</span>
-                      <span>${app.job.hours !== null ? `每周 ${escapeHtml(app.job.hours)} 小时` : "工时待定"}</span>
+                      <span>RoleID: ${escapeHtml(app.jobId)}</span>
+                      <span>${app.job.hours !== null ? `${escapeHtml(app.job.hours)} hrs/week` : "Hours TBD"}</span>
                     </div>
                     <div class="application-footer">
                       ${(() => {
@@ -603,7 +611,7 @@ function renderSidebar() {
                         return `
                           <span class="badge ${meta.className}">${escapeHtml(meta.label)}</span>
                           <button class="btn btn-danger btn-xs cancel-application-btn" type="button" data-app-id="${escapeHtml(app.id)}" ${meta.canCancel ? "" : "disabled"}>
-                            取消申请
+                            Cancel Application
                           </button>
                         `;
                     })()}
@@ -635,7 +643,7 @@ function renderProfileView() {
               <p>${escapeHtml(state.profile.major)}</p>
               <div style="margin-top:12px;">
                 <span class="status-pill ${state.profile.isVisible ? "" : "off"}">
-                  ${state.profile.isVisible ? "●" : "○"} ${escapeHtml(visibilityText)}
+                  ${escapeHtml(visibilityText)}
                 </span>
               </div>
             </div>
@@ -774,7 +782,7 @@ function bindFeedEvents() {
 
     if (filterStubBtn) {
         filterStubBtn.addEventListener("click", () => {
-            alert("当前版本保留了筛选按钮交互外观，详细高级筛选后续再扩展。");
+            alert("This version keeps the filter button UI only; advanced filters will be added later.");
         });
     }
 }
@@ -802,20 +810,20 @@ function bindSidebarEvents() {
             event.stopPropagation();
             const applicationId = btn.dataset.appId;
             if (!applicationId) return;
-            if (!confirm("确认取消该申请吗？")) return;
+            if (!confirm("Cancel this application?")) return;
 
             const r = await request(`/application?action=cancel&applicationId=${encodeURIComponent(applicationId)}`, {
                 method: "POST"
             });
 
             if (r.ok && r.data && r.data.code === 200) {
-                alert(r.data.msg || "已取消申请");
+                alert(r.data.msg || "Application canceled.");
                 await loadMyApplications();
                 render();
                 return;
             }
 
-            showError((r.data && r.data.msg) || r.error || "取消申请失败");
+            showError((r.data && r.data.msg) || r.error || "Failed to cancel application.");
         });
     });
 }
@@ -891,7 +899,7 @@ function closeProfileModal() {
     updateBodyScrollLock();
 }
 
-// 未实现后端接口连接：示例接口文档中没有个人资料保存接口，先保留前端本地修改
+// Backend not connected: profile saving is not available in the sample API, so this stays local.
 async function saveProfile() {
     const nextName = els.profileNameInput.value.trim() || state.profile.name;
     const nextEmail = els.profileEmailInput.value.trim() || state.profile.email;
@@ -926,27 +934,27 @@ async function saveProfile() {
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "保存失败");
+    showError((r.data && r.data.msg) || r.error || "Save failed");
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function handleApply(jobId) {
     const r = await request(`/application?action=apply&jobId=${encodeURIComponent(jobId)}`, {
         method: "POST"
     });
 
     if (r.ok && r.data && r.data.code === 200) {
-        alert(r.data.msg || "申请成功");
+        alert(r.data.msg || "Application submitted.");
         await loadOpenJobs();
         await loadMyApplications();
         render();
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "申请失败");
+    showError((r.data && r.data.msg) || r.error || "Application failed");
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function openJobModal(jobId) {
     const r = await request(`/job?action=getDetail&jobId=${encodeURIComponent(jobId)}`);
 
@@ -955,14 +963,14 @@ async function openJobModal(jobId) {
 
         state.selectedJob = {
             id: detail.jobId,
-            course: detail.jobName || "未命名岗位",
-            prof: detail.publisherName || detail.moName || "课程负责人",
+            course: detail.jobName || "Untitled Role",
+            prof: detail.publisherName || detail.moName || "Course Lead",
             hours: detail.workHoursWeekly || 0,
             tags: [
-                detail.jobType === 1 ? "助教" : "助理",
-                detail.belongModule || "未分类"
+                detail.jobType === 1 ? "TA" : "Assistant",
+                detail.belongModule || "Uncategorized"
             ],
-            description: detail.jobDesc || "暂无岗位描述",
+            description: detail.jobDesc || "No description available",
             raw: detail
         };
 
@@ -978,7 +986,7 @@ async function openJobModal(jobId) {
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "获取岗位详情失败");
+    showError((r.data && r.data.msg) || r.error || "Failed to load role details.");
 }
 
 function closeJobModal() {
@@ -993,25 +1001,26 @@ function renderJobModal() {
 
     const match = getMatchData(job);
     const raw = job.raw || {};
+    const alreadyApplied = isJobApplied(job.id);
 
     els.jobModalTitle.textContent = job.course;
     els.jobModalMeta.innerHTML = `
     <span class="badge badge-soft">${Icons.user} ${escapeHtml(job.prof)}</span>
     <span class="badge badge-soft">${Icons.clock} ${escapeHtml(job.hours)} hrs/week</span>
-    <span class="badge badge-primary">${raw.jobType === 1 ? "助教岗位" : "助理岗位"}</span>
-    <span class="badge badge-soft">${escapeHtml(raw.belongModule || "未分类")}</span>
+    <span class="badge badge-primary">${raw.jobType === 1 ? "TARole" : "AssistantRole"}</span>
+    <span class="badge badge-soft">${escapeHtml(raw.belongModule || "Uncategorized")}</span>
   `;
 
     els.jobDescriptionText.textContent = job.description;
 
     els.matchCard.innerHTML = `
-    <strong>${Icons.target} 岗位匹配度: ${match.score}%</strong>
+    <strong>${Icons.target} Role Match: ${match.score}%</strong>
     <p>
-      已匹配技能: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "暂无"}。
+      Matched skills: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
       ${
         match.missing.length > 0
-            ? `待补充技能: ${escapeHtml(match.missing.join(", "))}。`
-            : " 当前技能已覆盖展示出的标签要求。"
+            ? `Missing skills: ${escapeHtml(match.missing.join(", "))}.`
+            : " Your current skills cover the listed tags."
     }
     </p>
   `;
@@ -1023,6 +1032,12 @@ function renderJobModal() {
     els.appRemarksInput.value = state.appRemarks;
 
     syncApplicationOptionButtons();
+
+    const submitBtn = document.getElementById("submitApplicationBtn");
+    if (submitBtn) {
+        submitBtn.disabled = alreadyApplied;
+        submitBtn.textContent = alreadyApplied ? "Applied" : "Submit Application";
+    }
 }
 
 function syncApplicationOptionButtons() {
@@ -1036,7 +1051,7 @@ function syncApplicationOptionButtons() {
     els.inPersonIcon.classList.toggle("active", inPerson);
 }
 
-// 已实现后端接口连接
+// Backend API connected
 async function submitApplicationFromModal() {
     if (!state.selectedJob) return;
 
@@ -1048,7 +1063,7 @@ async function submitApplicationFromModal() {
     });
 
     if (r.ok && r.data && r.data.code === 200) {
-        alert(r.data.msg || "申请成功");
+        alert(r.data.msg || "Application submitted.");
         closeJobModal();
         await loadOpenJobs();
         await loadMyApplications();
@@ -1056,7 +1071,7 @@ async function submitApplicationFromModal() {
         return;
     }
 
-    showError((r.data && r.data.msg) || r.error || "申请失败");
+    showError((r.data && r.data.msg) || r.error || "Application failed");
 }
 
 function bindModalEvents() {
@@ -1208,10 +1223,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     bindGlobalEvents();
     bindModalEvents();
 
-    const ok = await loadLoginUser(); // 已实现后端接口连接
+    const ok = await loadLoginUser(); // Backend API connected
     if (!ok) return;
 
-    await loadOpenJobs(); // 已实现后端接口连接
-    await loadMyApplications(); // 已实现后端接口连接
+    await loadOpenJobs(); // Backend API connected
+    await loadMyApplications(); // Backend API connected
     render();
 });

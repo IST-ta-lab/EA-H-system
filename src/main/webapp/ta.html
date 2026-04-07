@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
@@ -28,7 +28,7 @@
 
             <div class="nav-right">
                 <span class="nav-username" id="navUserName"></span>
-                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="打开个人资料">
+                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Open profile">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
@@ -47,12 +47,12 @@
     </main>
 </div>
 
-<!-- 编辑资料弹窗 -->
+<!-- Edit profile modal -->
 <div class="modal-overlay hidden" id="profileModalOverlay">
     <div class="modal-card modal-large scale-enter" id="profileModalCard">
         <div class="modal-header">
-            <h2>编辑个人资料</h2>
-            <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="关闭">
+            <h2>Edit Profile</h2>
+            <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="Close">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -61,47 +61,47 @@
 
         <div class="modal-body form-layout scrollable">
             <div class="form-group">
-                <label for="profileNameInput">姓名</label>
+                <label for="profileNameInput">Name</label>
                 <input id="profileNameInput" type="text" />
             </div>
 
             <div class="form-group">
-                <label for="profileEmailInput">邮箱</label>
+                <label for="profileEmailInput">Email</label>
                 <input id="profileEmailInput" type="email" />
             </div>
 
             <div class="form-group">
-                <label for="profileMajorInput">专业 / 院系</label>
+                <label for="profileMajorInput">Major / Department</label>
                 <input id="profileMajorInput" type="text" />
             </div>
 
             <div class="form-group">
-                <label for="profileBioInput">个人简介</label>
+                <label for="profileBioInput">Bio</label>
                 <textarea id="profileBioInput" rows="4"></textarea>
             </div>
 
             <div class="form-group">
-                <label for="profileSkillsInput">技能（英文逗号分隔）</label>
+                <label for="profileSkillsInput">Skills (comma-separated)</label>
                 <input id="profileSkillsInput" type="text" />
             </div>
 
             <button class="check-row" id="profileVisibleToggle" type="button">
                 <span class="check-icon" id="profileVisibleIcon"></span>
                 <span>
-            <strong>对他人可见</strong>
-            <small>允许课程负责人搜索到你的资料</small>
+            <strong>Visible to others</strong>
+            <small>Allow course leads to find your profile</small>
           </span>
             </button>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">取消</button>
-            <button class="btn btn-primary" id="saveProfileBtn" type="button">保存修改</button>
+            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">Cancel</button>
+            <button class="btn btn-primary" id="saveProfileBtn" type="button">Save Changes</button>
         </div>
     </div>
 </div>
 
-<!-- 岗位详情 / 申请弹窗 -->
+<!-- Role details / Application modal -->
 <div class="modal-overlay hidden" id="jobModalOverlay">
     <div class="modal-card modal-xl scale-enter" id="jobModalCard">
         <div class="modal-header job-header">
@@ -109,7 +109,7 @@
                 <h2 id="jobModalTitle"></h2>
                 <div class="job-meta-row" id="jobModalMeta"></div>
             </div>
-            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="关闭">
+            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="Close">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -118,44 +118,44 @@
 
         <div class="modal-body scrollable" id="jobModalBody">
             <section class="job-section">
-                <h3>岗位说明</h3>
+                <h3>Role Description</h3>
                 <p id="jobDescriptionText"></p>
             </section>
 
             <section class="match-card" id="matchCard"></section>
 
             <section class="job-section">
-                <h3>所需技能</h3>
+                <h3>Required Skills</h3>
                 <div class="tag-list" id="jobRequiredTags"></div>
             </section>
 
             <hr class="divider" />
 
             <section class="job-section">
-                <h3>提交申请</h3>
+                <h3>Submit Application</h3>
 
                 <div class="option-list">
                     <button class="check-row" id="takenCourseToggle" type="button">
                         <span class="check-icon" id="takenCourseIcon"></span>
-                        <span><strong>我之前修过这门课</strong></span>
+                        <span><strong>I have taken this course before</strong></span>
                     </button>
 
                     <button class="check-row" id="inPersonToggle" type="button">
                         <span class="check-icon" id="inPersonIcon"></span>
-                        <span><strong>我可以参加线下答疑</strong></span>
+                        <span><strong>I can attend in-person sessions</strong></span>
                     </button>
                 </div>
 
                 <div class="form-group">
-                    <label for="appRemarksInput">补充说明（可选）</label>
-                    <textarea id="appRemarksInput" rows="3" placeholder="补充你的相关经验，或说明为什么适合这个岗位..."></textarea>
+                    <label for="appRemarksInput">Additional Notes (optional)</label>
+                    <textarea id="appRemarksInput" rows="3" placeholder="Add relevant experience or why you're a good fit..."></textarea>
                 </div>
             </section>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">取消</button>
-            <button class="btn btn-primary" id="submitApplicationBtn" type="button">提交申请</button>
+            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">Cancel</button>
+            <button class="btn btn-primary" id="submitApplicationBtn" type="button">Submit Application</button>
         </div>
     </div>
 </div>
