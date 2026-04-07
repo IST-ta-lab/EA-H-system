@@ -27,7 +27,8 @@ public class AuthFilter implements Filter {
             "/job?action=listOpen",   // 【新增】游客查招聘中岗位
             "/job?action=getDetail",  // 【新增】游客查岗位详情
             "/static/",
-            "/admin"
+            "/admin",
+            "guest.html"
     );
 
     @Override
