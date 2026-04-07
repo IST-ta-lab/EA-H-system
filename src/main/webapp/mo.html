@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -11,224 +11,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <style>
-    :root {
-      --font-sans: Inter, system-ui, -apple-system, sans-serif;
-      --font-display: Outfit, Inter, system-ui, -apple-system, sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: var(--font-sans);
-      color: #0f172a;
-      background-color: #f8fafc;
-      background-image:
-        radial-gradient(circle at 0% 0%, rgba(224, 231, 255, 0.6) 0%, transparent 40%),
-        radial-gradient(circle at 100% 50%, rgba(252, 231, 243, 0.5) 0%, transparent 50%),
-        radial-gradient(circle at 50% 100%, rgba(243, 232, 255, 0.4) 0%, transparent 40%);
-      background-attachment: fixed;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    .font-display {
-      font-family: var(--font-display);
-    }
-
-    .soft-card {
-      background: rgba(255, 255, 255, 0.78);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(241, 245, 249, 0.9);
-      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
-    }
-
-    .icon-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      border: none;
-      background: transparent;
-      color: #94a3b8;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.18s ease;
-    }
-
-    .icon-btn:hover {
-      background: #eef2ff;
-      color: #4f46e5;
-    }
-
-    .icon-btn.danger:hover {
-      background: #fef2f2;
-      color: #dc2626;
-    }
-
-    .icon-btn.good:hover {
-      background: #ecfdf5;
-      color: #059669;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      background: #f8fafc;
-      border: 1px solid #eef2f7;
-    }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      display: inline-block;
-    }
-
-    .dot-purple { background: #a855f7; }
-    .dot-green { background: #10b981; }
-    .dot-blue { background: #3b82f6; }
-
-    .status-approved {
-      color: #047857;
-      background: #d1fae5;
-    }
-
-    .status-rejected {
-      color: #b91c1c;
-      background: #fee2e2;
-    }
-
-    .status-pending {
-      color: #334155;
-      background: #f1f5f9;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #e2e8f0;
-      border-radius: 20px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background-color: #cbd5e1;
-    }
-
-    .modal-mask {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.4);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 80;
-    }
-
-    .modal-mask.show {
-      display: flex;
-    }
-
-    .modal-card {
-      width: min(100%, 720px);
-      max-height: 90vh;
-      overflow: auto;
-      border-radius: 30px;
-      background: #fff;
-      border: 1px solid #f1f5f9;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
-    }
-
-    .toast {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      background: #0f172a;
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.3);
-      z-index: 120;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: all 0.2s ease;
-      pointer-events: none;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    .tooltip-anchor {
-      position: relative;
-    }
-
-    .tooltip-anchor:hover .tooltip {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .tooltip {
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 50%;
-      transform: translateX(-50%) translateY(5px);
-      background: #1e293b;
-      color: #fff;
-      border-radius: 7px;
-      padding: 4px 7px;
-      font-size: 11px;
-      white-space: nowrap;
-      opacity: 0;
-      transition: all 0.15s ease;
-      pointer-events: none;
-      z-index: 20;
-    }
-
-    .line-clamp-2 {
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-    }
-  </style>
+    <link rel="stylesheet" href="mo.css" />
 </head>
 <body class="min-h-screen pb-20">
   <header class="bg-transparent pt-6 pb-4">
     <div class="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-[#6366f1] rounded-xl flex items-center justify-center text-white shadow-sm text-xs font-bold">TM</div>
+        <div class="w-9 h-9 bg-[#6366f1] rounded-xl flex items-center justify-center text-white shadow-sm">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
         <span class="font-bold text-3xl tracking-tight">TA Market</span>
       </div>
 
       <div class="flex items-center gap-4">
         <span id="headerRealName" class="text-sm font-medium text-slate-600 hidden sm:block">Loading...</span>
-        <button id="btnLogout" class="w-10 h-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm text-xs font-semibold">OUT</button>
+        <button class="avatar-btn" type="button" aria-label="Profile">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21a8 8 0 0 0-16 0"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
+        <button id="btnLogout" class="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2">Sign out</button>
       </div>
     </div>
   </header>
@@ -255,10 +61,20 @@
       <div class="soft-card rounded-[28px] p-8 sticky top-24">
         <div class="flex items-center justify-between mb-8">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-sm font-bold">POS</div>
+            <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+                <path d="M16 3v4M8 3v4M3 11h18"></path>
+              </svg>
+            </div>
             <h3 class="text-lg font-bold">Post Position</h3>
           </div>
-          <button id="btnOpenCreateFromPencil" class="text-slate-400 hover:text-slate-600 transition-colors text-xs font-semibold">EDIT</button>
+          <button id="btnOpenCreateFromPencil" class="text-slate-400 hover:text-slate-600 transition-colors" title="Edit Draft">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+            </svg>
+          </button>
         </div>
 
         <div class="mb-8">
@@ -268,12 +84,17 @@
         </div>
 
         <div class="border border-slate-100 border-dashed rounded-2xl p-6 text-center mb-6">
-          <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3 text-2xl">+</div>
+          <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v8M8 12h8"></path>
+            </svg>
+          </div>
           <h5 class="text-sm font-bold text-slate-900 mb-1">Add Details</h5>
           <p class="text-xs text-slate-500">Fill out course info, hours, and requirements</p>
         </div>
 
-        <button id="btnOpenCreate" class="w-full bg-[#0f172a] text-white font-semibold py-4 rounded-full hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
+        <button id="btnOpenCreate" class="create-btn w-full bg-[#0f172a] text-white font-semibold py-4 rounded-full hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
           Create Position
         </button>
 
@@ -296,46 +117,28 @@
       <div class="p-6 space-y-5">
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1.5">Course Name</label>
-          <input id="formCourseName" type="text" placeholder="e.g., CS101: Intro to Programming" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Hours/week</label>
-            <input id="formHoursPerWeek" type="number" min="1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Max Capacity</label>
-            <input id="formMaxCapacity" type="number" min="1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Job Type</label>
-            <select id="formJobType" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-              <option value="1">Teaching Assistant</option>
-              <option value="2">Assistant</option>
-            </select>
-          </div>
+          <input id="formCourseName" type="text" placeholder="e.g., CS101: Intro to Programming" class="field w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Module</label>
-            <input id="formBelongModule" type="text" placeholder="e.g., Computer Science" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Hours/week</label>
+            <input id="formHoursPerWeek" type="number" min="1" class="field w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
           </div>
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deadline</label>
-            <input id="formDeadline" type="date" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Max Capacity</label>
+            <input id="formMaxCapacity" type="number" min="1" class="field w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
           </div>
         </div>
 
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1.5">Requirements</label>
-          <textarea id="formRequirements" rows="4" placeholder="Describe responsibilities and requirements..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none"></textarea>
+          <textarea id="formRequirements" rows="4" placeholder="Describe responsibilities and requirements..." class="field-textarea w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none"></textarea>
         </div>
 
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tags (comma separated)</label>
-          <input id="formTags" type="text" placeholder="e.g., Python, Grading, Office Hours" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+          <input id="formTags" type="text" placeholder="e.g., Python, Grading, Office Hours" class="field w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
           <p class="text-xs text-slate-400 mt-1">Tags are for UI display only. No mapped backend field in current API sample.</p>
         </div>
       </div>
@@ -375,653 +178,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script>
-    const BASE_URL = '/tapj';
-
-    const state = {
-      currentUser: null,
-      jobs: [],
-      applicantSearchByJob: {},
-      editingJobId: null,
-      deletingJobId: null,
-      viewingApplicant: null
-    };
-
-    const dom = {
-      headerRealName: document.getElementById('headerRealName'),
-      btnLogout: document.getElementById('btnLogout'),
-      btnOpenCreate: document.getElementById('btnOpenCreate'),
-      btnOpenCreateFromPencil: document.getElementById('btnOpenCreateFromPencil'),
-      profileUserLine: document.getElementById('profileUserLine'),
-      statJobCount: document.getElementById('statJobCount'),
-      statPendingCount: document.getElementById('statPendingCount'),
-      jobCards: document.getElementById('jobCards'),
-      emptyJobs: document.getElementById('emptyJobs'),
-      toast: document.getElementById('toast'),
-
-      jobModal: document.getElementById('jobModal'),
-      jobModalTitle: document.getElementById('jobModalTitle'),
-      formCourseName: document.getElementById('formCourseName'),
-      formHoursPerWeek: document.getElementById('formHoursPerWeek'),
-      formMaxCapacity: document.getElementById('formMaxCapacity'),
-      formJobType: document.getElementById('formJobType'),
-      formBelongModule: document.getElementById('formBelongModule'),
-      formDeadline: document.getElementById('formDeadline'),
-      formRequirements: document.getElementById('formRequirements'),
-      formTags: document.getElementById('formTags'),
-      btnSaveJob: document.getElementById('btnSaveJob'),
-
-      applicantModal: document.getElementById('applicantModal'),
-      applicantModalBody: document.getElementById('applicantModalBody'),
-
-      deleteModal: document.getElementById('deleteModal'),
-      btnConfirmDelete: document.getElementById('btnConfirmDelete')
-    };
-
-    function escapeHtml(v) {
-      if (v === null || v === undefined) return '';
-      return String(v)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function showToast(message) {
-      dom.toast.textContent = message;
-      dom.toast.classList.add('show');
-      window.setTimeout(() => {
-        dom.toast.classList.remove('show');
-      }, 2600);
-    }
-
-    function openModal(el) {
-      el.classList.add('show');
-    }
-
-    function closeModal(el) {
-      el.classList.remove('show');
-    }
-
-    function bindModalClose() {
-      document.querySelectorAll('[data-close]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-close');
-          const target = document.getElementById(id);
-          if (target) closeModal(target);
-        });
-      });
-
-      [dom.jobModal, dom.applicantModal, dom.deleteModal].forEach((modal) => {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) closeModal(modal);
-        });
-      });
-    }
-
-    async function request(url, options = {}) {
-      try {
-        const res = await fetch(BASE_URL + url, {
-          credentials: 'include',
-          ...options
-        });
-        const text = await res.text();
-        try {
-          return { ok: true, data: JSON.parse(text) };
-        } catch (e) {
-          return { ok: false, raw: text };
-        }
-      } catch (e) {
-        return { ok: false, error: e.message };
-      }
-    }
-
-    function appStatusToWord(status) {
-      if (status === 0 || status === '0' || status === 'pending') return 'pending';
-      if (status === 1 || status === '1' || status === 'approved') return 'approved';
-      if (status === 2 || status === '2' || status === 'rejected') return 'rejected';
-      return 'pending';
-    }
-
-    function getRawApplyStatus(app) {
-      if (app && app.status !== undefined && app.status !== null) return app.status;
-      if (app && app.applyStatus !== undefined && app.applyStatus !== null) return app.applyStatus;
-      return null;
-    }
-
-    function mapApplicant(rawApp) {
-      const normalizedStatus = appStatusToWord(getRawApplyStatus(rawApp));
-      return {
-        applicationId: rawApp.applicationId,
-        taUserId: rawApp.taUserId || rawApp.taId || '',
-        name: rawApp.taRealName || ('TA #' + (rawApp.taUserId || rawApp.taId || '?')),
-        major: rawApp.major || rawApp.taMajor || 'Major not provided',
-        status: normalizedStatus,
-        remarks: rawApp.remark || rawApp.remarks || '',
-        email: rawApp.email || rawApp.taEmail || 'Email not provided',
-        resumeUrl: rawApp.resumeUrl || rawApp.resume || ''
-      };
-    }
-
-    function mapJob(rawJob, applicants) {
-      const approvedCount = applicants.filter((a) => a.status === 'approved').length;
-      const tags = [];
-      if (rawJob.belongModule) tags.push(rawJob.belongModule);
-      tags.push(rawJob.jobType === 1 ? 'Teaching Assistant' : 'Assistant');
-
-      return {
-        id: String(rawJob.jobId),
-        courseName: rawJob.jobName || 'Untitled Position',
-        hoursPerWeek: Number(rawJob.workHoursWeekly || 0),
-        requirements: rawJob.jobDesc || '',
-        tags,
-        recruitedCount: Number(rawJob.hiredNum || approvedCount),
-        maxCapacity: Number(rawJob.recruitNum || 1),
-        jobType: rawJob.jobType,
-        belongModule: rawJob.belongModule || '',
-        deadline: rawJob.applyDeadline || '',
-        applicants
-      };
-    }
-
-    // 已实现后端接口连接
-    // GET /user?action=getLoginUser
-    async function loadCurrentUser() {
-      const r = await request('/user?action=getLoginUser');
-      if (!(r.ok && r.data && r.data.code === 200)) {
-        alert('Login expired. Please sign in again.');
-        window.location.href = 'index.html';
-        return false;
-      }
-
-      state.currentUser = r.data.data;
-      if (state.currentUser.userType !== 2 && state.currentUser.userType !== 3) {
-        alert('Only MO/Admin can access this page.');
-        window.location.href = 'main.html';
-        return false;
-      }
-
-      const realName = state.currentUser.realName || state.currentUser.username || 'MO User';
-      dom.headerRealName.textContent = realName;
-      dom.profileUserLine.textContent = realName;
-      return true;
-    }
-
-    // 已实现后端接口连接
-    // POST /user?action=logout
-    async function logout() {
-      await request('/user?action=logout', { method: 'POST' });
-      alert('Signed out successfully.');
-      window.location.href = 'index.html';
-    }
-
-    // 已实现后端接口连接
-    // GET /job?action=listMy
-    // GET /application?action=listByJob&jobId=...
-    async function loadJobsWithApplicants() {
-      const jobsRes = await request('/job?action=listMy');
-      if (!(jobsRes.ok && jobsRes.data && jobsRes.data.code === 200)) {
-        state.jobs = [];
-        renderAll();
-        return;
-      }
-
-      const rawJobs = jobsRes.data.data || [];
-      const resultJobs = [];
-
-      for (let i = 0; i < rawJobs.length; i += 1) {
-        const rawJob = rawJobs[i];
-        const appRes = await request('/application?action=listByJob&jobId=' + encodeURIComponent(rawJob.jobId));
-        let applicants = [];
-        if (appRes.ok && appRes.data && appRes.data.code === 200) {
-          applicants = (appRes.data.data || []).map(mapApplicant);
-        }
-        resultJobs.push(mapJob(rawJob, applicants));
-      }
-
-      state.jobs = resultJobs;
-      renderAll();
-    }
-
-    function pendingCountAll() {
-      return state.jobs.reduce((sum, j) => {
-        return sum + j.applicants.filter((a) => a.status === 'pending').length;
-      }, 0);
-    }
-
-    function renderAll() {
-      dom.statJobCount.textContent = String(state.jobs.length);
-      dom.statPendingCount.textContent = String(pendingCountAll());
-
-      if (state.jobs.length === 0) {
-        dom.jobCards.innerHTML = '';
-        dom.emptyJobs.classList.remove('hidden');
-      } else {
-        dom.emptyJobs.classList.add('hidden');
-        renderJobCards();
-      }
-    }
-
-    function applicantStatusBadge(app) {
-      if (app.status === 'approved') {
-        return '<span class="text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 status-approved">' +
-          '<span>OK</span><span>APPROVED</span></span>';
-      }
-      if (app.status === 'rejected') {
-        return '<span class="text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 status-rejected">' +
-          '<span>NO</span><span>REJECTED</span></span>';
-      }
-      return '';
-    }
-
-    function renderJobCards() {
-      dom.jobCards.innerHTML = state.jobs.map((job) => {
-        const currentSearch = (state.applicantSearchByJob[job.id] || '').toLowerCase();
-        const visibleApplicants = job.applicants.filter((app) => {
-          if (!currentSearch) return true;
-          return app.name.toLowerCase().includes(currentSearch)
-            || app.major.toLowerCase().includes(currentSearch)
-            || String(app.taUserId).toLowerCase().includes(currentSearch);
-        });
-
-        const pendingCount = job.applicants.filter((a) => a.status === 'pending').length;
-
-        return ''
-          + '<article class="soft-card rounded-[28px] p-8">'
-          + '  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-5">'
-          + '    <div class="flex items-center gap-4 min-w-0">'
-          + '      <div class="flex items-center gap-1 shrink-0">'
-          + '        <div class="tooltip-anchor"><button class="icon-btn btn-edit-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">ED</button><span class="tooltip">Edit Position</span></div>'
-          + '        <div class="tooltip-anchor"><button class="icon-btn danger btn-delete-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">DEL</button><span class="tooltip">Delete Position</span></div>'
-          + '        <div class="tooltip-anchor"><button class="icon-btn good btn-share-job text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '">SH</button><span class="tooltip">Copy Share Link</span></div>'
-          + '      </div>'
-          + '      <h3 class="text-2xl font-bold tracking-tight truncate">' + escapeHtml(job.courseName) + '</h3>'
-          + '    </div>'
-          + '    <div class="flex items-center gap-2 self-start sm:self-auto">'
-          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all" data-jobid="' + escapeHtml(job.id) + '">Accept All</button>'
-          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-reject-all" data-jobid="' + escapeHtml(job.id) + '">Reject All</button>'
-          + '    </div>'
-          + '  </div>'
-
-          + '  <div class="flex flex-wrap items-center gap-4 mb-6">'
-          + '    <div class="pill"><span class="dot dot-purple"></span><span>' + escapeHtml(state.currentUser.realName || 'MO') + '</span></div>'
-          + '    <div class="pill"><span class="dot dot-green"></span><span>' + escapeHtml(job.hoursPerWeek) + ' hrs/wk</span></div>'
-          + '    <div class="pill"><span class="dot dot-blue"></span><span>' + escapeHtml(job.recruitedCount) + ' / ' + escapeHtml(job.maxCapacity) + ' Recruited</span></div>'
-          + '  </div>'
-
-          + '  <div class="flex flex-wrap items-center gap-2 mb-8">'
-          + job.tags.map((tag) => '<span class="text-[13px] font-medium text-slate-600 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full">' + escapeHtml(tag) + '</span>').join('')
-          + '  </div>'
-
-          + '  <div class="border-t border-slate-100 pt-6">'
-          + '    <div class="flex items-center justify-between mb-4 px-1 gap-3">'
-          + '      <h4 class="text-sm font-bold text-slate-900">Applicants (' + escapeHtml(job.applicants.length) + ')</h4>'
-          + '      <div class="relative">'
-          + '        <input type="text" data-jobid="' + escapeHtml(job.id) + '" value="' + escapeHtml(state.applicantSearchByJob[job.id] || '') + '" placeholder="Search applicants..." class="job-app-search w-48 pl-3 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 text-slate-700" />'
-          + '      </div>'
-          + '    </div>'
-
-          + '    <div class="max-h-[280px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">'
-          + (visibleApplicants.length === 0
-              ? '<div class="text-center py-6 text-sm text-slate-500">No matching applicants.</div>'
-              : visibleApplicants.map((app) => {
-                  return ''
-                    + '<div class="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group app-row" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">'
-                    + '  <div class="flex items-center gap-3 min-w-0">'
-                    + '    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold shadow-inner shrink-0">' + escapeHtml(app.name.charAt(0)) + '</div>'
-                    + '    <div class="min-w-0">'
-                    + '      <div class="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">' + escapeHtml(app.name) + '</div>'
-                    + '      <div class="text-xs text-slate-500 truncate">' + escapeHtml(app.major) + '</div>'
-                    + '    </div>'
-                    + (app.resumeUrl
-                        ? '<div class="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md ml-2 shrink-0">Resume</div>'
-                        : '')
-                    + '  </div>'
-                    + '  <div class="flex items-center gap-2 shrink-0 app-action-zone">'
-                    + (app.status === 'pending'
-                        ? '<button class="icon-btn good btn-approve-app text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">AP</button>'
-                          + '<button class="icon-btn danger btn-reject-app text-[11px] font-bold" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">RJ</button>'
-                        : applicantStatusBadge(app))
-                    + '  </div>'
-                    + '</div>';
-                }).join(''))
-          + '    </div>'
-          + '  </div>'
-
-          + (pendingCount > 0
-              ? '<div class="mt-4 text-xs text-slate-500">Pending applications for this job: <span class="mono">' + pendingCount + '</span></div>'
-              : '')
-          + '</article>';
-      }).join('');
-
-      bindJobCardEvents();
-    }
-
-    function findJob(jobId) {
-      return state.jobs.find((j) => String(j.id) === String(jobId));
-    }
-
-    function findApplicant(jobId, appId) {
-      const job = findJob(jobId);
-      if (!job) return null;
-      return job.applicants.find((a) => String(a.applicationId) === String(appId)) || null;
-    }
-
-    function bindJobCardEvents() {
-      dom.jobCards.querySelectorAll('.job-app-search').forEach((input) => {
-        input.addEventListener('input', () => {
-          const jobId = input.getAttribute('data-jobid');
-          state.applicantSearchByJob[jobId] = input.value;
-          renderJobCards();
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-share-job').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const jobId = btn.getAttribute('data-jobid');
-          const url = window.location.origin + window.location.pathname + '#job-' + jobId;
-          try {
-            await navigator.clipboard.writeText(url);
-            showToast('Share link copied to clipboard.');
-          } catch (e) {
-            showToast('Unable to copy. Please copy manually.');
-          }
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-edit-job').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const jobId = btn.getAttribute('data-jobid');
-          openJobModal(jobId);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-delete-job').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const jobId = btn.getAttribute('data-jobid');
-          state.deletingJobId = jobId;
-          openModal(dom.deleteModal);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-accept-all').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const jobId = btn.getAttribute('data-jobid');
-          await batchAudit(jobId, 1);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-reject-all').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const jobId = btn.getAttribute('data-jobid');
-          await batchAudit(jobId, 2);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-approve-app').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const appId = btn.getAttribute('data-appid');
-          await auditApplication(appId, 1);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.btn-reject-app').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const appId = btn.getAttribute('data-appid');
-          await auditApplication(appId, 2);
-        });
-      });
-
-      dom.jobCards.querySelectorAll('.app-row').forEach((row) => {
-        row.addEventListener('click', (e) => {
-          if (e.target.closest('.app-action-zone')) return;
-          const jobId = row.getAttribute('data-jobid');
-          const appId = row.getAttribute('data-appid');
-          openApplicantModal(jobId, appId);
-        });
-      });
-    }
-
-    function resetJobForm() {
-      dom.formCourseName.value = '';
-      dom.formHoursPerWeek.value = '10';
-      dom.formMaxCapacity.value = '1';
-      dom.formJobType.value = '1';
-      dom.formBelongModule.value = '';
-      dom.formDeadline.value = '';
-      dom.formRequirements.value = '';
-      dom.formTags.value = '';
-    }
-
-    function openJobModal(jobIdOrNull) {
-      state.editingJobId = jobIdOrNull || null;
-      if (!state.editingJobId) {
-        dom.jobModalTitle.textContent = 'Post a New Position';
-        dom.btnSaveJob.textContent = 'Post Position';
-        resetJobForm();
-      } else {
-        dom.jobModalTitle.textContent = 'Edit Position';
-        dom.btnSaveJob.textContent = 'Save Changes';
-        const job = findJob(state.editingJobId);
-        if (job) {
-          dom.formCourseName.value = job.courseName;
-          dom.formHoursPerWeek.value = String(job.hoursPerWeek);
-          dom.formMaxCapacity.value = String(job.maxCapacity);
-          dom.formJobType.value = String(job.jobType || 1);
-          dom.formBelongModule.value = job.belongModule || '';
-          dom.formDeadline.value = job.deadline || '';
-          dom.formRequirements.value = job.requirements || '';
-          dom.formTags.value = job.tags.join(', ');
-        }
-      }
-      openModal(dom.jobModal);
-    }
-
-    // 已实现后端接口连接
-    // POST /job?action=publish
-    async function saveJob() {
-      if (!dom.formCourseName.value.trim()) {
-        showToast('Course name is required.');
-        return;
-      }
-
-      if (state.editingJobId) {
-        // 未实现后端接口，保留前端展示
-        // The sample APIs do not provide MO-side update job endpoint.
-        showToast('Update endpoint is not available in current API sample.');
-        closeModal(dom.jobModal);
-        return;
-      }
-
-      const params = new URLSearchParams();
-      params.append('jobName', dom.formCourseName.value.trim());
-      params.append('jobType', dom.formJobType.value);
-      params.append('belongModule', dom.formBelongModule.value.trim());
-      params.append('jobDesc', dom.formRequirements.value.trim());
-      params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
-      params.append('recruitNum', dom.formMaxCapacity.value.trim());
-      params.append('applyDeadline', dom.formDeadline.value.trim());
-
-      const r = await request('/job?action=publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-      });
-
-      if (r.ok && r.data) {
-        showToast(r.data.msg || 'Position posted.');
-      } else {
-        showToast('Failed to post position.');
-      }
-
-      if (r.ok && r.data && r.data.code === 200) {
-        closeModal(dom.jobModal);
-        await loadJobsWithApplicants();
-      }
-    }
-
-    function renderApplicantModal(app) {
-      const statusText = app.status.toUpperCase();
-      const statusClass = app.status === 'approved'
-        ? 'status-approved'
-        : app.status === 'rejected'
-          ? 'status-rejected'
-          : 'status-pending';
-
-      dom.applicantModalBody.innerHTML = ''
-        + '<div class="flex items-center gap-5 mb-8">'
-        + '  <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold text-3xl shadow-inner">' + escapeHtml(app.name.charAt(0)) + '</div>'
-        + '  <div>'
-        + '    <h3 class="text-2xl font-bold text-slate-900">' + escapeHtml(app.name) + '</h3>'
-        + '    <p class="text-slate-500 font-medium">' + escapeHtml(app.major) + '</p>'
-        + '    <p class="text-sm text-slate-400 mt-1">' + escapeHtml(app.email) + '</p>'
-        + '    <p class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(app.taUserId || '-') + '</span></p>'
-        + '  </div>'
-        + '</div>'
-
-        + '<div class="space-y-6">'
-        + '  <div>'
-        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Remarks / Cover Letter</h4>'
-        + '    <div class="bg-slate-50 p-4 rounded-xl text-sm text-slate-700 leading-relaxed border border-slate-100">' + escapeHtml(app.remarks || 'No remarks provided.') + '</div>'
-        + '  </div>'
-
-        + '  <div>'
-        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
-        + (app.resumeUrl
-            ? '<button id="btnResumeDownload" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Download Resume</button>'
-            : '<div class="text-sm text-slate-400">Resume not provided.</div>')
-        + '  </div>'
-        + '</div>';
-
-      if (app.status === 'pending') {
-        dom.applicantModalBody.innerHTML += ''
-          + '<div class="mt-8 flex gap-3 pt-6 border-t border-slate-100">'
-          + '  <button id="btnModalReject" class="flex-1 px-4 py-3 font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl">Reject</button>'
-          + '  <button id="btnModalApprove" class="flex-1 px-4 py-3 font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl">Approve</button>'
-          + '</div>';
-      } else {
-        dom.applicantModalBody.innerHTML += ''
-          + '<div class="mt-8 pt-6 border-t border-slate-100 flex justify-center">'
-          + '  <span class="px-4 py-2 rounded-full font-bold text-sm ' + statusClass + '">This applicant is ' + escapeHtml(statusText) + '.</span>'
-          + '</div>';
-      }
-
-      const downloadBtn = document.getElementById('btnResumeDownload');
-      if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-          // 未实现后端接口，保留前端展示
-          // Sample APIs do not include resume file download endpoint.
-          showToast('Resume download endpoint is not available in current API sample.');
-        });
-      }
-
-      const rejectBtn = document.getElementById('btnModalReject');
-      if (rejectBtn) {
-        rejectBtn.addEventListener('click', async () => {
-          await auditApplication(app.applicationId, 2);
-          closeModal(dom.applicantModal);
-        });
-      }
-
-      const approveBtn = document.getElementById('btnModalApprove');
-      if (approveBtn) {
-        approveBtn.addEventListener('click', async () => {
-          await auditApplication(app.applicationId, 1);
-          closeModal(dom.applicantModal);
-        });
-      }
-    }
-
-    function openApplicantModal(jobId, appId) {
-      const app = findApplicant(jobId, appId);
-      if (!app) {
-        showToast('Applicant not found.');
-        return;
-      }
-      state.viewingApplicant = { jobId, appId };
-      renderApplicantModal(app);
-      openModal(dom.applicantModal);
-    }
-
-    // 已实现后端接口连接
-    // POST /application?action=audit
-    async function auditApplication(applicationId, auditStatus) {
-      const params = new URLSearchParams();
-      params.append('applicationId', String(applicationId));
-      params.append('auditStatus', String(auditStatus));
-      params.append('remark', auditStatus === 1 ? 'Approved by MO' : 'Rejected by MO');
-
-      const r = await request('/application?action=audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-      });
-
-      if (r.ok && r.data) {
-        showToast(r.data.msg || 'Application audited.');
-      } else {
-        showToast('Audit failed.');
-      }
-
-      if (r.ok && r.data && r.data.code === 200) {
-        await loadJobsWithApplicants();
-      }
-    }
-
-    async function batchAudit(jobId, auditStatus) {
-      const job = findJob(jobId);
-      if (!job) return;
-
-      const pending = job.applicants.filter((a) => a.status === 'pending');
-      if (pending.length === 0) {
-        showToast('No pending applicants.');
-        return;
-      }
-
-      for (let i = 0; i < pending.length; i += 1) {
-        const app = pending[i];
-        const params = new URLSearchParams();
-        params.append('applicationId', String(app.applicationId));
-        params.append('auditStatus', String(auditStatus));
-        params.append('remark', auditStatus === 1 ? 'Approved by MO (batch)' : 'Rejected by MO (batch)');
-
-        await request('/application?action=audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params
-        });
-      }
-
-      showToast(auditStatus === 1 ? 'All pending applicants accepted.' : 'All pending applicants rejected.');
-      await loadJobsWithApplicants();
-    }
-
-    function bindGlobalEvents() {
-      dom.btnLogout.addEventListener('click', logout);
-
-      dom.btnOpenCreate.addEventListener('click', () => openJobModal(null));
-      dom.btnOpenCreateFromPencil.addEventListener('click', () => openJobModal(null));
-      dom.btnSaveJob.addEventListener('click', saveJob);
-
-      dom.btnConfirmDelete.addEventListener('click', () => {
-        // 未实现后端接口，保留前端展示
-        // Sample APIs do not include MO-side delete job endpoint.
-        closeModal(dom.deleteModal);
-        showToast('Delete endpoint is not available in current API sample.');
-      });
-
-      bindModalClose();
-    }
-
-    async function bootstrap() {
-      const ok = await loadCurrentUser();
-      if (!ok) return;
-      bindGlobalEvents();
-      await loadJobsWithApplicants();
-    }
-
-    bootstrap();
-  </script>
+    <script src="mo.js"></script>
 </body>
 </html>
+
