@@ -6,6 +6,19 @@
     <title>TA Market - 游客模式</title>
     <link rel="stylesheet" href="ta.css" />
     <style>
+        .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #eee;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
         /* 覆盖原有样式，适配游客模式 */
         .nav-username {
             color: #667eea;
@@ -216,7 +229,13 @@
     // ==================== 核心：加载岗位列表（和 TA 一样的接口） ====================
     async function loadOpenJobs() {
         const feedView = document.getElementById('feedView');
-        feedView.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">加载中...</p>';
+       feedView.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px;">
+        <div class="loading-spinner"></div>
+        <p style="margin-top:10px;color:#666;">加载岗位中...</p>
+    </div>
+`;
+
 
         try {
             const res = await fetch(BASE_URL + '/job?action=listOpen', {
