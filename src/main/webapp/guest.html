@@ -136,6 +136,12 @@
     <main class="container main-layout">
         <section class="main-content" id="mainContent">
             <!-- 只保留岗位列表视图 -->
+            <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="🔍 搜索岗位..."
+                    style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;"
+            />
             <div id="feedView" class="view-panel active"></div>
             <!-- 隐藏个人资料视图 -->
             <div id="profileView" class="view-panel" style="display: none;"></div>
@@ -341,6 +347,9 @@
 
     // ==================== 页面加载时初始化 ====================
     window.onload = function() {
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+    filterJobs(e.target.value);
+});
         // 加载岗位列表
         loadOpenJobs();
 
@@ -359,5 +368,12 @@
         // 如果是从 index.html 跳过来的，不需要做额外处理
     };
 </script>
+function filterJobs(keyword) {
+const cards = document.querySelectorAll('.job-card');
+cards.forEach(card => {
+const text = card.innerText.toLowerCase();
+card.style.display = text.includes(keyword.toLowerCase()) ? '' : 'none';
+});
+}
 </body>
 </html>
