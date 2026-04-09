@@ -208,16 +208,61 @@ function mapJobFromBackend(job) {
 
 // 已实现后端接口连接
 function mapApplicationFromBackend(app) {
+    const statusCode = typeof app.applyStatus === "number" ? app.applyStatus : Number(app.status);
     return {
         id: app.applicationId,
         jobId: app.jobId,
-        status: app.status || "未知状态",
+        status: formatApplyStatus(statusCode),
+        statusCode,
         raw: app,
         job: {
             course: app.jobName ? app.jobName : `岗位ID: ${app.jobId}`,
-            prof: app.taId ? `TA ID: ${app.taId}` : "我的申请"
+            module: app.belongModule || "未分类",
+            typeLabel: formatJobType(app.jobType),
+            description: app.jobDesc || "暂无岗位描述",
+            hours: typeof app.workHoursWeekly === "number" ? app.workHoursWeekly : null
         }
     };
+}
+
+function formatApplyStatus(statusCode) {
+    switch (Number(statusCode)) {
+        case 0:
+            return "待审核";
+        case 1:
+            return "已通过";
+        case 2:
+            return "已拒绝";
+        default:
+            return "未知状态";
+    }
+}
+
+function getApplicationStatusMeta(statusCode) {
+    const code = Number(statusCode);
+    if (code === 1) {
+        return { label: "已通过", className: "badge-success", canCancel: false };
+    }
+    if (code === 2) {
+        return { label: "已拒绝", className: "badge-danger", canCancel: false };
+    }
+    if (code === 0) {
+        return { label: "待审核", className: "badge-warning", canCancel: true };
+    }
+    return { label: "未知状态", className: "badge-soft", canCancel: false };
+}
+
+function formatJobType(jobType) {
+    switch (Number(jobType)) {
+        case 1:
+            return "课程助教";
+        case 2:
+            return "监考助教";
+        case 3:
+            return "活动助教";
+        default:
+            return "岗位";
+    }
 }
 
 function getFilteredJobs() {
@@ -529,7 +574,7 @@ function renderSidebar() {
       </section>
 
       <section class="glass-card section-card">
-        <h3 class="side-title">${Icons.clock} Applications</h3>
+        <h3 class="side-title">${Icons.clock} My Applications</h3>
         <div class="application-list">
           ${
         state.applications.length === 0
@@ -541,10 +586,27 @@ function renderSidebar() {
               `
             : state.applications.map(app => `
                   <div class="application-item fade-in">
-                    <h5>${escapeHtml(app.job.course)}</h5>
-                    <p>${escapeHtml(app.job.prof)}</p>
-                    <div style="margin-top:10px;">
-                      <span class="badge badge-soft">${escapeHtml(app.status)}</span>
+                    <div class="application-head">
+                      <div>
+                        <h5>${escapeHtml(app.job.course)}</h5>
+                        <p class="application-sub">${escapeHtml(app.job.module)} · ${escapeHtml(app.job.typeLabel)}</p>
+                      </div>
+                    </div>
+                    <p class="application-desc">${escapeHtml(app.job.description)}</p>
+                    <div class="application-meta">
+                      <span>岗位ID: ${escapeHtml(app.jobId)}</span>
+                      <span>${app.job.hours !== null ? `每周 ${escapeHtml(app.job.hours)} 小时` : "工时待定"}</span>
+                    </div>
+                    <div class="application-footer">
+                      ${(() => {
+                        const meta = getApplicationStatusMeta(app.statusCode);
+                        return `
+                          <span class="badge ${meta.className}">${escapeHtml(meta.label)}</span>
+                          <button class="btn btn-danger btn-xs cancel-application-btn" type="button" data-app-id="${escapeHtml(app.id)}" ${meta.canCancel ? "" : "disabled"}>
+                            取消申请
+                          </button>
+                        `;
+                    })()}
                     </div>
                   </div>
                 `).join("")
@@ -721,6 +783,7 @@ function bindSidebarEvents() {
     const openProfileEditBtn = document.getElementById("openProfileEditBtn");
     const sidebarViewProfileBtn = document.getElementById("sidebarViewProfileBtn");
     const resumeUploadBtn = document.getElementById("resumeUploadBtn");
+    const cancelButtons = els.sidebar.querySelectorAll(".cancel-application-btn");
 
     if (openProfileEditBtn) {
         openProfileEditBtn.addEventListener("click", openProfileModal);
@@ -733,6 +796,28 @@ function bindSidebarEvents() {
     if (resumeUploadBtn) {
         resumeUploadBtn.addEventListener("click", handleUploadResume);
     }
+
+    cancelButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const applicationId = btn.dataset.appId;
+            if (!applicationId) return;
+            if (!confirm("确认取消该申请吗？")) return;
+
+            const r = await request(`/application?action=cancel&applicationId=${encodeURIComponent(applicationId)}`, {
+                method: "POST"
+            });
+
+            if (r.ok && r.data && r.data.code === 200) {
+                alert(r.data.msg || "已取消申请");
+                await loadMyApplications();
+                render();
+                return;
+            }
+
+            showError((r.data && r.data.msg) || r.error || "取消申请失败");
+        });
+    });
 }
 
 function bindProfileViewEvents() {

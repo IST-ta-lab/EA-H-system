@@ -321,6 +321,12 @@ button {
     background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
 }
 
+.btn-xs {
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
 .search-box {
     position: relative;
     margin-bottom: 18px;
@@ -466,6 +472,16 @@ button {
 .badge-success {
     color: #052c23;
     background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+}
+
+.badge-warning {
+    color: #3a2b05;
+    background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+}
+
+.badge-danger {
+    color: #fff;
+    background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
 }
 
 .badge-soft {
@@ -624,6 +640,45 @@ button {
     color: var(--text-soft);
     font-size: 12px;
     line-height: 1.7;
+}
+
+.application-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.application-sub {
+    margin: 4px 0 0;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.application-desc {
+    margin-top: 10px;
+    color: var(--text-soft);
+    line-height: 1.7;
+    font-size: 12px;
+}
+
+.application-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    color: var(--text-faint);
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.application-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
 }
 
 .empty-state {

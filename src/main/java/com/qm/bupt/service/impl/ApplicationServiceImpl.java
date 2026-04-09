@@ -4,6 +4,7 @@ import com.qm.bupt.dao.ApplicationDAO;
 import com.qm.bupt.dao.JobDAO;
 import com.qm.bupt.dao.TADAO; // 【新增】导入TADAO
 import com.qm.bupt.dto.ApplicationDetailDTO; // 【新增】导入DTO
+import com.qm.bupt.dto.MyApplicationDTO;
 import com.qm.bupt.entity.Application;
 import com.qm.bupt.entity.Job;
 import com.qm.bupt.entity.TA; // 【新增】导入TA
@@ -92,10 +93,18 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public List<Application> listMyApplications(String taUserId) {
-        return applicationDAO.listAll().stream()
+    public List<MyApplicationDTO> listMyApplications(String taUserId) {
+        List<Application> apps = applicationDAO.listAll().stream()
                 .filter(a -> taUserId.equals(a.getTaUserId()))
                 .collect(Collectors.toList());
+
+        List<MyApplicationDTO> dtoList = new ArrayList<>();
+        for (Application app : apps) {
+            Job job = jobDAO.getById(app.getJobId(), "jobId").orElse(null);
+            dtoList.add(new MyApplicationDTO(app, job));
+        }
+
+        return dtoList;
     }
 
     @Override
@@ -116,5 +125,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         return dtoList;
+    }
+
+    @Override
+    public boolean cancelApplication(String taUserId, String applicationId) {
+        Application app = applicationDAO.getById(applicationId, "applicationId").orElse(null);
+        if (app == null) return false;
+        if (!taUserId.equals(app.getTaUserId())) return false;
+        if (app.getApplyStatus() != null && app.getApplyStatus() == 1) return false;
+
+        return applicationDAO.deleteById(applicationId, "applicationId");
     }
 }
