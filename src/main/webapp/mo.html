@@ -9,21 +9,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="mo.css" />
 </head>
-<body class="min-h-screen pb-20">
-  <header class="bg-transparent pt-6 pb-4">
-    <div class="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
+<body class="min-h-screen pb-20 mo-shell">
+  <header class="mo-topbar bg-transparent pt-6 pb-4">
+    <div class="max-w-[1400px] mx-auto px-6 flex items-center justify-between topbar-wrap">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-[#6366f1] rounded-xl flex items-center justify-center text-white shadow-sm">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm brand-glyph">
           <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
             <path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"></path>
           </svg>
         </div>
-        <span class="font-bold text-3xl tracking-tight">TA Market</span>
+        <span class="font-bold text-3xl tracking-tight brand-name">TA Market</span>
       </div>
 
       <div class="flex items-center gap-4">
@@ -39,18 +39,18 @@
     </div>
   </header>
 
-  <main class="max-w-[1400px] mx-auto px-6 py-8 flex flex-col lg:flex-row gap-10">
+  <main class="max-w-[1400px] mx-auto px-6 py-8 flex flex-col lg:flex-row gap-10 mo-layout">
     <section class="flex-1 min-w-0">
-      <div class="mb-10">
-        <h1 class="text-5xl font-extrabold tracking-tight mb-4">Manage Roles<span class="text-indigo-500">.</span></h1>
-        <p class="text-slate-500 text-lg max-w-2xl leading-relaxed">
+      <div class="mb-10 hero-panel">
+        <h1 class="text-5xl font-extrabold tracking-tight mb-4 hero-title">Manage Roles<span class="hero-title-dot">.</span></h1>
+        <p class="text-slate-500 text-lg max-w-2xl leading-relaxed hero-copy">
           Create and manage teaching assistant positions. Review applications and select the best candidates for your courses.
         </p>
       </div>
 
       <div id="jobCards" class="space-y-6"></div>
 
-      <div id="emptyJobs" class="hidden text-center py-16 bg-white rounded-[28px] border border-slate-100 border-dashed shadow-[0_2px_20px_rgba(0,0,0,0.02)]">
+      <div id="emptyJobs" class="hidden text-center py-16 bg-white rounded-[28px] border border-slate-100 border-dashed shadow-[0_2px_20px_rgba(0,0,0,0.02)] empty-panel">
         <div class="text-4xl text-slate-300 mb-4">[]</div>
         <h3 class="text-lg font-bold text-slate-900 mb-2">No Positions Posted</h3>
         <p class="text-slate-500">Create a new position to start recruiting teaching assistants.</p>
@@ -58,7 +58,7 @@
     </section>
 
     <aside class="w-full lg:w-[340px] shrink-0">
-      <div class="soft-card rounded-[28px] p-8 sticky top-24">
+      <div class="soft-card rounded-[28px] p-8 sticky top-24 control-card">
         <div class="flex items-center justify-between mb-8">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
@@ -79,7 +79,7 @@
 
         <div class="mb-8">
           <div class="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-2">Action</div>
-          <h4 class="text-4xl font-bold text-slate-900 mb-1">New Role</h4>
+          <h4 class="text-4xl font-bold text-slate-900 mb-1 action-title">New Role</h4>
           <p class="text-sm text-slate-500">Create a new Teaching Assistant position</p>
         </div>
 
@@ -98,7 +98,7 @@
           Create Position
         </button>
 
-        <div class="mt-5 rounded-2xl bg-slate-50 border border-slate-100 p-3.5 text-xs text-slate-600">
+        <div class="mt-5 rounded-2xl bg-slate-50 border border-slate-100 p-3.5 text-xs text-slate-600 profile-stats">
           <div>Current User: <span id="profileUserLine" class="font-semibold">-</span></div>
           <div class="mt-1">Posted Jobs: <span id="statJobCount" class="mono">0</span></div>
           <div>Pending Applications: <span id="statPendingCount" class="mono">0</span></div>
@@ -108,7 +108,7 @@
   </main>
 
   <div id="jobModal" class="modal-mask" role="dialog" aria-modal="true">
-    <div class="modal-card custom-scrollbar">
+    <div class="modal-card custom-scrollbar glass-modal">
       <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
         <h2 id="jobModalTitle" class="text-xl font-bold">Post a New Position</h2>
         <button data-close="jobModal" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500">X</button>
@@ -151,7 +151,7 @@
   </div>
 
   <div id="applicantModal" class="modal-mask" role="dialog" aria-modal="true">
-    <div class="modal-card custom-scrollbar">
+    <div class="modal-card custom-scrollbar glass-modal">
       <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
         <h2 class="text-xl font-bold">Applicant Profile</h2>
         <button data-close="applicantModal" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500">X</button>
@@ -162,7 +162,7 @@
   </div>
 
   <div id="deleteModal" class="modal-mask" role="dialog" aria-modal="true">
-    <div class="modal-card" style="max-width: 520px;">
+    <div class="modal-card glass-modal" style="max-width: 520px;">
       <div class="px-6 py-5 border-b border-slate-100">
         <h2 class="text-xl font-bold">Delete Position</h2>
       </div>
