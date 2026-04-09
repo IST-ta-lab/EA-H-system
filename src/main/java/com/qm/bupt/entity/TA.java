@@ -25,6 +25,8 @@ public class TA extends User implements Serializable {
     private String cvPath;
     // 个人简介
     private String selfIntro;
+    // 是否对他人可见
+    private Boolean profileVisible;
     // 累计已分配工作量（小时）
     private Double totalWorkload;
     // 每周可投入时长
@@ -98,6 +100,14 @@ public class TA extends User implements Serializable {
 
     public void setSelfIntro(String selfIntro) {
         this.selfIntro = selfIntro;
+    }
+
+    public Boolean getProfileVisible() {
+        return profileVisible;
+    }
+
+    public void setProfileVisible(Boolean profileVisible) {
+        this.profileVisible = profileVisible;
     }
 
     public Double getTotalWorkload() {

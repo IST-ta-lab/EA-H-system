@@ -95,4 +95,14 @@ public class UserServiceImpl implements UserService {
     public User getUserById(String userId) {
         return userDAO.getById(userId, "userId").orElse(null);
     }
+
+    @Override
+    public boolean updateTAProfile(TA ta) {
+        if (ta == null || ta.getUserId() == null || ta.getUserId().isEmpty()) {
+            return false;
+        }
+        boolean userOk = userDAO.updateById(ta, ta.getUserId(), "userId");
+        boolean taOk = taDAO.updateById(ta, ta.getUserId(), "userId");
+        return userOk && taOk;
+    }
 }
