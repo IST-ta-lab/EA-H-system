@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA 个人资料 PDF 上传</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Microsoft YaHei, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            padding: 30px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .upload-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .file-input-group {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .file-input-group:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .upload-tip {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: none;
+        }
+
+        .status-success {
+            background: #e6f7ef;
+            color: #00b472;
+            display: block;
+        }
+
+        .status-error {
+            background: #fef0f0;
+            color: #f53f3f;
+            display: block;
+        }
+
+        .pdf-preview-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .preview-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .pdf-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .pdf-container.show {
+            display: block;
+        }
+
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<h1 class="page-title">TA 个人资料 PDF 上传与预览</h1>
+
+<!-- 上传区域 -->
+<div class="upload-card">
+    <div class="upload-title">📤 上传个人资料 PDF</div>
+
+    <div class="file-input-group" id="dropArea">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text" id="fileText">点击或拖拽 PDF 文件到此处</div>
+        <div class="upload-tip">仅支持 PDF 格式，文件大小不限</div>
+        <input type="file" class="file-input" id="pdfFile" accept="application/pdf">
+    </div>
+
+    <button class="upload-btn" id="uploadBtn" disabled>开始上传</button>
+    <div class="status" id="uploadStatus"></div>
+</div>
+
+<!-- 预览区域 -->
+<div class="pdf-preview-card">
+    <div class="preview-title">👁️ PDF 在线预览</div>
+    <iframe class="pdf-container" id="pdfViewer"></iframe>
+</div>
+
+<a href="ta.html" class="back-btn">← 返回主页</a>
+
+<script>
+    const BASE_URL = '/tapj';
+    const pdfFileInput = document.getElementById('pdfFile');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const pdfViewer = document.getElementById('pdfViewer');
+    const fileText = document.getElementById('fileText');
+    const dropArea = document.getElementById('dropArea');
+
+    // 选择文件
+    dropArea.addEventListener('click', () => pdfFileInput.click());
+
+    pdfFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.includes('pdf')) {
+            showStatus('仅支持上传 PDF 文件！', 'error');
+            uploadBtn.disabled = true;
+            return;
+        }
+
+        fileText.textContent = `已选择：${file.name}`;
+        uploadBtn.disabled = false;
+        showStatus('', 'none');
+    });
+
+    // 拖拽上传
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.background = 'rgba(102,126,234,0.1)';
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.style.background = '';
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.includes('pdf')) {
+            pdfFileInput.files = e.dataTransfer.files;
+            fileText.textContent = `已选择：${file.name}`;
+            uploadBtn.disabled = false;
+        }
+    });
+
+    // 上传文件
+    uploadBtn.addEventListener('click', async () => {
+        const file = pdfFileInput.files[0];
+        if (!file) return;
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '上传中...';
+        showStatus('正在上传，请稍候...', 'none');
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(BASE_URL + '/user?action=uploadProfilePdf', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (result.code === 200) {
+                showStatus('✅ PDF 上传成功！', 'success');
+                uploadBtn.textContent = '上传成功';
+                // 加载预览
+                loadPdfPreview();
+            } else {
+                showStatus(`❌ 上传失败：${result.msg}`, 'error');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '开始上传';
+            }
+        } catch (err) {
+            showStatus('❌ 网络错误，上传失败', 'error');
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = '开始上传';
+        }
+    });
+
+    // 预览当前用户上传的 PDF
+    async function loadPdfPreview() {
+        try {
+            // 获取当前登录用户信息
+            const res = await fetch(BASE_URL + '/user?action=getLoginUser', {
+                credentials: 'include'
+            });
+            const result = await res.json();
+
+            if (result.code === 200 && result.data) {
+                const uid = result.data.userId;
+                // 拼接预览地址
+                const pdfUrl = BASE_URL + `/user?action=downloadProfilePdf&uid=${uid}`;
+                pdfViewer.src = pdfUrl;
+                pdfViewer.classList.add('show');
+            }
+        } catch (err) {
+            console.log('预览加载失败');
+        }
+    }
+
+    // 显示状态
+    function showStatus(text, type) {
+        uploadStatus.textContent = text;
+        uploadStatus.className = 'status';
+        if (type !== 'none') {
+            uploadStatus.classList.add(`status-${type}`);
+        }
+    }
+
+    // 页面加载时尝试加载已上传的 PDF
+    window.onload = loadPdfPreview;
+</script>
+
+</body>
+</html>
