@@ -97,6 +97,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public TA getTAById(String userId) {
+        return taDAO.getById(userId, "userId").orElse(null);
+    }
+
+    @Override
     public boolean updateTAProfile(TA ta) {
         if (ta == null || ta.getUserId() == null || ta.getUserId().isEmpty()) {
             return false;
