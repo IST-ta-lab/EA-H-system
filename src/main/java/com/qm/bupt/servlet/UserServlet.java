@@ -8,14 +8,20 @@ import com.qm.bupt.service.UserService;
 import com.qm.bupt.service.impl.UserServiceImpl;
 import com.qm.bupt.util.Result;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +29,7 @@ import java.util.stream.Collectors;
  * 访问路径：/user?action=xxx
  */
 @WebServlet("/user")
+@MultipartConfig
 public class UserServlet extends BaseServlet {
 
     private final UserService userService = UserServiceImpl.getInstance();
@@ -245,6 +252,118 @@ public class UserServlet extends BaseServlet {
         }
 
         writeJson(response, Result.success("Admin注册成功"));
+    }
+
+    /**
+     * TA上传个人资料PDF
+     * 访问：POST /user?action=uploadProfilePdf
+     * 参数：file (multipart file)
+     */
+    public void uploadProfilePdf(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "未登录"));
+            return;
+        }
+        if (!(loginUser instanceof TA)) {
+            writeJson(response, Result.error(403, "仅TA可上传个人资料PDF"));
+            return;
+        }
+
+        Part filePart = request.getPart("file");
+        if (filePart == null || filePart.getSubmittedFileName() == null || filePart.getSubmittedFileName().isEmpty()) {
+            writeJson(response, Result.error(400, "请选择PDF文件"));
+            return;
+        }
+
+        String fileName = filePart.getSubmittedFileName();
+        if (!fileName.toLowerCase().endsWith(".pdf")) {
+            writeJson(response, Result.error(400, "仅支持PDF文件"));
+            return;
+        }
+
+        TA ta = (TA) loginUser;
+        String userId = ta.getUserId();
+
+        String pdfDir = request.getServletContext().getRealPath("/WEB-INF/data/profile_pdfs");
+        File pdfDirFile = new File(pdfDir);
+        if (!pdfDirFile.exists()) {
+            pdfDirFile.mkdirs();
+        }
+
+        String saveFileName = userId + ".pdf";
+        String filePath = pdfDir + File.separator + saveFileName;
+
+        try (InputStream input = filePart.getInputStream();
+             FileOutputStream output = new FileOutputStream(filePath)) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+        }
+
+        ta.setProfilePdfPath("/WEB-INF/data/profile_pdfs/" + saveFileName);
+        boolean ok = userService.updateTAProfile(ta);
+        if (!ok) {
+            new File(filePath).delete();
+            writeJson(response, Result.error(500, "保存失败"));
+            return;
+        }
+
+        session.setAttribute("loginUser", ta);
+        writeJson(response, Result.success("上传成功"));
+    }
+
+    /**
+     * 根据uid下载TA的个人资料PDF
+     * 访问：GET /user?action=downloadProfilePdf&uid=xxx
+     * 仅当TA设置了profileVisible=true且已上传PDF时才可下载
+     */
+    public void downloadProfilePdf(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String uid = request.getParameter("uid");
+        if (uid == null || uid.isEmpty()) {
+            response.sendError(400, "缺少uid参数");
+            return;
+        }
+
+        TA ta = userService.getTAById(uid);
+        if (ta == null) {
+            response.sendError(404, "用户不存在");
+            return;
+        }
+
+        if (ta.getProfileVisible() == null || !ta.getProfileVisible()) {
+            response.sendError(403, "该用户设置了隐私保护，无法下载");
+            return;
+        }
+
+        String pdfPath = ta.getProfilePdfPath();
+        if (pdfPath == null || pdfPath.isEmpty()) {
+            response.sendError(404, "该用户未上传个人资料PDF");
+            return;
+        }
+
+        String realPath = request.getServletContext().getRealPath(pdfPath);
+        File pdfFile = new File(realPath);
+        if (!pdfFile.exists()) {
+            response.sendError(404, "文件不存在");
+            return;
+        }
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + ta.getRealName() + "_profile.pdf\"");
+        response.setContentLengthLong(pdfFile.length());
+
+        try (InputStream input = new java.io.FileInputStream(pdfFile);
+             java.io.OutputStream output = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+        }
     }
 
 

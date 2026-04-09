@@ -23,6 +23,8 @@ public class TA extends User implements Serializable {
     private List<String> skillIds;
     // CV文件上传后的服务器路径
     private String cvPath;
+    // 个人资料PDF路径
+    private String profilePdfPath;
     // 个人简介
     private String selfIntro;
     // 是否对他人可见
@@ -92,6 +94,14 @@ public class TA extends User implements Serializable {
 
     public void setCvPath(String cvPath) {
         this.cvPath = cvPath;
+    }
+
+    public String getProfilePdfPath() {
+        return profilePdfPath;
+    }
+
+    public void setProfilePdfPath(String profilePdfPath) {
+        this.profilePdfPath = profilePdfPath;
     }
 
     public String getSelfIntro() {
