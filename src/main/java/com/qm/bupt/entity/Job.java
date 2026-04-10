@@ -35,6 +35,8 @@ public class Job implements Serializable {
     private String applyDeadline;
     // 岗位状态：0=招聘中，1=已截止，2=已招满
     private Integer jobStatus;
+    // 标签数组
+    private List<String> tags;
 
     // 无参构造
     public Job() {
@@ -145,5 +147,13 @@ public class Job implements Serializable {
 
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
 }

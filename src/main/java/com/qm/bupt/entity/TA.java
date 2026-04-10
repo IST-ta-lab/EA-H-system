@@ -33,6 +33,10 @@ public class TA extends User implements Serializable {
     private Double totalWorkload;
     // 每周可投入时长
     private Double availableHours;
+    // 标签数组
+    private List<String> tags;
+    // 匹配度（临时字段，不持久化）
+    private Integer matchScore;
 
     // 无参构造
     public TA() {
@@ -134,5 +138,21 @@ public class TA extends User implements Serializable {
 
     public void setAvailableHours(Double availableHours) {
         this.availableHours = availableHours;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public Integer getMatchScore() {
+        return matchScore;
+    }
+
+    public void setMatchScore(Integer matchScore) {
+        this.matchScore = matchScore;
     }
 }
