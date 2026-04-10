@@ -138,6 +138,7 @@ public class UserServlet extends BaseServlet {
         String selfIntro = request.getParameter("selfIntro");
         String skills = request.getParameter("skills");
         String profileVisible = request.getParameter("profileVisible");
+        String tags = request.getParameter("tags");
 
         if (realName != null) {
             ta.setRealName(realName);
@@ -161,6 +162,13 @@ public class UserServlet extends BaseServlet {
                     .filter(item -> !item.isEmpty())
                     .collect(Collectors.toList());
             ta.setSkillIds(skillList);
+        }
+        if (tags != null) {
+            List<String> tagList = Arrays.stream(tags.split(","))
+                    .map(String::trim)
+                    .filter(item -> !item.isEmpty())
+                    .collect(Collectors.toList());
+            ta.setTags(tagList);
         }
 
         boolean ok = userService.updateTAProfile(ta);
