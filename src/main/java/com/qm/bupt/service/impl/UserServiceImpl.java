@@ -11,6 +11,8 @@ import com.qm.bupt.service.UserService;
 import com.qm.bupt.util.AuthUtil;
 import com.qm.bupt.util.DateUtil;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -109,5 +111,38 @@ public class UserServiceImpl implements UserService {
         boolean userOk = userDAO.updateById(ta, ta.getUserId(), "userId");
         boolean taOk = taDAO.updateById(ta, ta.getUserId(), "userId");
         return userOk && taOk;
+    }
+
+    @Override
+    public List<TA> matchTAsByTags(List<String> jobTags) {
+        if (jobTags == null || jobTags.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<TA> allTAs = taDAO.listAll();
+        List<String> lowerJobTags = new ArrayList<>();
+        for (String tag : jobTags) {
+            lowerJobTags.add(tag.toLowerCase());
+        }
+        
+        List<TA> matchedTAs = new ArrayList<>();
+        for (TA ta : allTAs) {
+            List<String> taTags = ta.getTags();
+            if (taTags == null || taTags.isEmpty()) {
+                continue;
+            }
+            int matchCount = 0;
+            for (String tag : taTags) {
+                if (lowerJobTags.contains(tag.toLowerCase())) {
+                    matchCount++;
+                }
+            }
+            if (matchCount > 0) {
+                ta.setMatchScore(matchCount);
+                matchedTAs.add(ta);
+            }
+        }
+        
+        matchedTAs.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
+        return matchedTAs;
     }
 }
