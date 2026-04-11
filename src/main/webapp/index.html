@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>助教招聘系统 - 登录/注册</title>
+    <title>TA Hiring System - Login / Register</title>
     <style>
-        /* 原有所有样式完全保留，只修改 JS 逻辑 */
         * {
             margin: 0;
             padding: 0;
@@ -113,7 +112,7 @@
             overflow: hidden;
             border-right: 3px solid var(--white);
             white-space: nowrap;
-            animation: typing 3s steps(12, end), blink-caret 0.75s step-end infinite;
+            animation: typing 3s steps(18, end), blink-caret 0.75s step-end infinite;
         }
 
         @keyframes typing {
@@ -575,19 +574,18 @@
             overflow: hidden;
         }
 
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
         }
 
-        .submit-btn:active {
+        .submit-btn:active:not(:disabled) {
             transform: translateY(0);
         }
 
         .submit-btn:disabled {
             opacity: 0.7;
             cursor: not-allowed;
-            transform: none;
         }
 
         .guest-btn {
@@ -649,28 +647,11 @@
             to { transform: rotate(360deg); }
         }
 
-        .response-section {
-            margin-top: 25px;
-            padding: 20px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            flex-shrink: 0;
-        }
-
-        .response-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        pre {
-            font-size: 13px;
-            line-height: 1.6;
-            color: #333;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        /* 必填项红色星号 */
+        .required-mark {
+            color: #dc3545;
+            margin-left: 3px;
+            font-weight: bold;
         }
 
         @media (max-width: 900px) {
@@ -722,11 +703,11 @@
 </head>
 <body>
 
-<!-- 背景装饰 -->
+<!-- Background Decorations -->
 <div class="bg-blob blob-1"></div>
 <div class="bg-blob blob-2"></div>
 
-<!-- 顶部栏 -->
+<!-- Top Bar -->
 <div class="top-bar">
     <div class="logo-section">
         <div class="logo-icon">🎓</div>
@@ -735,153 +716,147 @@
         </div>
     </div>
     <div style="text-align: right;">
-        <div class="top-title">助教招聘系统</div>
+        <div class="top-title">TA Hiring System</div>
         <div class="top-subtitle">Teaching Assistant Recruitment Platform</div>
     </div>
 </div>
 
-<!-- 主内容区 -->
+<!-- Main Content -->
 <div class="main-content">
     <div class="container">
-        <!-- 左侧：项目介绍 -->
+        <!-- Left: Introduction -->
         <div class="intro-section">
-            <h1 class="intro-title typing-text">高效招聘，精准匹配</h1>
+            <h1 class="intro-title typing-text">Efficient Hiring, Perfect Match</h1>
             <p class="intro-desc">
-                一个现代化的助教招聘管理平台，为教师和学生提供一站式的招聘与申请服务，让招聘流程更简单、更高效。
+                A modern teaching assistant recruitment management platform that provides one-stop recruitment and application services for teachers and students, making the hiring process simpler and more efficient.
             </p>
             <ul class="feature-list">
                 <li class="feature-item">
                     <span class="feature-icon">✓</span>
-                    <span>TA 在线申请，实时查看状态</span>
+                    <span>TA: Apply online, track status in real-time</span>
                 </li>
                 <li class="feature-item">
                     <span class="feature-icon">✓</span>
-                    <span>MO 发布岗位，便捷审核申请</span>
+                    <span>MO: Post jobs, review applications easily</span>
                 </li>
                 <li class="feature-item">
                     <span class="feature-icon">✓</span>
-                    <span>Admin 统一管理用户和岗位</span>
+                    <span>Admin: Manage users and jobs centrally</span>
                 </li>
                 <li class="feature-item">
                     <span class="feature-icon">✓</span>
-                    <span>游客模式，浏览岗位详情</span>
+                    <span>Guest Mode: Browse job details</span>
                 </li>
             </ul>
         </div>
 
-        <!-- 右侧：登录/注册表单 -->
+        <!-- Right: Login/Register Form -->
         <div class="form-section">
-            <!-- 切换按钮 -->
+            <!-- Tab Switcher -->
             <div class="tab-container">
                 <div class="tab-slider" id="tabSlider"></div>
-                <button class="tab-btn active" data-tab="login" onclick="switchTab('login')">登录</button>
-                <button class="tab-btn" data-tab="register" onclick="switchTab('register')">注册</button>
+                <button class="tab-btn active" data-tab="login" onclick="switchTab('login')">Login</button>
+                <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register</button>
             </div>
 
-            <!-- 滚动包装容器 -->
+            <!-- Scroll Wrapper -->
             <div class="form-scroll-wrapper">
                 <div class="form-container">
-                    <!-- 登录表单 -->
+                    <!-- Login Form - 移除了用户名密码的红星 -->
                     <div class="form-box active" id="loginForm">
-                        <h2 class="form-title">欢迎回来 👋</h2>
+                        <h2 class="form-title">Welcome Back 👋</h2>
 
                         <div class="input-group">
                             <input type="text" class="input-field" id="loginUsername" placeholder=" " value="admin">
-                            <label class="input-label">用户名</label>
+                            <label class="input-label">Username</label>
                         </div>
 
                         <div class="input-group">
                             <input type="password" class="input-field" id="loginPassword" placeholder=" " value="123456">
-                            <label class="input-label">密码</label>
+                            <label class="input-label">Password</label>
                         </div>
 
                         <div class="login-btn-group">
-                            <button class="submit-btn" id="loginBtn" onclick="login(event)">立即登录</button>
-                            <button class="guest-btn" id="guestBtn" onclick="guestLogin(event)">游客登录</button>
+                            <button class="submit-btn" id="loginBtn" onclick="login(event)">Login Now</button>
+                            <button class="guest-btn" id="guestBtn" onclick="guestLogin(event)">Guest Login</button>
                         </div>
                     </div>
 
-                    <!-- 注册表单 -->
+                    <!-- Register Form - 仅给指定字段加红星 -->
                     <div class="form-box" id="registerForm">
-                        <h2 class="form-title">创建账号 🚀</h2>
+                        <h2 class="form-title">Create Account 🚀</h2>
 
                         <div class="input-group">
                             <select class="input-field" id="registerRole" onchange="updateRegisterForm()">
-                                <option value="ta">TA（助教申请者）</option>
-                                <option value="mo">MO（教师/发布者）</option>
+                                <option value="ta">TA (Teaching Assistant Applicant)</option>
+                                <option value="mo">MO (Faculty / Job Poster)</option>
                             </select>
-                            <label class="input-label">注册身份</label>
+                            <label class="input-label">Register As</label>
                         </div>
 
                         <div class="input-row">
                             <div class="input-group">
                                 <input type="text" class="input-field" id="regUsername" placeholder=" ">
-                                <label class="input-label">用户名</label>
+                                <label class="input-label">Username<span class="required-mark">*</span></label>
                             </div>
                             <div class="input-group">
                                 <input type="password" class="input-field" id="regPassword" placeholder=" ">
-                                <label class="input-label">密码</label>
+                                <label class="input-label">Password<span class="required-mark">*</span></label>
                             </div>
                         </div>
 
                         <div class="input-row">
                             <div class="input-group">
                                 <input type="text" class="input-field" id="regRealName" placeholder=" ">
-                                <label class="input-label">真实姓名</label>
+                                <label class="input-label">Real Name</label>
                             </div>
                             <div class="input-group">
                                 <input type="email" class="input-field" id="regEmail" placeholder=" ">
-                                <label class="input-label">邮箱</label>
+                                <label class="input-label">Email</label>
                             </div>
                         </div>
 
-                        <!-- TA 专属字段 -->
+                        <!-- TA Specific Fields -->
                         <div id="taFields">
                             <div class="input-row">
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regStudentId" placeholder=" ">
-                                    <label class="input-label">学号</label>
+                                    <label class="input-label">Student ID<span class="required-mark">*</span></label>
                                 </div>
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regMajor" placeholder=" ">
-                                    <label class="input-label">专业</label>
+                                    <label class="input-label">Major</label>
                                 </div>
                             </div>
                             <div class="input-row">
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regEducation" placeholder=" ">
-                                    <label class="input-label">学历</label>
+                                    <label class="input-label">Education</label>
                                 </div>
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regGrade" placeholder=" ">
-                                    <label class="input-label">年级</label>
+                                    <label class="input-label">Grade</label>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- MO 专属字段 -->
+                        <!-- MO Specific Fields -->
                         <div id="moFields" style="display: none;">
                             <div class="input-row">
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regStaffId" placeholder=" ">
-                                    <label class="input-label">工号</label>
+                                    <label class="input-label">Staff ID</label>
                                 </div>
                                 <div class="input-group">
                                     <input type="text" class="input-field" id="regDepartment" placeholder=" ">
-                                    <label class="input-label">部门</label>
+                                    <label class="input-label">Department</label>
                                 </div>
                             </div>
                         </div>
 
-                        <button class="submit-btn" id="registerBtn" onclick="register(event)">立即注册</button>
+                        <button class="submit-btn" id="registerBtn" onclick="register(event)">Register Now</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- 响应显示区域 -->
-            <div class="response-section" id="responseSection" style="display: none;">
-                <div class="response-title">📡 服务器响应</div>
-                <pre id="response"></pre>
             </div>
         </div>
     </div>
@@ -891,7 +866,21 @@
     const BASE_URL = '/tapj';
     let isSubmitting = false;
 
-    // 视差效果
+    // ==================== 核心修复：页面显示时重置所有按钮状态（解决浏览器返回后按钮禁用问题） ====================
+    window.addEventListener('pageshow', () => {
+        // 重置提交状态锁
+        isSubmitting = false;
+        // 重置登录按钮
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.innerHTML = 'Login Now';
+        loginBtn.disabled = false;
+        // 重置注册按钮
+        const registerBtn = document.getElementById('registerBtn');
+        registerBtn.innerHTML = 'Register Now';
+        registerBtn.disabled = false;
+    });
+
+    // Parallax Effect
     document.addEventListener('mousemove', (e) => {
         const x = e.clientX - window.innerWidth / 2;
         const y = e.clientY - window.innerHeight / 2;
@@ -905,7 +894,7 @@
         document.documentElement.style.setProperty('--spotlightY', `${spotlightY}%`);
     });
 
-    // 按钮涟漪效果
+    // Button Ripple Effect
     function createRipple(event) {
         const button = event.currentTarget;
         const ripple = document.createElement('span');
@@ -930,7 +919,7 @@
         btn.addEventListener('click', createRipple);
     });
 
-    // 切换登录/注册
+    // Switch Login/Register
     function switchTab(tab) {
         const tabs = document.querySelectorAll('.tab-btn');
         const forms = document.querySelectorAll('.form-box');
@@ -957,22 +946,14 @@
         }, 300);
     }
 
-    // 根据注册角色显示/隐藏字段
+    // Toggle Fields Based on Role
     function updateRegisterForm() {
         const role = document.getElementById('registerRole').value;
         document.getElementById('taFields').style.display = role === 'ta' ? 'block' : 'none';
         document.getElementById('moFields').style.display = role === 'mo' ? 'block' : 'none';
     }
 
-    // 显示响应
-    function showResponse(data) {
-        const section = document.getElementById('responseSection');
-        const pre = document.getElementById('response');
-        section.style.display = 'block';
-        pre.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    }
-
-    // 通用请求
+    // Generic Request
     async function request(url, options = {}) {
         try {
             const res = await fetch(BASE_URL + url, {
@@ -990,7 +971,7 @@
         }
     }
 
-    // ==================== 登录函数（保留，供注册成功后调用） ====================
+    // ==================== Login Function ====================
     async function doLogin(username, password) {
         const p = new URLSearchParams();
         p.append('username', username);
@@ -1005,7 +986,7 @@
         return r;
     }
 
-    // 登录按钮点击
+    // Login Button Click
     async function login(event) {
         if (isSubmitting) return;
         createRipple(event);
@@ -1013,7 +994,7 @@
 
         const btn = document.getElementById('loginBtn');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="btn-loader"></span> 登录中...';
+        btn.innerHTML = '<span class="btn-loader"></span> Logging in...';
         btn.disabled = true;
 
         const username = document.getElementById('loginUsername').value;
@@ -1023,8 +1004,9 @@
 
         if(r.ok && r.data.code === 200) {
             const user = r.data.data;
-            btn.innerHTML = '登录成功！正在跳转...';
+            btn.innerHTML = 'Login successful! Redirecting...';
 
+            // 跳转前重置状态，防止浏览器返回时残留
             setTimeout(() => {
                 if (user.userType === 1) {
                     location.href = "ta.html";
@@ -1035,21 +1017,21 @@
                 }
             }, 800);
         } else {
-            showResponse(r.data || r.raw);
-            alert("登录失败：" + (r.data?.msg || "未知错误"));
+            alert("Login failed: " + (r.data?.msg || "Unknown error"));
+            // 失败时重置按钮状态
             btn.innerHTML = originalText;
             btn.disabled = false;
             isSubmitting = false;
         }
     }
 
-    // 游客登录
+    // Guest Login
     function guestLogin(event) {
         createRipple(event);
         location.href = "guest.html";
     }
 
-    // ==================== 核心修改：注册成功后自动登录 ====================
+    // ==================== Register Function ====================
     async function register(event) {
         if (isSubmitting) return;
         createRipple(event);
@@ -1057,10 +1039,9 @@
 
         const btn = document.getElementById('registerBtn');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="btn-loader"></span> 注册中...';
+        btn.innerHTML = '<span class="btn-loader"></span> Registering...';
         btn.disabled = true;
 
-        // 保存用户输入的账号密码，用于后续自动登录
         const regUsername = document.getElementById('regUsername').value;
         const regPassword = document.getElementById('regPassword').value;
 
@@ -1091,18 +1072,14 @@
             body: p
         });
 
-        showResponse(r.data || r.raw);
-
         if(r.ok && r.data.code === 200) {
-            // 注册成功！直接自动登录
-            btn.innerHTML = '注册成功！正在登录...';
+            btn.innerHTML = 'Registration successful! Logging in...';
 
-            // 调用登录接口
             const loginResult = await doLogin(regUsername, regPassword);
 
             if(loginResult.ok && loginResult.data.code === 200) {
                 const user = loginResult.data.data;
-                btn.innerHTML = '登录成功！正在跳转...';
+                btn.innerHTML = 'Login successful! Redirecting...';
 
                 setTimeout(() => {
                     if (user.userType === 1) {
@@ -1112,18 +1089,18 @@
                     }
                 }, 800);
             } else {
-                // 自动登录失败，提示手动登录
-                alert("注册成功，但自动登录失败，请手动登录");
+                alert("Registration successful, but auto-login failed. Please login manually.");
                 switchTab('login');
-                // 把刚才注册的账号密码填到登录框里
                 document.getElementById('loginUsername').value = regUsername;
                 document.getElementById('loginPassword').value = regPassword;
+                // 重置按钮状态
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 isSubmitting = false;
             }
         } else {
-            alert("注册失败：" + (r.data?.msg || "未知错误"));
+            alert("Registration failed: " + (r.data?.msg || "Unknown error"));
+            // 失败时重置按钮状态
             btn.innerHTML = originalText;
             btn.disabled = false;
             isSubmitting = false;
@@ -1134,7 +1111,7 @@
         const title = document.querySelector('.typing-text');
         title.style.animation = 'none';
         setTimeout(() => {
-            title.style.animation = 'typing 3s steps(12, end), blink-caret 0.75s step-end infinite';
+            title.style.animation = 'typing 3s steps(18, end), blink-caret 0.75s step-end infinite';
         }, 100);
     });
 </script>
