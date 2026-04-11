@@ -1,0 +1,21 @@
+﻿.guest-modal-card {
+    max-width: 420px;
+}
+
+.guest-modal-card .modal-header {
+    justify-content: center;
+}
+
+.guest-modal-card .modal-body {
+    text-align: center;
+}
+
+.guest-modal-desc {
+    margin: 0;
+    color: #556;
+    line-height: 1.6;
+}
+
+.guest-modal-card .modal-footer {
+    justify-content: center;
+}
