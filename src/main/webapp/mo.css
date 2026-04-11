@@ -479,6 +479,47 @@ body::before {
   color: #8da0b2;
 }
 
+.tag-picker {
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(20, 56, 89, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.tag-picker-empty {
+  font-size: 13px;
+  color: #88a0b5;
+}
+
+.tag-option {
+  border: 1px solid rgba(21, 57, 90, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  color: #35506e;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.tag-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 8px 14px rgba(17, 46, 75, 0.12);
+}
+
+.tag-option.active {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(120deg, #0f766e, #2563eb);
+  box-shadow: 0 10px 16px rgba(22, 78, 127, 0.24);
+}
+
 .field:focus,
 .field-select:focus,
 .field-textarea:focus {

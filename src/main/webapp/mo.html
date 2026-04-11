@@ -132,14 +132,15 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Requirements</label>
-          <textarea id="formRequirements" rows="4" placeholder="Describe responsibilities and requirements..." class="field-textarea w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none"></textarea>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tags (Optional)</label>
+          <div id="formTagOptions" class="tag-picker" aria-label="Selectable tags"></div>
+          <input id="formTags" type="hidden" value="" />
+          <p class="text-xs text-slate-400 mt-1">Select one or more tags from the system tag list.</p>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tags (comma separated)</label>
-          <input id="formTags" type="text" placeholder="e.g., Python, Grading, Office Hours" class="field w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
-          <p class="text-xs text-slate-400 mt-1">Tags are for UI display only. No mapped backend field in current API sample.</p>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Requirements</label>
+          <textarea id="formRequirements" rows="4" placeholder="Describe responsibilities and requirements..." class="field-textarea w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none"></textarea>
         </div>
       </div>
 
@@ -178,6 +179,6 @@
 
   <div id="toast" class="toast"></div>
 
-    <script src="mo.js"></script>
+    <script src="mo.js?v=20260411-tagfix"></script>
 </body>
 </html>
