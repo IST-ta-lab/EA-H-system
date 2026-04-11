@@ -272,23 +272,23 @@ public class UserServlet extends BaseServlet {
         HttpSession session = request.getSession();
         User loginUser = (User) session.getAttribute("loginUser");
         if (loginUser == null) {
-            writeJson(response, Result.error(401, "未登录"));
+            writeJson(response, Result.error(401, "Not login"));
             return;
         }
         if (!(loginUser instanceof TA)) {
-            writeJson(response, Result.error(403, "仅TA可上传个人资料PDF"));
+            writeJson(response, Result.error(403, "Only TA can upload PDF"));
             return;
         }
 
         Part filePart = request.getPart("file");
         if (filePart == null || filePart.getSubmittedFileName() == null || filePart.getSubmittedFileName().isEmpty()) {
-            writeJson(response, Result.error(400, "请选择PDF文件"));
+            writeJson(response, Result.error(400, "Please use PDF"));
             return;
         }
 
         String fileName = filePart.getSubmittedFileName();
         if (!fileName.toLowerCase().endsWith(".pdf")) {
-            writeJson(response, Result.error(400, "仅支持PDF文件"));
+            writeJson(response, Result.error(400, "only PDF"));
             return;
         }
 
@@ -317,7 +317,7 @@ public class UserServlet extends BaseServlet {
         boolean ok = userService.updateTAProfile(ta);
         if (!ok) {
             new File(filePath).delete();
-            writeJson(response, Result.error(500, "保存失败"));
+            writeJson(response, Result.error(500, "Save Failed"));
             return;
         }
 
@@ -333,35 +333,35 @@ public class UserServlet extends BaseServlet {
     public void downloadProfilePdf(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String uid = request.getParameter("uid");
         if (uid == null || uid.isEmpty()) {
-            response.sendError(400, "缺少uid参数");
+            writeJson(response, Result.error(400, "Missing uid parameter"));
             return;
         }
 
         TA ta = userService.getTAById(uid);
         if (ta == null) {
-            response.sendError(404, "用户不存在");
+            writeJson(response, Result.error(404, "User does not exist"));
             return;
         }
 
         HttpSession session = request.getSession();
-        TA currentUser = (TA) session.getAttribute("loginUser");
+        User currentUser = (User) session.getAttribute("loginUser");
         boolean isOwner = currentUser != null && currentUser.getUserId().equals(ta.getUserId());
 
         if (!isOwner && (ta.getProfileVisible() == null || !ta.getProfileVisible())) {
-            response.sendError(403, "该用户设置了隐私保护，无法下载");
+            writeJson(response, Result.error(403, "Download failed due to user privacy settings."));
             return;
         }
 
         String pdfPath = ta.getProfilePdfPath();
         if (pdfPath == null || pdfPath.isEmpty()) {
-            response.sendError(404, "该用户未上传个人资料PDF");
+            writeJson(response, Result.error(404, "No profile PDF uploaded by this user"));
             return;
         }
 
         String realPath = request.getServletContext().getRealPath(pdfPath);
         File pdfFile = new File(realPath);
         if (!pdfFile.exists()) {
-            response.sendError(404, "文件不存在");
+            writeJson(response, Result.error(404, "File does not exist"));
             return;
         }
 
@@ -388,7 +388,7 @@ public class UserServlet extends BaseServlet {
         String jsonPath = request.getServletContext().getRealPath("/WEB-INF/data/tags.json");
         java.io.File jsonFile = new java.io.File(jsonPath);
         if (!jsonFile.exists()) {
-            writeJson(response, Result.error(500, "Tag配置文件不存在"));
+            writeJson(response, Result.error(500, "Tag config not found"));
             return;
         }
 

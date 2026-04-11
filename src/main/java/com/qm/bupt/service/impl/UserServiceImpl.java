@@ -38,12 +38,21 @@ public class UserServiceImpl implements UserService {
         }
         // 加密密码
         String encryptPwd = AuthUtil.md5Encrypt(password);
-        // 查询用户
+        // 先查询用户
         List<User> userList = userDAO.listAll();
         Optional<User> userOptional = userList.stream()
                 .filter(u -> username.equals(u.getUsername()) && encryptPwd.equals(u.getPassword()) && u.getStatus() == 0)
                 .findFirst();
-        return userOptional.orElse(null);
+        if (!userOptional.isPresent()) {
+            return null;
+        }
+        User user = userOptional.get();
+        // 如果是TA用户，需要查询TA扩展表获取完整信息
+        if ("TA".equals(user.getUserType())) {
+            TA ta = getTAById(user.getUserId());
+            return ta;
+        }
+        return user;
     }
 
     @Override
