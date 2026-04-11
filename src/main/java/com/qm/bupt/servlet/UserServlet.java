@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -372,6 +373,38 @@ public class UserServlet extends BaseServlet {
                 output.write(buffer, 0, bytesRead);
             }
         }
+    }
+
+    /**
+     * 获取Tag列表
+     * 访问：GET /user?action=listTags
+     * 无需登录，返回所有可选的Tag
+     */
+    public void listTags(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String jsonPath = request.getServletContext().getRealPath("/WEB-INF/data/tags.json");
+        java.io.File jsonFile = new java.io.File(jsonPath);
+        if (!jsonFile.exists()) {
+            writeJson(response, Result.error(500, "Tag配置文件不存在"));
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        try (InputStream is = new java.io.FileInputStream(jsonFile);
+             java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        }
+
+        com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(sb.toString()).getAsJsonObject();
+        com.google.gson.JsonArray tagsArray = json.getAsJsonArray("tags");
+        java.util.List<String> tags = new java.util.ArrayList<>();
+        for (com.google.gson.JsonElement elem : tagsArray) {
+            tags.add(elem.getAsString());
+        }
+
+        writeJson(response, Result.success(tags));
     }
 
 
