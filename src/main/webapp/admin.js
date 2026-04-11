@@ -9,9 +9,6 @@ const state = {
         email: "admin@ta-market.edu"
     },
 
-    currentUser: null, // 已实现后端接口连接
-    backendJobs: [], // 已实现后端接口连接
-
     filters: {
         taSearch: "",
         moSearch: "",
@@ -22,25 +19,12 @@ const state = {
     },
 
     selectedTA: null,
-    selectedUser: null,
-    selectedPost: null,
-    selectedRequest: null,
-    selectedBackendJob: null, // 已实现后端接口连接
-    selectedJobApplicants: [], // 已实现后端接口连接
-
-    modals: {
-        taDetail: false,
-        stats: false,
-        users: false,
-        userDetail: false,
-        rejectPost: false,
-        requests: false
-    },
+    selectedJobApplicants: [],
 
     rejectReason: "",
 
-    backendUsers: [], // 已实现后端接口连接
-    backendJobsList: [], // 已实现后端接口连接
+    backendUsers: [],
+    backendJobsList: [],
 
     stats: {
         totalUsers: 0,
@@ -53,18 +37,10 @@ const state = {
         activeLogsToday: 0
     },
 
-    roleRequests: [], // 已实现后端接口连接 - 从后端加载
-
-    systemUsers: [], // 已实现后端接口连接 - 从后端加载
-
-    taWorkloads: [], // 已实现后端接口连接 - 从backendUsers过滤出TA用户
-
-    moWorkloads: [], // 已实现后端接口连接 - 从backendUsers过滤出MO用户
-
-    logs: [], // 已实现后端接口连接 - 从后端加载（后端暂无此接口，暂时为空）
-
-    // 修复问题3：添加申请记录缓存，用于计算TA工作负荷
-    backendApplications: [] // TA的申请记录
+    roleRequests: [],
+    taWorkloads: [],
+    moWorkloads: [],
+    logs: []
 };
 
 const els = {};
@@ -82,7 +58,6 @@ function cacheElements() {
     els.statsModalOverlay = document.getElementById("statsModalOverlay");
     els.usersModalOverlay = document.getElementById("usersModalOverlay");
     els.userDetailModalOverlay = document.getElementById("userDetailModalOverlay");
-    els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
     els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
@@ -94,8 +69,6 @@ function cacheElements() {
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
     els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
-
-    els.rejectReasonInput = document.getElementById("rejectReasonInput");
 }
 
 const Icons = {
@@ -379,7 +352,8 @@ async function loadAllUsers() {
                         belongModule: relatedJob.belongModule || "N/A",
                         publisherName: relatedJob.publisherName || relatedJob.moName || "N/A",
                         jobDesc: relatedJob.jobDesc || "No description",
-                        applicationStatus: app.status || "N/A"
+                        applicationStatus: app.status || "N/A",
+                        recruitNum: relatedJob.recruitNum || 0
                     });
                 } else {
                     recentTasks.push(`Job #${appJobId}`);
@@ -390,7 +364,8 @@ async function loadAllUsers() {
                         belongModule: "N/A",
                         publisherName: "N/A",
                         jobDesc: "No description",
-                        applicationStatus: app.status || "N/A"
+                        applicationStatus: app.status || "N/A",
+                        recruitNum: 0
                     });
                 }
             });
@@ -1000,7 +975,6 @@ function cacheElements() {
     els.statsModalOverlay = document.getElementById("statsModalOverlay");
     els.usersModalOverlay = document.getElementById("usersModalOverlay");
     els.userDetailModalOverlay = document.getElementById("userDetailModalOverlay");
-    els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
     els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
@@ -1012,8 +986,6 @@ function cacheElements() {
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
     els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
-
-    els.rejectReasonInput = document.getElementById("rejectReasonInput");
 }
 
 function bindPageEvents() {
@@ -1293,128 +1265,220 @@ function openTADetailModal(id) {
     const statusInfo = getWorkloadStatusInfo(ta.workloadStatus);
 
     els.taDetailModalBody.innerHTML = `
-    <div class="user-profile-block">
-      <div class="user-avatar-xl">${escapeHtml(getInitials(ta.name))}</div>
-      <div class="user-identity">
-        <h3>${escapeHtml(ta.name)}</h3>
-        <p>@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)}</p>
+    <div id="taDetailContent">
+      <div class="user-profile-block">
+        <div class="user-avatar-xl">${escapeHtml(getInitials(ta.name))}</div>
+        <div class="user-identity">
+          <h3>${escapeHtml(ta.name)}</h3>
+          <p>@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)}</p>
+        </div>
       </div>
-    </div>
 
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px;background:var(--bg-soft);border-radius:14px;">
-      <span class="badge ${statusInfo.class}" style="font-size:14px;font-weight:600;padding:8px 16px;">
-        ${statusInfo.text}
-      </span>
-    </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px;background:var(--bg-soft);border-radius:14px;">
+        <span class="badge ${statusInfo.class}" style="font-size:14px;font-weight:600;padding:8px 16px;">
+          ${statusInfo.text}
+        </span>
+      </div>
 
-    <!-- TA详情页的工作负荷进度条 - 红黄绿三色（修复问题4） -->
-    <div class="workload-progress-container" style="margin-bottom:20px;">
-      <div class="workload-progress-header">
-        <span class="workload-progress-label">Weekly Workload</span>
-        <span class="workload-progress-value ${ta.workloadStatus}">${ta.hoursDisplay}</span>
+      <!-- TA详情页的工作负荷进度条 - 红黄绿三色（修复问题4） -->
+      <div class="workload-progress-container" style="margin-bottom:20px;">
+        <div class="workload-progress-header">
+          <span class="workload-progress-label">Weekly Workload</span>
+          <span class="workload-progress-value ${ta.workloadStatus}">${ta.hoursDisplay}</span>
+        </div>
+        <div class="workload-progress-bar" style="height:14px;">
+          <div class="workload-progress-fill ${ta.workloadStatus}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
+        </div>
       </div>
-      <div class="workload-progress-bar" style="height:14px;">
-        <div class="workload-progress-fill ${ta.workloadStatus}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
-      </div>
-    </div>
 
-    <div class="detail-grid" style="margin-bottom:18px;">
-      <div class="detail-row">
-        <span>User ID</span>
-        <span>${escapeHtml(ta.id)}</span>
+      <div class="detail-grid" style="margin-bottom:18px;">
+        <div class="detail-row">
+          <span>User ID</span>
+          <span>${escapeHtml(ta.id)}</span>
+        </div>
+        <div class="detail-row">
+          <span>Email</span>
+          <span>${escapeHtml(ta.email || "-")}</span>
+        </div>
+        <div class="detail-row">
+          <span>Applied Jobs</span>
+          <span>${escapeHtml(ta.taskCount)}</span>
+        </div>
       </div>
-      <div class="detail-row">
-        <span>Email</span>
-        <span>${escapeHtml(ta.email || "-")}</span>
-      </div>
-      <div class="detail-row">
-        <span>Applied Jobs</span>
-        <span>${escapeHtml(ta.taskCount)}</span>
-      </div>
-    </div>
 
-    ${ta.skills && ta.skills.length > 0 ? `
-    <div style="margin-bottom:18px;">
-      <h3 style="margin:0 0 12px;font-size:16px;">Skills</h3>
-      <div class="tag-list">
-        ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+      ${ta.skills && ta.skills.length > 0 ? `
+      <div style="margin-bottom:18px;">
+        <h3 style="margin:0 0 12px;font-size:16px;">Skills</h3>
+        <div class="tag-list">
+          ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+        </div>
       </div>
-    </div>
-    ` : ''}
+      ` : ''}
 
-    <!-- View PDF Button -->
-    <div style="margin-bottom:18px;">
-      <button class="btn btn-sm btn-soft" type="button" id="viewPdfBtn" data-uid="${escapeHtml(ta.id)}">
-        ${Icons.eye} View Profile PDF
-      </button>
-    </div>
+      <!-- View PDF Button -->
+      <div style="margin-bottom:18px;">
+        <button class="btn btn-sm btn-soft" type="button" id="viewPdfBtn" data-uid="${escapeHtml(ta.id)}">
+          ${Icons.eye} View Profile PDF
+        </button>
+      </div>
 
-    ${ta.appliedJobs && ta.appliedJobs.length > 0 ? `
-    <div>
-      <h3 style="margin:0 0 12px;font-size:16px;">Applied Jobs</h3>
-      <p style="margin:0 0 16px;font-size:13px;color:var(--text-soft);">Click on a job to view full details</p>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${ta.appliedJobs.map((job, index) => `
-          <button class="job-detail-btn" type="button" data-job-index="${index}">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                <svg viewBox="0 0 24 24" style="width:18px;height:18px;color:white;" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/>
+      ${ta.appliedJobs && ta.appliedJobs.length > 0 ? `
+      <div>
+        <h3 style="margin:0 0 12px;font-size:16px;">Applied Jobs</h3>
+        <p style="margin:0 0 16px;font-size:13px;color:var(--text-soft);">Click on a job to view full details</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${ta.appliedJobs.map((job, index) => `
+            <button class="job-detail-btn" type="button" data-job-index="${index}">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                  <svg viewBox="0 0 24 24" style="width:18px;height:18px;color:white;" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-size:14px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</div>
+                  <div style="font-size:12px;color:var(--text-soft);">${escapeHtml(job.belongModule)}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(job.workHoursWeekly)}h/week</span>
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--text-soft);" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m9 18 6-6-6-6"/>
                 </svg>
               </div>
-              <div>
-                <div style="font-size:14px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</div>
-                <div style="font-size:12px;color:var(--text-soft);">${escapeHtml(job.belongModule)}</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <span style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(job.workHoursWeekly)}h/week</span>
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--text-soft);" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </button>
-        `).join("")}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+      ` : `
+      <div style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
+        <p style="margin:0;">This TA has not applied for any jobs yet.</p>
+      </div>
+      `}
+    </div>
+
+    <!-- PDF Preview Container - 界面内嵌预览 -->
+    <div id="pdfPreviewContainer" class="hidden" style="background:#f8f9fa;border-radius:12px;padding:16px;margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;font-size:16px;color:var(--text);">PDF Preview</h3>
+        <button class="btn btn-sm btn-soft hidden" type="button" id="closePreviewBtn" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;transform:rotate(180deg);" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+          Back to Details
+        </button>
       </div>
     </div>
-    ` : `
-    <div style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
-      <p style="margin:0;">This TA has not applied for any jobs yet.</p>
-    </div>
-    `}
   `;
 
     const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
     if (header) header.textContent = "Teaching Assistant Details";
 
-    // 添加PDF查看按钮事件监听器（带403拦截）
+    // 添加PDF查看按钮事件监听器
     const viewPdfBtn = els.taDetailModalOverlay.querySelector('#viewPdfBtn');
     if (viewPdfBtn) {
         viewPdfBtn.addEventListener('click', async function() {
             const uid = this.getAttribute('data-uid');
             const pdfUrl = `/tapj/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`;
 
-            // 先用fetch检查PDF是否存在
             try {
+                // 直接发GET请求获取PDF内容，检查响应状态
                 const response = await fetch(pdfUrl, {
-                    method: 'HEAD',
                     credentials: 'include'
                 });
 
-                if (response.ok) {
-                    // PDF存在，打开新标签页
-                    window.open(pdfUrl, '_blank');
-                } else if (response.status === 403) {
+                // 检查HTTP状态码
+                if (response.status === 403) {
                     alert("You do not have permission to view this profile PDF.");
-                } else if (response.status === 404) {
+                    return;
+                }
+                if (response.status === 404) {
                     alert("Profile PDF not found for this user.");
-                } else {
+                    return;
+                }
+                if (!response.ok) {
                     alert("Failed to load profile PDF. Please try again later.");
+                    return;
+                }
+
+                // 获取 PDF 内容作为 blob
+                const blob = await response.blob();
+
+                // 检查blob是否为空
+                if (blob.size === 0) {
+                    alert("Profile PDF not found for this user.");
+                    return;
+                }
+
+                // 检查内容类型，确保是PDF而不是JSON错误
+                const contentType = response.headers.get('Content-Type') || blob.type;
+                if (contentType && contentType.includes('application/json')) {
+                    // 如果是JSON响应，说明是错误信息
+                    alert("Profile PDF not available due to privacy settings.");
+                    return;
+                }
+
+                // 创建 blob URL 用于预览
+                const blobUrl = URL.createObjectURL(blob);
+
+                // 在界面内嵌预览 PDF，不打开新窗口
+                const previewContainer = els.taDetailModalOverlay.querySelector('#pdfPreviewContainer');
+                if (previewContainer) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = blobUrl;
+                    iframe.style.width = '100%';
+                    iframe.style.height = '600px';
+                    iframe.style.border = 'none';
+                    iframe.id = 'pdfPreviewIframe';
+
+                    previewContainer.innerHTML = '';
+                    previewContainer.appendChild(iframe);
+                    previewContainer.classList.remove('hidden');
+
+                    // 隐藏其他详情内容，显示PDF预览
+                    const detailContent = els.taDetailModalOverlay.querySelector('#taDetailContent');
+                    if (detailContent) {
+                        detailContent.classList.add('hidden');
+                    }
+
+                    // 更新模态框标题
+                    const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
+                    if (header) header.textContent = "Profile PDF Preview";
+
+                    // 添加关闭预览按钮
+                    const closePreviewBtn = els.taDetailModalOverlay.querySelector('#closePreviewBtn');
+                    if (closePreviewBtn) {
+                        closePreviewBtn.classList.remove('hidden');
+                    }
                 }
             } catch (error) {
-                console.error('Error checking PDF:', error);
-                alert("An error occurred while checking the PDF.");
+                alert("An error occurred while loading the PDF. Please try again later.");
             }
+        });
+    }
+
+    // 关闭PDF预览按钮
+    const closePreviewBtn = els.taDetailModalOverlay.querySelector('#closePreviewBtn');
+    if (closePreviewBtn) {
+        closePreviewBtn.addEventListener('click', function() {
+            const previewContainer = els.taDetailModalOverlay.querySelector('#pdfPreviewContainer');
+            if (previewContainer) {
+                previewContainer.classList.add('hidden');
+                previewContainer.innerHTML = '';
+            }
+
+            // 恢复显示详情内容
+            const detailContent = els.taDetailModalOverlay.querySelector('#taDetailContent');
+            if (detailContent) {
+                detailContent.classList.remove('hidden');
+            }
+
+            // 恢复模态框标题
+            const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
+            if (header) header.textContent = "Teaching Assistant Details";
+
+            // 隐藏关闭预览按钮
+            closePreviewBtn.classList.add('hidden');
         });
     }
 
@@ -1435,6 +1499,20 @@ function openTADetailModal(id) {
 
 function closeTADetailModal() {
     state.selectedTA = null;
+    // 重置PDF预览状态
+    const previewContainer = els.taDetailModalOverlay.querySelector('#pdfPreviewContainer');
+    if (previewContainer) {
+        previewContainer.classList.add("hidden");
+        previewContainer.innerHTML = '';
+    }
+    const closePreviewBtn = els.taDetailModalOverlay.querySelector('#closePreviewBtn');
+    if (closePreviewBtn) {
+        closePreviewBtn.classList.add("hidden");
+    }
+    const detailContent = els.taDetailModalOverlay.querySelector('#taDetailContent');
+    if (detailContent) {
+        detailContent.classList.remove("hidden");
+    }
     els.taDetailModalOverlay.classList.add("hidden");
 }
 
@@ -1454,8 +1532,8 @@ function openJobDetailModal(job) {
 
     <div class="detail-grid" style="margin-bottom:20px;">
       <div class="detail-row">
-        <span>Module</span>
-        <span>${escapeHtml(job.belongModule)}</span>
+        <span>Max Capacity</span>
+        <span>${escapeHtml(job.recruitNum || job.maxCapacity || "N/A")}</span>
       </div>
       <div class="detail-row">
         <span>Course Organizer</span>
@@ -1768,7 +1846,7 @@ function renderAllJobsModal() {
             <tr>
               <th>Job ID</th>
               <th>Job Name</th>
-              <th>Publisher MO ID</th>
+              <th>Publisher MO</th>
               <th>Recruit Num</th>
               <th>Status</th>
               <th>Action</th>
@@ -1778,15 +1856,21 @@ function renderAllJobsModal() {
             ${state.backendJobsList.length > 0 ? state.backendJobsList.map(job => {
         const statusText = job.jobStatus === 0 ? "Open" : job.jobStatus === 1 ? "Closed" : job.jobStatus === 2 ? "Filled" : job.jobStatus === 3 ? "Cancelled" : "Unknown";
         const statusClass = job.jobStatus === 0 ? "badge-success" : job.jobStatus === 1 ? "badge-warning" : job.jobStatus === 2 ? "badge-danger" : "badge-soft";
+        // 尝试从用户列表中查找MO的名称
+        const moUser = state.backendUsers.find(u => String(u.userId) === String(job.publisherMoId) && u.userType === 2);
+        const moDisplay = moUser ? (moUser.realName || moUser.username) : `MO #${job.publisherMoId}`;
         return `
               <tr>
                 <td>${escapeHtml(job.jobId)}</td>
                 <td>${escapeHtml(job.jobName)}</td>
-                <td>${escapeHtml(job.publisherMoId)}</td>
+                <td>${escapeHtml(moDisplay)}</td>
                 <td>${escapeHtml(job.recruitNum)}</td>
                 <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
                 <td>
                   <div class="row-actions">
+                    <button class="btn btn-soft view-job-detail-btn" type="button" data-job-id="${job.jobId}">
+                      View Details
+                    </button>
                     <button class="btn btn-danger delete-alljob-btn" type="button" data-job-id="${job.jobId}">
                       Delete
                     </button>
@@ -1809,6 +1893,32 @@ function renderAllJobsModal() {
 
 function bindAllJobsModalEvents() {
     const modalBody = els.allJobsModalBody;
+
+    // 查看岗位详情按钮
+    const viewDetailBtns = modalBody.querySelectorAll(".view-job-detail-btn");
+    viewDetailBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const jobId = btn.dataset.jobId;
+            const job = state.backendJobsList.find(j => String(j.jobId) === String(jobId));
+            if (job) {
+                // 尝试从用户列表中查找MO的名称
+                const moUser = state.backendUsers.find(u =>
+                    String(u.userId) === String(job.publisherMoId) && u.userType === 2
+                );
+                const moName = moUser ? (moUser.realName || moUser.username) : `MO #${job.publisherMoId}`;
+
+                openJobDetailModal({
+                    jobId: job.jobId,
+                    jobName: job.jobName || "Unnamed Job",
+                    workHoursWeekly: job.workHoursWeekly || 0,
+                    belongModule: job.belongModule || "N/A",
+                    publisherName: moName,
+                    jobDesc: job.jobDesc || "No description available.",
+                    recruitNum: job.recruitNum || 0
+                });
+            }
+        });
+    });
 
     // 删除岗位按钮
     const deleteBtns = modalBody.querySelectorAll(".delete-alljob-btn");
@@ -2206,9 +2316,6 @@ function bindModalEvents() {
     const closeStatsModalBtn = document.getElementById("closeStatsModalBtn");
     const closeUsersModalBtn = document.getElementById("closeUsersModalBtn");
     const closeUserDetailModalBtn = document.getElementById("closeUserDetailModalBtn");
-    const closeRejectPostModalBtn = document.getElementById("closeRejectPostModalBtn");
-    const cancelRejectPostBtn = document.getElementById("cancelRejectPostBtn");
-    const confirmRejectPostBtn = document.getElementById("confirmRejectPostBtn");
     const closeRequestsModalBtn = document.getElementById("closeRequestsModalBtn");
     const closeAllJobsModalBtn = document.getElementById("closeAllJobsModalBtn");
     const closeJobDetailModalBtn = document.getElementById("closeJobDetailModalBtn");
@@ -2227,18 +2334,6 @@ function bindModalEvents() {
 
     if (closeUserDetailModalBtn) {
         closeUserDetailModalBtn.addEventListener("click", closeUserDetailModal);
-    }
-
-    if (closeRejectPostModalBtn) {
-        closeRejectPostModalBtn.addEventListener("click", closeRejectPostModal);
-    }
-
-    if (cancelRejectPostBtn) {
-        cancelRejectPostBtn.addEventListener("click", closeRejectPostModal);
-    }
-
-    if (confirmRejectPostBtn) {
-        confirmRejectPostBtn.addEventListener("click", confirmRejectPost);
     }
 
     if (closeRequestsModalBtn) {
@@ -2262,18 +2357,11 @@ function bindModalEvents() {
         document.getElementById("logoutBtn").addEventListener("click", logout);
     }
 
-    if (els.rejectReasonInput) {
-        els.rejectReasonInput.addEventListener("input", e => {
-            state.rejectReason = e.target.value;
-        });
-    }
-
     [
         [els.taDetailModalOverlay, closeTADetailModal],
         [els.statsModalOverlay, closeStatsModal],
         [els.usersModalOverlay, closeUsersModal],
         [els.userDetailModalOverlay, closeUserDetailModal],
-        [els.rejectPostModalOverlay, closeRejectPostModal],
         [els.requestsModalOverlay, closeRequestsModal],
         [els.allJobsModalOverlay, closeAllJobsModal],
         [els.jobDetailModalOverlay, closeJobDetailModal]
@@ -2291,7 +2379,6 @@ function bindModalEvents() {
         if (!els.statsModalOverlay.classList.contains("hidden")) closeStatsModal();
         if (!els.usersModalOverlay.classList.contains("hidden")) closeUsersModal();
         if (!els.userDetailModalOverlay.classList.contains("hidden")) closeUserDetailModal();
-        if (!els.rejectPostModalOverlay.classList.contains("hidden")) closeRejectPostModal();
         if (!els.requestsModalOverlay.classList.contains("hidden")) closeRequestsModal();
         if (!els.allJobsModalOverlay.classList.contains("hidden")) closeAllJobsModal();
         if (!els.jobDetailModalOverlay.classList.contains("hidden")) closeJobDetailModal();
