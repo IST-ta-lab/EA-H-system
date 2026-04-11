@@ -23,6 +23,8 @@ public class TA extends User implements Serializable {
     private List<String> skillIds;
     // CV文件上传后的服务器路径
     private String cvPath;
+    // 个人资料PDF路径
+    private String profilePdfPath;
     // 个人简介
     private String selfIntro;
     // 是否对他人可见
@@ -31,6 +33,10 @@ public class TA extends User implements Serializable {
     private Double totalWorkload;
     // 每周可投入时长
     private Double availableHours;
+    // 标签数组
+    private List<String> tags;
+    // 匹配度（临时字段，不持久化）
+    private Integer matchScore;
 
     // 无参构造
     public TA() {
@@ -94,6 +100,14 @@ public class TA extends User implements Serializable {
         this.cvPath = cvPath;
     }
 
+    public String getProfilePdfPath() {
+        return profilePdfPath;
+    }
+
+    public void setProfilePdfPath(String profilePdfPath) {
+        this.profilePdfPath = profilePdfPath;
+    }
+
     public String getSelfIntro() {
         return selfIntro;
     }
@@ -124,5 +138,21 @@ public class TA extends User implements Serializable {
 
     public void setAvailableHours(Double availableHours) {
         this.availableHours = availableHours;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public Integer getMatchScore() {
+        return matchScore;
+    }
+
+    public void setMatchScore(Integer matchScore) {
+        this.matchScore = matchScore;
     }
 }

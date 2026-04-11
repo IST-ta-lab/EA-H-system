@@ -61,7 +61,10 @@ const state = {
 
     moWorkloads: [], // 已实现后端接口连接 - 从backendUsers过滤出MO用户
 
-    logs: [] // 已实现后端接口连接 - 从后端加载（后端暂无此接口，暂时为空）
+    logs: [], // 已实现后端接口连接 - 从后端加载（后端暂无此接口，暂时为空）
+
+    // 修复问题3：添加申请记录缓存，用于计算TA工作负荷
+    backendApplications: [] // TA的申请记录
 };
 
 const els = {};
@@ -248,6 +251,17 @@ async function loadLoginUser() {
     return false;
 }
 
+// 修复问题3：加载所有申请记录，用于计算TA工作负荷
+async function loadAllApplications() {
+    const r = await request("/application?action=listAll");
+    if (r.ok && r.data && r.data.code === 200) {
+        state.backendApplications = Array.isArray(r.data.data) ? r.data.data : [];
+        return state.backendApplications;
+    }
+    state.backendApplications = [];
+    return [];
+}
+
 // 已实现后端接口连接 - 加载开放岗位（仅用于后端统计，不直接用于MO视图）
 async function loadOpenJobs() {
     const r = await request("/job?action=listOpen");
@@ -297,25 +311,69 @@ async function loadAllUsers() {
                 };
             });
 
-        // 从用户列表中过滤出TA用户（userType=1），构建TA工作负载视图数据
-        // 确保id统一为字符串类型，防止类型不一致导致查找失败
-        // 同时获取TA的申请记录和工作负荷信息
+        // 修复问题3：从用户列表中过滤出TA用户（userType=1），构建TA工作负载视图数据
+        // 计算逻辑：TA的工作负荷 = 该TA所有申请工作的总工作时间（每周工作时长总和）
         state.taWorkloads = state.backendUsers
             .filter(u => u.userType === 1) // 只保留TA用户
             .map(ta => {
+                // 获取该TA的所有申请记录（无论是何种状态）
+                const allApps = state.backendApplications.filter(app =>
+                    String(app.taId) === String(ta.userId)
+                );
+
+                // 计算所有申请岗位的总工作时长
+                let totalWorkHours = 0;
+                allApps.forEach(app => {
+                    // 尝试从申请记录中获取岗位信息的工作时长
+                    // 如果申请记录中有workHoursWeekly字段则使用，否则尝试从岗位列表中查找
+                    if (app.workHoursWeekly) {
+                        totalWorkHours += parseFloat(app.workHoursWeekly) || 0;
+                    } else {
+                        // 从岗位列表中查找对应岗位的工作时长
+                        const relatedJob = state.backendJobsList.find(j => String(j.jobId) === String(app.jobId));
+                        if (relatedJob && relatedJob.workHoursWeekly) {
+                            totalWorkHours += parseFloat(relatedJob.workHoursWeekly) || 0;
+                        }
+                    }
+                });
+
+                // 修复问题4：调整工作负荷状态为三个（红黄绿）
+                // 计算工作负荷状态：基于每周工作小时数
+                // 假设标准工作上限为20小时
+                const maxHours = 20;
+                const currentHours = totalWorkHours;
+                const workloadRatio = maxHours > 0 ? currentHours / maxHours : 0;
+
+                let workloadStatus;
+                // 三个状态：绿色（健康）、黄色（接近上限）、红色（超负荷）
+                if (workloadRatio > 1) {
+                    workloadStatus = "overloaded"; // 红色 - 超负荷
+                } else if (workloadRatio >= 0.8) {
+                    workloadStatus = "near_limit"; // 黄色 - 接近上限
+                } else {
+                    workloadStatus = "healthy"; // 绿色 - 健康
+                }
+
                 return {
                     id: String(ta.userId), // 统一转换为字符串
                     name: ta.realName || ta.username || "Unnamed TA",
                     username: ta.username || "",
                     course: ta.belongModule || "No Module Assigned",
                     email: ta.email || "",
-                    status: "healthy",
-                    summary: "This TA has registered. View application records for more details.",
+                    workloadStatus: workloadStatus, // overloaded (红) / near_limit (黄) / healthy (绿)
+                    currentHours: currentHours,
+                    maxHours: maxHours,
+                    hoursDisplay: `${currentHours}/${maxHours} Hours`,
+                    summary: allApps.length > 0
+                        ? `This TA has applied for ${allApps.length} job(s) with a total weekly workload of ${currentHours} hours.`
+                        : "This TA has not applied for any jobs yet.",
                     skills: ta.skills || [],
-                    hours: ta.workHoursWeekly || ta.hoursPerWeek || "N/A",
-                    taskCount: ta.assignedJobs || ta.taskCount || "0",
+                    taskCount: String(allApps.length),
                     rating: ta.rating || "N/A",
-                    recentTasks: []
+                    recentTasks: allApps.map(app => {
+                        const job = state.backendJobsList.find(j => String(j.jobId) === String(app.jobId));
+                        return job ? `${job.jobName || "Unnamed Job"} (${job.workHoursWeekly || 0}h/week)` : `Job #${app.jobId}`;
+                    })
                 };
             });
 
@@ -326,8 +384,17 @@ async function loadAllUsers() {
     return [];
 }
 
-// 已实现后端接口连接 - 删除用户
+// 已实现后端接口连接 - 删除用户（修改：禁止删除其他admin）
 async function deleteUser(userId) {
+    // 查找要删除的用户
+    const userToDelete = state.backendUsers.find(u => String(u.userId) === String(userId));
+
+    // 检查是否是admin用户（userType === 3）
+    if (userToDelete && userToDelete.userType === 3) {
+        alert("Cannot delete admin users. This operation is not allowed.");
+        return;
+    }
+
     if (!confirm("Are you sure you want to delete this user?")) {
         return;
     }
@@ -434,9 +501,10 @@ function getFilteredTAWorkloads() {
             item.username.toLowerCase().includes(state.filters.taSearch.toLowerCase()) ||
             item.course.toLowerCase().includes(state.filters.taSearch.toLowerCase());
 
+        // 工作负荷状态过滤：all / overloaded / near_limit / healthy / zero
         const matchStatus =
             state.filters.taStatus === "all" ||
-            item.status === state.filters.taStatus;
+            item.workloadStatus === state.filters.taStatus;
 
         return matchSearch && matchStatus;
     });
@@ -560,25 +628,46 @@ function renderSwitcher() {
 function renderTAView() {
     const items = getFilteredTAWorkloads();
 
+    // 获取工作负荷状态显示文本和样式（修复问题4：只有三个状态，红黄绿）
+    const getWorkloadStatusInfo = (status) => {
+        switch (status) {
+            case "overloaded":
+                return { text: "OVERLOADED", class: "badge-danger", color: "var(--danger)" };
+            case "near_limit":
+                return { text: "Near Limit", class: "badge-warning", color: "var(--warning)" };
+            case "healthy":
+                return { text: "Healthy", class: "badge-success", color: "var(--success)" };
+            default:
+                return { text: status, class: "badge-soft", color: "var(--text-faint)" };
+        }
+    };
+
+    // 计算进度条百分比
+    const getProgressPercent = (current, max) => {
+        if (max === 0) return 0;
+        const percent = (current / max) * 100;
+        return Math.min(percent, 100); // 最多100%
+    };
+
     els.monitorContent.innerHTML = `
     <section class="section-header">
       <div class="section-title-block">
-        <h2>Teaching Assistant (TA) Overview</h2>
-        <p>View all TA users. Click View Details to see their application records.</p>
+        <h2>Teaching Assistant (TA) Workload</h2>
+        <p>View all TA users and their workload status. Click the TA name to see detailed information.</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
-          ${Icons.search}
-          <input id="taSearchInput" type="text" placeholder="Search TA..." value="${escapeHtml(state.filters.taSearch)}" />
+          <span class="search-icon">${Icons.search}</span>
+          <input id="taSearchInput" type="text" placeholder="Search TA name..." value="${escapeHtml(state.filters.taSearch)}" />
           <button id="taSearchBtn" class="search-btn" type="button">Search</button>
         </div>
 
         <div class="filter-chips">
           <button class="filter-chip ${state.filters.taStatus === "all" ? "active" : ""}" data-ta-status="all" type="button">All</button>
-          <button class="filter-chip ${state.filters.taStatus === "healthy" ? "active" : ""}" data-ta-status="healthy" type="button">Healthy</button>
-          <button class="filter-chip ${state.filters.taStatus === "warning" ? "active" : ""}" data-ta-status="warning" type="button">Warning</button>
-          <button class="filter-chip ${state.filters.taStatus === "critical" ? "active" : ""}" data-ta-status="critical" type="button">Critical</button>
+          <button class="filter-chip ${state.filters.taStatus === "overloaded" ? "active" : ""}" data-ta-status="overloaded" type="button">Overloaded (Red)</button>
+          <button class="filter-chip ${state.filters.taStatus === "near_limit" ? "active" : ""}" data-ta-status="near_limit" type="button">Near Limit (Yellow)</button>
+          <button class="filter-chip ${state.filters.taStatus === "healthy" ? "active" : ""}" data-ta-status="healthy" type="button">Healthy (Green)</button>
         </div>
       </div>
     </section>
@@ -586,53 +675,71 @@ function renderTAView() {
     <div class="workload-grid">
       ${
         items.length > 0
-            ? items.map(item => `
+            ? items.map(item => {
+                const statusInfo = getWorkloadStatusInfo(item.workloadStatus);
+                const progressPercent = item.currentHours === 0 ? 0 : getProgressPercent(item.currentHours, item.maxHours);
+                return `
               <article class="workload-card" data-ta-id="${item.id}">
                 <div class="workload-top">
                   <div>
-                    <h3 class="workload-title">${escapeHtml(item.name)}</h3>
+                    <h3 class="workload-title">
+                      <a href="#" class="ta-name-link view-ta-detail-btn" data-ta-id="${item.id}" style="color:var(--text);text-decoration:none;">${escapeHtml(item.name)}</a>
+                    </h3>
                     <div class="workload-sub">
                       <span class="badge badge-soft">@${escapeHtml(item.username)}</span>
                       <span class="badge badge-soft">${escapeHtml(item.course)}</span>
                     </div>
                   </div>
-                  <span class="badge ${
-                item.status === "healthy"
-                    ? "badge-success"
-                    : item.status === "warning"
-                        ? "badge-warning"
-                        : "badge-danger"
-            }">
-                    ${escapeHtml(item.status)}
+                  <span class="badge ${statusInfo.class}" style="font-weight:600;">
+                    ${statusInfo.text}
                   </span>
                 </div>
 
-                <p class="workload-desc">${escapeHtml(item.summary)}</p>
-
-                <div class="tag-list" style="margin-bottom:16px;">
-                  ${item.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+                <!-- 工作负荷进度条 - 红黄绿三色（修复问题4） -->
+                <div class="workload-progress-container">
+                  <div class="workload-progress-header">
+                    <span class="workload-progress-label">Weekly Workload</span>
+                    <span class="workload-progress-value ${item.workloadStatus}">${item.hoursDisplay}</span>
+                  </div>
+                  <div class="workload-progress-bar">
+                    <div class="workload-progress-fill ${item.workloadStatus}" style="width: ${progressPercent}%;"></div>
+                  </div>
                 </div>
 
-                <div class="workload-sub" style="margin-bottom:16px;">
-                  <span class="badge badge-soft">Hours: ${escapeHtml(item.hours)}</span>
-                  <span class="badge badge-soft">Tasks: ${escapeHtml(item.taskCount)}</span>
-                  <span class="badge badge-soft">Rating: ${escapeHtml(item.rating)}</span>
+                <div style="display:flex;align-items:center;gap:16px;margin:16px 0;padding:14px;background:var(--bg-soft);border-radius:12px;">
+                  <div style="flex:1;">
+                    <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Applied Jobs</div>
+                    <div style="font-size:22px;font-weight:700;color:var(--text);">${escapeHtml(item.taskCount)}</div>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Rating</div>
+                    <div style="font-size:22px;font-weight:700;color:var(--text);">${escapeHtml(item.rating)}</div>
+                  </div>
                 </div>
+
+                ${item.skills && item.skills.length > 0 ? `
+                <div style="margin-bottom:16px;">
+                  <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">Skills</div>
+                  <div class="tag-list">
+                    ${item.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+                  </div>
+                </div>
+                ` : ''}
 
                 <div class="workload-actions">
                   <button class="btn btn-sm btn-soft view-ta-detail-btn" type="button" data-ta-id="${item.id}">
-                    View Details
+                    ${Icons.eye} View Details
                   </button>
                   <button class="btn btn-sm btn-danger delete-ta-btn" type="button" data-ta-id="${item.id}">
-                    ${Icons.reject}
+                    ${Icons.reject} Delete
                   </button>
                 </div>
               </article>
-            `).join("")
+            `}).join("")
             : `
             <div class="empty-state">
               <strong>No TA records matched.</strong>
-              <span>Try adjusting your search or status filter.</span>
+              <span>Try adjusting your search or workload status filter.</span>
             </div>
           `
     }
@@ -652,7 +759,7 @@ function renderMOView() {
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
-          ${Icons.search}
+          <span class="search-icon">${Icons.search}</span>
           <input id="moSearchInput" type="text" placeholder="Search MO..." value="${escapeHtml(state.filters.moSearch)}" />
           <button id="moSearchBtn" class="search-btn" type="button">Search</button>
         </div>
@@ -762,7 +869,7 @@ function renderLogsView() {
 
       <div class="toolbar-row" style="margin:0;">
         <div class="search-box">
-          ${Icons.search}
+          <span class="search-icon">${Icons.search}</span>
           <input id="logSearchInput" type="text" placeholder="Search logs..." value="${escapeHtml(state.filters.logSearch)}" />
           <button id="logSearchBtn" class="search-btn" type="button">Search</button>
         </div>
@@ -1120,6 +1227,22 @@ function openTADetailModal(id) {
 
     state.selectedTA = ta;
 
+    // 获取工作负荷状态显示信息（修复问题4：只有三个状态，红黄绿）
+    const getWorkloadStatusInfo = (status) => {
+        switch (status) {
+            case "overloaded":
+                return { text: "OVERLOADED", class: "badge-danger", color: "var(--danger)" };
+            case "near_limit":
+                return { text: "Near Limit", class: "badge-warning", color: "var(--warning)" };
+            case "healthy":
+                return { text: "Healthy", class: "badge-success", color: "var(--success)" };
+            default:
+                return { text: status, class: "badge-soft", color: "var(--text-faint)" };
+        }
+    };
+
+    const statusInfo = getWorkloadStatusInfo(ta.workloadStatus);
+
     els.taDetailModalBody.innerHTML = `
     <div class="user-profile-block">
       <div class="user-avatar-xl">${escapeHtml(getInitials(ta.name))}</div>
@@ -1129,18 +1252,35 @@ function openTADetailModal(id) {
       </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px;background:var(--bg-soft);border-radius:14px;">
+      <span class="badge ${statusInfo.class}" style="font-size:14px;font-weight:600;padding:8px 16px;">
+        ${statusInfo.text}
+      </span>
+    </div>
+
+    <!-- TA详情页的工作负荷进度条 - 红黄绿三色（修复问题4） -->
+    <div class="workload-progress-container" style="margin-bottom:20px;">
+      <div class="workload-progress-header">
+        <span class="workload-progress-label">Weekly Workload</span>
+        <span class="workload-progress-value ${ta.workloadStatus}">${ta.hoursDisplay}</span>
+      </div>
+      <div class="workload-progress-bar" style="height:14px;">
+        <div class="workload-progress-fill ${ta.workloadStatus}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
+      </div>
+    </div>
+
     <div class="detail-grid" style="margin-bottom:18px;">
       <div class="detail-row">
-        <span>Weekly Hours</span>
-        <span>${escapeHtml(ta.hours)}</span>
+        <span>User ID</span>
+        <span>${escapeHtml(ta.id)}</span>
       </div>
       <div class="detail-row">
-        <span>Task Count</span>
+        <span>Email</span>
+        <span>${escapeHtml(ta.email || "-")}</span>
+      </div>
+      <div class="detail-row">
+        <span>Applied Jobs</span>
         <span>${escapeHtml(ta.taskCount)}</span>
-      </div>
-      <div class="detail-row">
-        <span>Status</span>
-        <span>${escapeHtml(ta.status)}</span>
       </div>
       <div class="detail-row">
         <span>Rating</span>
@@ -1148,20 +1288,23 @@ function openTADetailModal(id) {
       </div>
     </div>
 
+    ${ta.skills && ta.skills.length > 0 ? `
     <div style="margin-bottom:18px;">
-      <h3 style="margin:0 0 12px;">Skills</h3>
+      <h3 style="margin:0 0 12px;font-size:16px;">Skills</h3>
       <div class="tag-list">
         ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
       </div>
     </div>
+    ` : ''}
 
     <div style="margin-bottom:18px;">
-      <h3 style="margin:0 0 12px;">Summary</h3>
+      <h3 style="margin:0 0 12px;font-size:16px;">Summary</h3>
       <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(ta.summary)}</p>
     </div>
 
+    ${ta.recentTasks && ta.recentTasks.length > 0 ? `
     <div>
-      <h3 style="margin:0 0 12px;">Recent Tasks</h3>
+      <h3 style="margin:0 0 12px;font-size:16px;">Recent Tasks</h3>
       <div class="log-list">
         ${ta.recentTasks.map(task => `
           <div class="log-item">
@@ -1170,6 +1313,7 @@ function openTADetailModal(id) {
         `).join("")}
       </div>
     </div>
+    ` : ''}
   `;
 
     const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
@@ -1309,7 +1453,7 @@ function renderUsersModal() {
 
     <div class="users-filter-bar">
       <div class="search-box">
-        ${Icons.search}
+        <span class="search-icon">${Icons.search}</span>
         <input id="usersSearchInput" type="text" placeholder="Search users..." value="${escapeHtml(state.filters.usersSearch)}" />
         <button id="usersSearchBtn" class="search-btn" type="button">Search</button>
       </div>
@@ -1339,6 +1483,8 @@ function renderUsersModal() {
             ${filteredUsers.length > 0 ? filteredUsers.map(user => {
         const roleText = user.userType === 1 ? "TA" : user.userType === 2 ? "MO" : user.userType === 3 ? "Admin" : "Unknown";
         const roleClass = user.userType === 1 ? "badge-primary" : user.userType === 2 ? "badge-warning" : user.userType === 3 ? "badge-success" : "badge-soft";
+        // 检查是否是admin用户，如果是则不显示删除按钮
+        const isAdmin = user.userType === 3;
         return `
               <tr>
                 <td>${escapeHtml(user.userId)}</td>
@@ -1351,9 +1497,11 @@ function renderUsersModal() {
                     <button class="btn btn-sm btn-soft open-user-detail-btn" type="button" data-user-id="${user.userId}">
                       ${Icons.eye} View
                     </button>
+                    ${isAdmin ? '' : `
                     <button class="btn btn-sm btn-danger delete-user-btn" type="button" data-user-id="${user.userId}">
                       Delete
                     </button>
+                    `}
                   </div>
                 </td>
               </tr>
@@ -1424,7 +1572,7 @@ function bindUsersModalEvents() {
         });
     });
 
-    // Delete按钮
+    // Delete按钮 - 只有非admin用户才显示删除按钮
     const deleteBtns = modalBody.querySelectorAll(".delete-user-btn");
     deleteBtns.forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -2055,12 +2203,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await loadLoginUser(); // 已实现后端接口连接
     if (!ok) return;
 
-    // 已实现后端接口连接 - 先加载岗位数据，再加载用户数据
-    // 原因：loadAllUsers()内部需要使用backendJobsList来统计MO发布的岗位数量
-    await loadAllJobs(); // 先加载岗位列表
-    await Promise.all([
-        loadAllUsers(), // 用户列表加载时会构建moWorkloads和taWorkloads
-        loadOpenJobs()  // 开放岗位列表
-    ]);
+    // 修复问题3：调整数据加载顺序
+    // 先加载申请记录（用于计算TA工作负荷），再加载岗位和用户数据
+    await loadAllApplications(); // 先加载申请记录
+    await loadAllJobs(); // 再加载岗位列表
+    await loadAllUsers(); // 用户列表加载时会使用申请记录来计算TA工作负荷
+    await loadOpenJobs(); // 开放岗位列表
     render();
 });

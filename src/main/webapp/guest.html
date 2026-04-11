@@ -6,6 +6,26 @@
     <title>TA Market - 游客模式</title>
     <link rel="stylesheet" href="ta.css" />
     <style>
+        .job-card {
+    transition: all 0.3s ease;
+}
+
+.job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #eee;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
         /* 覆盖原有样式，适配游客模式 */
         .nav-username {
             color: #667eea;
@@ -123,6 +143,12 @@
     <main class="container main-layout">
         <section class="main-content" id="mainContent">
             <!-- 只保留岗位列表视图 -->
+            <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="🔍 搜索岗位..."
+                    style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;"
+            />
             <div id="feedView" class="view-panel active"></div>
             <!-- 隐藏个人资料视图 -->
             <div id="profileView" class="view-panel" style="display: none;"></div>
@@ -216,7 +242,13 @@
     // ==================== 核心：加载岗位列表（和 TA 一样的接口） ====================
     async function loadOpenJobs() {
         const feedView = document.getElementById('feedView');
-        feedView.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">加载中...</p>';
+       feedView.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px;">
+        <div class="loading-spinner"></div>
+        <p style="margin-top:10px;color:#666;">加载岗位中...</p>
+    </div>
+`;
+
 
         try {
             const res = await fetch(BASE_URL + '/job?action=listOpen', {
@@ -322,6 +354,9 @@
 
     // ==================== 页面加载时初始化 ====================
     window.onload = function() {
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+    filterJobs(e.target.value);
+});
         // 加载岗位列表
         loadOpenJobs();
 
@@ -340,5 +375,12 @@
         // 如果是从 index.html 跳过来的，不需要做额外处理
     };
 </script>
+function filterJobs(keyword) {
+const cards = document.querySelectorAll('.job-card');
+cards.forEach(card => {
+const text = card.innerText.toLowerCase();
+card.style.display = text.includes(keyword.toLowerCase()) ? '' : 'none';
+});
+}
 </body>
 </html>
