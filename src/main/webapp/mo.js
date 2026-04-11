@@ -49,6 +49,7 @@
       btnSaveJob: document.getElementById('btnSaveJob'),
 
       applicantModal: document.getElementById('applicantModal'),
+      applicantModalTitle: document.getElementById('applicantModalTitle'),
       applicantModalBody: document.getElementById('applicantModalBody'),
 
       deleteModal: document.getElementById('deleteModal'),
@@ -429,6 +430,7 @@
           + '      <h3 class="text-2xl font-bold tracking-tight truncate">' + escapeHtml(job.courseName) + '</h3>'
           + '    </div>'
           + '    <div class="flex items-center gap-2 self-start sm:self-auto">'
+          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-match-job" data-jobid="' + escapeHtml(job.id) + '">Recommend TAs</button>'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all" data-jobid="' + escapeHtml(job.id) + '">Accept All</button>'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-reject-all" data-jobid="' + escapeHtml(job.id) + '">Reject All</button>'
           + '    </div>'
@@ -533,6 +535,13 @@
           const jobId = btn.getAttribute('data-jobid');
           state.deletingJobId = jobId;
           openModal(dom.deleteModal);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-match-job').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
+          await openMatchCandidatesModal(jobId);
         });
       });
 
@@ -719,7 +728,92 @@
       }
     }
 
+    function mapMatchedTa(raw) {
+      return {
+        userId: raw.userId || raw.taUserId || '',
+        realName: raw.realName || raw.username || 'Unnamed TA',
+        major: raw.major || 'Major not provided',
+        grade: raw.grade || '',
+        email: raw.email || '',
+        matchScore: Number(raw.matchScore || 0),
+        tags: Array.isArray(raw.tags) ? raw.tags : parseTagsText(raw.tags || '')
+      };
+    }
+
+    function renderMatchCandidates(job, matchList) {
+      const sorted = matchList.slice().sort((a, b) => b.matchScore - a.matchScore);
+      const jobTags = (job && Array.isArray(job.tags)) ? job.tags : [];
+
+      if (!sorted.length) {
+        dom.applicantModalBody.innerHTML = ''
+          + '<div class="space-y-4">'
+          + '  <div class="text-sm text-slate-600">No matched TA candidates for this role yet.</div>'
+          + '  <div class="text-xs text-slate-400">Try enriching job tags to improve matching results.</div>'
+          + '</div>';
+        return;
+      }
+
+      dom.applicantModalBody.innerHTML = ''
+        + '<div class="mb-5 text-sm text-slate-600">'
+        + '  Matching based on current job tags: '
+        + (jobTags.length > 0
+            ? jobTags.map((tag) => '<span class="inline-flex text-xs font-semibold bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 mr-1 mb-1">' + escapeHtml(tag) + '</span>').join('')
+            : '<span class="text-slate-400">No tags</span>')
+        + '</div>'
+        + '<div class="space-y-3">'
+        + sorted.map((ta) => {
+          return ''
+            + '<div class="p-4 rounded-xl border border-slate-200 bg-white/90">'
+            + '  <div class="flex items-start justify-between gap-3">'
+            + '    <div>'
+            + '      <div class="text-base font-bold text-slate-900">' + escapeHtml(ta.realName) + '</div>'
+            + '      <div class="text-sm text-slate-500">' + escapeHtml(ta.major || 'Major not provided') + (ta.grade ? ' · ' + escapeHtml(ta.grade) : '') + '</div>'
+            + '      <div class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(ta.userId || '-') + '</span>' + (ta.email ? ' · ' + escapeHtml(ta.email) : '') + '</div>'
+            + '    </div>'
+            + '    <div class="text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">' + escapeHtml(ta.matchScore) + '% Match</div>'
+            + '  </div>'
+            + '  <div class="mt-3 flex flex-wrap gap-2">'
+            + (ta.tags.length > 0
+                ? ta.tags.map((tag) => '<span class="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">' + escapeHtml(tag) + '</span>').join('')
+                : '<span class="text-xs text-slate-400">No tags</span>')
+            + '  </div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
+
+    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+    // GET /job?action=matchTAs&jobId=...
+    async function openMatchCandidatesModal(jobId) {
+      const job = findJob(jobId);
+      if (!job) {
+        showToast('Job not found.');
+        return;
+      }
+
+      if (dom.applicantModalTitle) {
+        dom.applicantModalTitle.textContent = 'Recommended TA Candidates';
+      }
+
+      dom.applicantModalBody.innerHTML = '<div class="text-sm text-slate-500">Loading recommendations...</div>';
+      openModal(dom.applicantModal);
+
+      const r = await request('/job?action=matchTAs&jobId=' + encodeURIComponent(jobId));
+      if (!(r.ok && r.data && r.data.code === 200)) {
+        dom.applicantModalBody.innerHTML = '<div class="text-sm text-red-600">Failed to load recommendations.</div>';
+        showToast((r.data && r.data.msg) || 'Failed to match TAs.');
+        return;
+      }
+
+      const list = Array.isArray(r.data.data) ? r.data.data.map(mapMatchedTa) : [];
+      renderMatchCandidates(job, list);
+    }
+
     function renderApplicantModal(app) {
+      if (dom.applicantModalTitle) {
+        dom.applicantModalTitle.textContent = 'Applicant Profile';
+      }
+
       const statusText = app.status.toUpperCase();
       const statusClass = app.status === 'approved'
         ? 'status-approved'
