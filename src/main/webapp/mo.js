@@ -681,6 +681,25 @@
       }
     }
 
+    async function queryApplicantResumePdf(taUserId) {
+      const resumeUrl = BASE_URL + '/user?action=downloadProfilePdf&uid=' + encodeURIComponent(taUserId);
+      try {
+        const res = await fetch(resumeUrl, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          return { ok: true, blob };
+        }
+
+        return { ok: false, status: res.status };
+      } catch (e) {
+        return { ok: false, error: e.message || 'Network error' };
+      }
+    }
+
     function renderApplicantModal(app) {
       const statusText = app.status.toUpperCase();
       const statusClass = app.status === 'approved'
@@ -708,9 +727,8 @@
 
         + '  <div>'
         + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
-        + (app.resumeUrl
-            ? '<button id="btnResumeDownload" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Download Resume</button>'
-            : '<div class="text-sm text-slate-400">Resume not provided.</div>')
+    + '    <button id="btnQueryResumePdf" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Query Resume PDF</button>'
+    + '    <div id="resumeQueryStatus" class="text-sm text-slate-400 mt-2">Click the button to query resume PDF.</div>'
         + '  </div>'
         + '</div>';
 
@@ -727,13 +745,57 @@
           + '</div>';
       }
 
-      const downloadBtn = document.getElementById('btnResumeDownload');
-      if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-          // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-          // Sample APIs do not include resume file download endpoint.
-          showToast('Resume download endpoint is not available in current API sample.');
-        });
+      const queryResumeBtn = document.getElementById('btnQueryResumePdf');
+      const resumeQueryStatus = document.getElementById('resumeQueryStatus');
+      if (queryResumeBtn) {
+        if (!app.taUserId) {
+          queryResumeBtn.disabled = true;
+          queryResumeBtn.classList.add('opacity-60', 'cursor-not-allowed');
+          if (resumeQueryStatus) {
+            resumeQueryStatus.textContent = 'TA ID missing. Cannot query resume.';
+            resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+          }
+        } else {
+          queryResumeBtn.addEventListener('click', async () => {
+            queryResumeBtn.disabled = true;
+            queryResumeBtn.textContent = 'Querying...';
+            if (resumeQueryStatus) {
+              resumeQueryStatus.textContent = 'Checking resume status...';
+              resumeQueryStatus.className = 'text-sm text-slate-500 mt-2';
+            }
+
+            const r = await queryApplicantResumePdf(app.taUserId);
+            queryResumeBtn.disabled = false;
+            queryResumeBtn.textContent = 'Query Resume PDF';
+
+            if (r.ok) {
+              const blobUrl = URL.createObjectURL(r.blob);
+              window.open(blobUrl, '_blank', 'noopener');
+              window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60 * 1000);
+              if (resumeQueryStatus) {
+                resumeQueryStatus.textContent = 'Resume found. Opened in new tab.';
+                resumeQueryStatus.className = 'text-sm text-emerald-600 mt-2';
+              }
+              return;
+            }
+
+            if (resumeQueryStatus) {
+              if (r.status === 404) {
+                resumeQueryStatus.textContent = 'Resume not uploaded (未上传).';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 403) {
+                resumeQueryStatus.textContent = 'Resume is private and cannot be viewed.';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 401) {
+                resumeQueryStatus.textContent = 'Session expired. Please log in again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              } else {
+                resumeQueryStatus.textContent = 'Query failed. Please try again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              }
+            }
+          });
+        }
       }
 
       const rejectBtn = document.getElementById('btnModalReject');
