@@ -54,4 +54,20 @@ public class JobServiceImpl implements JobService {
     public Job getJobById(String jobId) {
         return jobDAO.getById(jobId, "jobId").orElse(null);
     }
+
+    @Override
+    public boolean updateJob(Job job, String moUserId) {
+        Job existingJob = jobDAO.getById(job.getJobId(), "jobId").orElse(null);
+        if (existingJob == null) {
+            return false;
+        }
+        if (!moUserId.equals(existingJob.getPublisherMoId())) {
+            return false;
+        }
+        job.setPublisherMoId(existingJob.getPublisherMoId());
+        job.setPublishTime(existingJob.getPublishTime());
+        job.setJobId(existingJob.getJobId());
+        job.setHiredNum(existingJob.getHiredNum());
+        return jobDAO.updateById(job, job.getJobId(), "jobId");
+    }
 }

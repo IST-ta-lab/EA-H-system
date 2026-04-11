@@ -147,4 +147,104 @@ public class JobServlet extends BaseServlet {
         List<TA> matchedTAs = userService.matchTAsByTags(job.getTags());
         writeJson(response, Result.success(matchedTAs));
     }
+
+    /**
+     * 7. MO修改自己发布的岗位（必须登录）
+     * POST /job?action=update
+     */
+    public void update(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "未登录"));
+            return;
+        }
+        if (loginUser.getUserType() != 2) {
+            writeJson(response, Result.error(403, "无权限，仅MO可修改岗位"));
+            return;
+        }
+
+        String jobId = request.getParameter("jobId");
+        if (jobId == null || jobId.isEmpty()) {
+            writeJson(response, Result.error(400, "缺少jobId参数"));
+            return;
+        }
+
+        Job existingJob = jobService.getJobById(jobId);
+        if (existingJob == null) {
+            writeJson(response, Result.error(404, "岗位不存在"));
+            return;
+        }
+        if (!loginUser.getUserId().equals(existingJob.getPublisherMoId())) {
+            writeJson(response, Result.error(403, "无权限，只能修改自己发布的岗位"));
+            return;
+        }
+
+        Job updatedJob = new Job();
+        updatedJob.setJobId(jobId);
+
+        String jobName = request.getParameter("jobName");
+        if (jobName != null && !jobName.isEmpty()) {
+            updatedJob.setJobName(jobName);
+        } else {
+            updatedJob.setJobName(existingJob.getJobName());
+        }
+
+        String jobType = request.getParameter("jobType");
+        if (jobType != null && !jobType.isEmpty()) {
+            updatedJob.setJobType(Integer.parseInt(jobType));
+        } else {
+            updatedJob.setJobType(existingJob.getJobType());
+        }
+
+        String belongModule = request.getParameter("belongModule");
+        if (belongModule != null && !belongModule.isEmpty()) {
+            updatedJob.setBelongModule(belongModule);
+        } else {
+            updatedJob.setBelongModule(existingJob.getBelongModule());
+        }
+
+        String jobDesc = request.getParameter("jobDesc");
+        if (jobDesc != null && !jobDesc.isEmpty()) {
+            updatedJob.setJobDesc(jobDesc);
+        } else {
+            updatedJob.setJobDesc(existingJob.getJobDesc());
+        }
+
+        String workHoursWeekly = request.getParameter("workHoursWeekly");
+        if (workHoursWeekly != null && !workHoursWeekly.isEmpty()) {
+            updatedJob.setWorkHoursWeekly(Double.parseDouble(workHoursWeekly));
+        } else {
+            updatedJob.setWorkHoursWeekly(existingJob.getWorkHoursWeekly());
+        }
+
+        String recruitNum = request.getParameter("recruitNum");
+        if (recruitNum != null && !recruitNum.isEmpty()) {
+            updatedJob.setRecruitNum(Integer.parseInt(recruitNum));
+        } else {
+            updatedJob.setRecruitNum(existingJob.getRecruitNum());
+        }
+
+        String applyDeadline = request.getParameter("applyDeadline");
+        if (applyDeadline != null && !applyDeadline.isEmpty()) {
+            updatedJob.setApplyDeadline(applyDeadline);
+        } else {
+            updatedJob.setApplyDeadline(existingJob.getApplyDeadline());
+        }
+
+        String tagsParam = request.getParameter("tags");
+        if (tagsParam != null && !tagsParam.isEmpty()) {
+            List<String> tagList = Arrays.stream(tagsParam.split(","))
+                    .map(String::trim)
+                    .filter(item -> !item.isEmpty())
+                    .collect(Collectors.toList());
+            updatedJob.setTags(tagList);
+        } else {
+            updatedJob.setTags(existingJob.getTags());
+        }
+
+        boolean success = jobService.updateJob(updatedJob, loginUser.getUserId());
+        writeJson(response, success ? Result.success("岗位修改成功") : Result.error(500, "修改失败"));
+    }
 }
