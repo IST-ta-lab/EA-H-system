@@ -362,6 +362,22 @@ async function loadMyApplications() {
     renderSidebar();
 }
 
+// Backend API connected
+async function logout() {
+    if (!confirm("Are you sure you want to logout?")) {
+        return;
+    }
+
+    const r = await request("/user?action=logout", { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "Logged out successfully");
+        location.href = "index.html";
+        return;
+    }
+
+    location.href = "index.html";
+}
+
 function createResumePicker() {
     const input = document.createElement("input");
     input.type = "file";
@@ -385,6 +401,26 @@ async function uploadResumeFile(file) {
     return { ok: false, error: (r.data && r.data.msg) || r.error || "Upload failed" };
 }
 
+async function checkResumeStatus() {
+    if (!state.currentUser || !state.currentUser.userId) return;
+
+    const uid = state.currentUser.userId;
+    try {
+        const res = await fetch(`${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`, {
+            method: "HEAD",
+            credentials: "include"
+        });
+
+        if (res.ok) {
+            state.hasResume = true;
+            state.resumeName = `${uid}.pdf`;
+            renderSidebar();
+        }
+    } catch (e) {
+        // Ignore check failures to avoid blocking the UI.
+    }
+}
+
 async function handleUploadResume() {
     if (state.isUploadingResume) return;
 
@@ -405,12 +441,12 @@ async function handleUploadResume() {
         const result = await uploadResumeFile(file);
         state.isUploadingResume = false;
 
-        if (result.ok) {
-            state.hasResume = true;
-            state.resumeName = file.name;
-            renderSidebar();
-            return;
-        }
+    if (result.ok) {
+        state.hasResume = true;
+        state.resumeName = file.name;
+        renderSidebar();
+        return;
+    }
 
         renderSidebar();
         showError(result.error);
@@ -1061,7 +1097,7 @@ function renderJobModal() {
     els.jobDescriptionText.textContent = job.description;
 
     els.matchCard.innerHTML = `
-    <strong>${Icons.target} Role Match: ${match.score}%</strong>
+    <strong>Role Match: ${match.score}%</strong>
     <p>
       Matched skills: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
       ${
@@ -1235,6 +1271,7 @@ function cacheElements() {
     els.profileView = document.getElementById("profileView");
     els.sidebar = document.getElementById("sidebar");
     els.avatarBtn = document.getElementById("avatarBtn");
+    els.logoutBtn = document.getElementById("logoutBtn");
 
     els.profileModalOverlay = document.getElementById("profileModalOverlay");
     els.jobModalOverlay = document.getElementById("jobModalOverlay");
@@ -1263,6 +1300,9 @@ function bindGlobalEvents() {
     if (els.avatarBtn) {
         els.avatarBtn.addEventListener("click", () => setView("profile"));
     }
+    if (els.logoutBtn) {
+        els.logoutBtn.addEventListener("click", logout);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1275,5 +1315,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await loadOpenJobs(); // Backend API connected
     await loadMyApplications(); // Backend API connected
+    await checkResumeStatus();
     render();
 });
