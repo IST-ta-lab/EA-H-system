@@ -17,6 +17,7 @@ public class AuthFilter implements Filter {
 
     // 白名单：无需登录即可访问的路径
     private static final List<String> WHITE_LIST = Arrays.asList(
+            "/",
             "/index.html",
             "/login.html",
             "/user?action=login",
