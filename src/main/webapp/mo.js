@@ -4,11 +4,27 @@
       currentUser: null,
       currentUserDisplayName: 'MO User',
       jobs: [],
+      availableTags: [],
+      selectedTags: [],
+      tagLoadWarned: false,
       applicantSearchByJob: {},
       editingJobId: null,
       deletingJobId: null,
       viewingApplicant: null
     };
+
+    const FALLBACK_TAGS = [
+      'Python',
+      'Java',
+      'C++',
+      'JavaScript',
+      'English',
+      'Machine Learning',
+      'Data Analysis',
+      'Teaching',
+      'Communication',
+      'Research'
+    ];
 
     const dom = {
       headerRealName: document.getElementById('headerRealName'),
@@ -28,6 +44,7 @@
       formHoursPerWeek: document.getElementById('formHoursPerWeek'),
       formMaxCapacity: document.getElementById('formMaxCapacity'),
       formRequirements: document.getElementById('formRequirements'),
+      formTagOptions: document.getElementById('formTagOptions'),
       formTags: document.getElementById('formTags'),
       btnSaveJob: document.getElementById('btnSaveJob'),
 
@@ -186,8 +203,84 @@
       if (Array.isArray(rawJob.tags)) candidates.push(rawJob.tags.join(','));
       if (typeof rawJob.tags === 'string') candidates.push(rawJob.tags);
       if (typeof rawJob.tagList === 'string') candidates.push(rawJob.tagList);
-      if (rawJob.belongModule) candidates.push(rawJob.belongModule);
-      return parseTagsText(candidates.join(','));
+      const parsedTags = parseTagsText(candidates.join(','));
+      if (parsedTags.length > 0) return parsedTags;
+      if (rawJob.belongModule) return parseTagsText(rawJob.belongModule);
+      return [];
+    }
+
+    function isTagSelected(tag) {
+      const t = String(tag || '').toLowerCase();
+      return state.selectedTags.some((item) => item.toLowerCase() === t);
+    }
+
+    function getRenderableTagOptions() {
+      const combined = state.availableTags.concat(state.selectedTags);
+      return parseTagsText(combined.join(','));
+    }
+
+    function renderTagOptions() {
+      if (!dom.formTagOptions) return;
+
+      const options = getRenderableTagOptions();
+      if (options.length === 0) {
+        dom.formTagOptions.innerHTML = '<div class="tag-picker-empty">No tags available from backend.</div>';
+        return;
+      }
+
+      dom.formTagOptions.innerHTML = options.map((tag) => {
+        return '<button type="button" class="tag-option' + (isTagSelected(tag) ? ' active' : '') + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>';
+      }).join('');
+    }
+
+    function setSelectedTags(tags) {
+      state.selectedTags = parseTagsText(tags);
+      if (dom.formTags) {
+        dom.formTags.value = state.selectedTags.join(', ');
+      }
+      renderTagOptions();
+    }
+
+    function toggleSelectedTag(tag) {
+      const t = String(tag || '').trim();
+      if (!t) return;
+
+      if (isTagSelected(t)) {
+        state.selectedTags = state.selectedTags.filter((item) => item.toLowerCase() !== t.toLowerCase());
+      } else {
+        state.selectedTags = parseTagsText(state.selectedTags.concat([t]).join(','));
+      }
+
+      if (dom.formTags) {
+        dom.formTags.value = state.selectedTags.join(', ');
+      }
+      renderTagOptions();
+    }
+
+    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+    // GET /user?action=listTags
+    async function loadAvailableTags() {
+      if (dom.formTagOptions) {
+        dom.formTagOptions.innerHTML = '<div class="tag-picker-empty">Loading tags...</div>';
+      }
+
+      const r = await request('/user?action=listTags');
+      let apiTags = [];
+      if (r.ok && r.data && r.data.code === 200 && Array.isArray(r.data.data)) {
+        apiTags = parseTagsText(r.data.data.join(','));
+      }
+
+      if (apiTags.length > 0) {
+        state.availableTags = apiTags;
+      } else {
+        state.availableTags = parseTagsText(FALLBACK_TAGS.join(','));
+        if (!state.tagLoadWarned) {
+          state.tagLoadWarned = true;
+          showToast('Tag API unavailable. Showing fallback tags.');
+        }
+      }
+
+      renderTagOptions();
     }
 
     function mapJob(rawJob, applicants) {
@@ -486,10 +579,11 @@
       dom.formHoursPerWeek.value = '10';
       dom.formMaxCapacity.value = '1';
       dom.formRequirements.value = '';
-      dom.formTags.value = '';
+      setSelectedTags([]);
     }
 
     function openJobModal(jobIdOrNull) {
+      loadAvailableTags();
       state.editingJobId = jobIdOrNull || null;
       if (!state.editingJobId) {
         dom.jobModalTitle.textContent = 'Post a New Position';
@@ -504,7 +598,7 @@
           dom.formHoursPerWeek.value = String(job.hoursPerWeek);
           dom.formMaxCapacity.value = String(job.maxCapacity);
           dom.formRequirements.value = job.requirements || '';
-          dom.formTags.value = job.tags.join(', ');
+          setSelectedTags(job.tags);
         }
       }
       openModal(dom.jobModal);
@@ -518,14 +612,16 @@
     }
 
     function deriveBelongModule(courseName, tagsText) {
-      const tags = parseTagsText(tagsText || '');
-      if (tags.length > 0) return tags.join(', ');
-
       const c = (courseName || '').trim();
-      if (!c) return 'General';
-      const parts = c.split(':');
-      if (parts[0] && parts[0].trim()) return parts[0].trim();
-      return c;
+      if (c) {
+        const parts = c.split(':');
+        if (parts[0] && parts[0].trim()) return parts[0].trim();
+        return c;
+      }
+
+      const tags = parseTagsText(tagsText || '');
+      if (tags.length > 0) return tags[0];
+      return 'General';
     }
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
@@ -546,7 +642,8 @@
 
       const params = new URLSearchParams();
       const courseName = dom.formCourseName.value.trim();
-      const tagsText = dom.formTags.value.trim();
+      const selectedTags = parseTagsText(dom.formTags.value);
+      const tagsText = selectedTags.join(', ');
 
       // Keep UI identical to target screenshot while satisfying backend publish API.
       const defaultJobType = '1';
@@ -562,6 +659,9 @@
       params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
       params.append('recruitNum', dom.formMaxCapacity.value.trim());
       params.append('applyDeadline', autoDeadline);
+      if (tagsText) {
+        params.append('tags', tagsText);
+      }
 
       const r = await request('/job?action=publish', {
         method: 'POST',
@@ -724,6 +824,15 @@
       dom.btnOpenCreateFromPencil.addEventListener('click', () => openJobModal(null));
       dom.btnSaveJob.addEventListener('click', saveJob);
 
+      if (dom.formTagOptions) {
+        dom.formTagOptions.addEventListener('click', (e) => {
+          const target = e.target.closest('.tag-option');
+          if (!target) return;
+          const tag = target.getAttribute('data-tag') || '';
+          toggleSelectedTag(tag);
+        });
+      }
+
       dom.btnConfirmDelete.addEventListener('click', () => {
         // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
         // Sample APIs do not include MO-side delete job endpoint.
@@ -737,6 +846,7 @@
     async function bootstrap() {
       const ok = await loadCurrentUser();
       if (!ok) return;
+      await loadAvailableTags();
       bindGlobalEvents();
       await loadJobsWithApplicants();
     }
