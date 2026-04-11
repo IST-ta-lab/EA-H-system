@@ -86,6 +86,7 @@ function cacheElements() {
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
     els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
+    els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
 
     els.taDetailModalBody = document.getElementById("taDetailModalBody");
     els.statsModalBody = document.getElementById("statsModalBody");
@@ -94,6 +95,7 @@ function cacheElements() {
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
     els.userQueryModalBody = document.getElementById("userQueryModalBody");
+    els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
     els.queryUserIdInput = document.getElementById("queryUserIdInput");
     els.userQueryResult = document.getElementById("userQueryResult");
 
@@ -358,6 +360,7 @@ async function loadAllUsers() {
             // 逻辑：先获取申请记录中的岗位ID，再从岗位列表中查找对应岗位的workHoursWeekly并累加
             let totalWorkHours = 0;
             let recentTasks = [];
+            let appliedJobs = []; // 存储完整的岗位信息用于详情展示
 
             userApplications.forEach(app => {
                 // 从申请记录中获取岗位ID
@@ -367,14 +370,36 @@ async function loadAllUsers() {
                     String(j.jobId) === String(appJobId)
                 );
                 console.log('查找岗位:', appJobId, '找到:', relatedJob ? relatedJob.jobName : '未找到', '工作时长:', relatedJob?.workHoursWeekly);
-                if (relatedJob && relatedJob.workHoursWeekly) {
-                    totalWorkHours += parseFloat(relatedJob.workHoursWeekly) || 0;
-                    recentTasks.push(`${relatedJob.jobName || "Unnamed Job"} (${relatedJob.workHoursWeekly}h/week)`);
+                if (relatedJob) {
+                    // 只要找到岗位就添加，不管workHoursWeekly是否为0
+                    const workHours = relatedJob.workHoursWeekly || 0;
+                    totalWorkHours += parseFloat(workHours) || 0;
+                    recentTasks.push(`${relatedJob.jobName || "Unnamed Job"} (${workHours}h/week)`);
+                    // 保存完整岗位信息用于详情页展示
+                    appliedJobs.push({
+                        jobId: relatedJob.jobId,
+                        jobName: relatedJob.jobName || "Unnamed Job",
+                        workHoursWeekly: workHours,
+                        belongModule: relatedJob.belongModule || "N/A",
+                        publisherName: relatedJob.publisherName || relatedJob.moName || "N/A",
+                        jobDesc: relatedJob.jobDesc || "No description",
+                        applicationStatus: app.status || "N/A"
+                    });
                 } else {
                     recentTasks.push(`Job #${appJobId}`);
+                    appliedJobs.push({
+                        jobId: appJobId,
+                        jobName: `Job #${appJobId}`,
+                        workHoursWeekly: 0,
+                        belongModule: "N/A",
+                        publisherName: "N/A",
+                        jobDesc: "No description",
+                        applicationStatus: app.status || "N/A"
+                    });
                 }
             });
             console.log('总工作时长:', totalWorkHours);
+            console.log('找到的申请岗位数量:', appliedJobs.length);
 
             // 修复问题4：调整工作负荷状态为三个（红黄绿）
             // 计算工作负荷状态：基于每周工作小时数
@@ -408,8 +433,8 @@ async function loadAllUsers() {
                     : "This TA has not applied for any jobs yet.",
                 skills: ta.skills || [],
                 taskCount: String(userApplications.length),
-                rating: ta.rating || "N/A",
-                recentTasks: recentTasks
+                recentTasks: recentTasks,
+                appliedJobs: appliedJobs // 完整的岗位申请详情
             });
         }
 
@@ -759,8 +784,12 @@ function renderTAView() {
                     <div style="font-size:22px;font-weight:700;color:var(--text);">${escapeHtml(item.taskCount)}</div>
                   </div>
                   <div style="flex:1;">
-                    <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Rating</div>
-                    <div style="font-size:22px;font-weight:700;color:var(--text);">${escapeHtml(item.rating)}</div>
+                    <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Total Hours</div>
+                    <div style="font-size:22px;font-weight:700;color:var(--text);">${item.currentHours}h</div>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;color:var(--text-soft);margin-bottom:6px;">Max Hours</div>
+                    <div style="font-size:22px;font-weight:700;color:var(--text);">${item.maxHours}h</div>
                   </div>
                 </div>
 
@@ -995,6 +1024,7 @@ function cacheElements() {
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
     els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
+    els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
 
     els.taDetailModalBody = document.getElementById("taDetailModalBody");
     els.statsModalBody = document.getElementById("statsModalBody");
@@ -1003,6 +1033,7 @@ function cacheElements() {
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
     els.userQueryModalBody = document.getElementById("userQueryModalBody");
+    els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
     els.queryUserIdInput = document.getElementById("queryUserIdInput");
     els.userQueryResult = document.getElementById("userQueryResult");
 
@@ -1329,10 +1360,6 @@ function openTADetailModal(id) {
         <span>Applied Jobs</span>
         <span>${escapeHtml(ta.taskCount)}</span>
       </div>
-      <div class="detail-row">
-        <span>Rating</span>
-        <span>${escapeHtml(ta.rating)}</span>
-      </div>
     </div>
 
     ${ta.skills && ta.skills.length > 0 ? `
@@ -1351,23 +1378,51 @@ function openTADetailModal(id) {
       </button>
     </div>
 
-    <div style="margin-bottom:18px;">
-      <h3 style="margin:0 0 12px;font-size:16px;">Summary</h3>
-      <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(ta.summary)}</p>
-    </div>
-
-    ${ta.recentTasks && ta.recentTasks.length > 0 ? `
+    ${ta.appliedJobs && ta.appliedJobs.length > 0 ? `
     <div>
-      <h3 style="margin:0 0 12px;font-size:16px;">Recent Tasks</h3>
-      <div class="log-list">
-        ${ta.recentTasks.map(task => `
-          <div class="log-item">
-            <p class="log-body">${escapeHtml(task)}</p>
-          </div>
+      <h3 style="margin:0 0 12px;font-size:16px;">Applied Jobs</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--text-soft);">Click on a job to view full details</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${ta.appliedJobs.map((job, index) => `
+          <button class="job-detail-btn" type="button" data-job-index="${index}" style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            width:100%;
+            padding:14px 16px;
+            background:var(--bg-soft);
+            border:1px solid var(--border);
+            border-radius:10px;
+            cursor:pointer;
+            transition:all 0.2s ease;
+            text-align:left;
+          " onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--bg-hover)';" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-soft)';">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;color:white;" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</div>
+                <div style="font-size:12px;color:var(--text-soft);">${escapeHtml(job.belongModule)}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(job.workHoursWeekly)}h/week</span>
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--text-soft);" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </div>
+          </button>
         `).join("")}
       </div>
     </div>
-    ` : ''}
+    ` : `
+    <div style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
+      <p style="margin:0;">This TA has not applied for any jobs yet.</p>
+    </div>
+    `}
   `;
 
     const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
@@ -1404,12 +1459,71 @@ function openTADetailModal(id) {
         });
     }
 
+    // 添加岗位详情按钮事件监听器
+    const jobDetailBtns = els.taDetailModalOverlay.querySelectorAll('.job-detail-btn');
+    jobDetailBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const jobIndex = parseInt(this.getAttribute('data-job-index'), 10);
+            const selectedJob = ta.appliedJobs[jobIndex];
+            if (selectedJob) {
+                openJobDetailModal(selectedJob);
+            }
+        });
+    });
+
     els.taDetailModalOverlay.classList.remove("hidden");
 }
 
 function closeTADetailModal() {
     state.selectedTA = null;
     els.taDetailModalOverlay.classList.add("hidden");
+}
+
+function openJobDetailModal(job) {
+    els.jobDetailModalBody.innerHTML = `
+    <div style="padding:16px;background:var(--bg-soft);border-radius:12px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h3 style="margin:0 0 8px;font-size:18px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</h3>
+          <span style="font-size:13px;color:var(--text-soft);">Job ID: ${escapeHtml(job.jobId)}</span>
+        </div>
+        <span class="badge badge-primary" style="font-size:14px;font-weight:600;padding:8px 14px;">
+          ${escapeHtml(job.workHoursWeekly)}h/week
+        </span>
+      </div>
+    </div>
+
+    <div class="detail-grid" style="margin-bottom:20px;">
+      <div class="detail-row">
+        <span>Module</span>
+        <span>${escapeHtml(job.belongModule)}</span>
+      </div>
+      <div class="detail-row">
+        <span>Course Organizer</span>
+        <span>${escapeHtml(job.publisherName)}</span>
+      </div>
+      <div class="detail-row">
+        <span>Weekly Hours</span>
+        <span>${escapeHtml(job.workHoursWeekly)} hours</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;">Description</h3>
+      <div style="padding:14px;background:var(--bg-soft);border-radius:10px;font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap;">
+        ${escapeHtml(job.jobDesc || "No description available.")}
+      </div>
+    </div>
+  `;
+
+    const header = els.jobDetailModalOverlay.querySelector(".modal-header h2");
+    if (header) header.textContent = "Job Details";
+
+    els.jobDetailModalOverlay.classList.remove("hidden");
+}
+
+function closeJobDetailModal() {
+    els.jobDetailModalOverlay.classList.add("hidden");
 }
 
 function openStatsModal() {
@@ -2190,6 +2304,7 @@ function bindModalEvents() {
     const closeRequestsModalBtn = document.getElementById("closeRequestsModalBtn");
     const closeAllJobsModalBtn = document.getElementById("closeAllJobsModalBtn");
     const closeUserQueryModalBtn = document.getElementById("closeUserQueryModalBtn");
+    const closeJobDetailModalBtn = document.getElementById("closeJobDetailModalBtn");
     const confirmQueryUserBtn = document.getElementById("confirmQueryUserBtn");
 
     if (closeTaDetailModalBtn) {
@@ -2232,6 +2347,10 @@ function bindModalEvents() {
         closeUserQueryModalBtn.addEventListener("click", closeUserQueryModal);
     }
 
+    if (closeJobDetailModalBtn) {
+        closeJobDetailModalBtn.addEventListener("click", closeJobDetailModal);
+    }
+
     if (confirmQueryUserBtn) {
         confirmQueryUserBtn.addEventListener("click", confirmQueryUser);
     }
@@ -2259,7 +2378,8 @@ function bindModalEvents() {
         [els.rejectPostModalOverlay, closeRejectPostModal],
         [els.requestsModalOverlay, closeRequestsModal],
         [els.allJobsModalOverlay, closeAllJobsModal],
-        [els.userQueryModalOverlay, closeUserQueryModal]
+        [els.userQueryModalOverlay, closeUserQueryModal],
+        [els.jobDetailModalOverlay, closeJobDetailModal]
     ].forEach(([overlay, closer]) => {
         if (!overlay) return;
         overlay.addEventListener("click", e => {
@@ -2278,6 +2398,7 @@ function bindModalEvents() {
         if (!els.requestsModalOverlay.classList.contains("hidden")) closeRequestsModal();
         if (!els.allJobsModalOverlay.classList.contains("hidden")) closeAllJobsModal();
         if (!els.userQueryModalOverlay.classList.contains("hidden")) closeUserQueryModal();
+        if (!els.jobDetailModalOverlay.classList.contains("hidden")) closeJobDetailModal();
     });
 }
 
