@@ -462,12 +462,12 @@ async function handleUploadResume() {
         const result = await uploadResumeFile(file);
         state.isUploadingResume = false;
 
-        if (result.ok) {
-            state.hasResume = true;
-            state.resumeName = file.name;
-            renderSidebar();
-            return;
-        }
+    if (result.ok) {
+        state.hasResume = true;
+        state.resumeName = file.name;
+        renderSidebar();
+        return;
+    }
 
         renderSidebar();
         showError(result.error);
