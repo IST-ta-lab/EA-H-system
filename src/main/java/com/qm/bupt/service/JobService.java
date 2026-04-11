@@ -14,4 +14,6 @@ public interface JobService {
     List<Job> listMyJobs(String moUserId);
     // 5. 根据ID查询岗位
     Job getJobById(String jobId);
+    // 6. MO修改自己发布的岗位
+    boolean updateJob(Job job, String moUserId);
 }
