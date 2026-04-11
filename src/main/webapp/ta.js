@@ -373,6 +373,22 @@ async function loadMyApplications() {
 }
 
 // Backend API connected
+async function logout() {
+    if (!confirm("Are you sure you want to logout?")) {
+        return;
+    }
+
+    const r = await request("/user?action=logout", { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "Logged out successfully");
+        location.href = "index.html";
+        return;
+    }
+
+    location.href = "index.html";
+}
+
+// Backend API connected
 async function loadTagList() {
     const r = await request("/user?action=listTags");
     if (r.ok && r.data && r.data.code === 200) {
@@ -1317,6 +1333,7 @@ function cacheElements() {
     els.profileView = document.getElementById("profileView");
     els.sidebar = document.getElementById("sidebar");
     els.avatarBtn = document.getElementById("avatarBtn");
+    els.logoutBtn = document.getElementById("logoutBtn");
 
     els.profileModalOverlay = document.getElementById("profileModalOverlay");
     els.jobModalOverlay = document.getElementById("jobModalOverlay");
@@ -1343,6 +1360,9 @@ function cacheElements() {
 function bindGlobalEvents() {
     if (els.avatarBtn) {
         els.avatarBtn.addEventListener("click", () => setView("profile"));
+    }
+    if (els.logoutBtn) {
+        els.logoutBtn.addEventListener("click", logout);
     }
 }
 
