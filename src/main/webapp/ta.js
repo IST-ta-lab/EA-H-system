@@ -852,6 +852,53 @@ function syncProfileModalState() {
     els.profileVisibleIcon.classList.toggle("active", !!state.profile.isVisible);
 }
 
+function bindJobListEvents() {
+    const openButtons = els.feedView.querySelectorAll(".open-job-btn");
+    const applyButtons = els.feedView.querySelectorAll(".apply-job-btn");
+
+    openButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await openJobModal(id);
+        });
+    });
+
+    applyButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await handleApply(id);
+        });
+    });
+
+    const cards = els.feedView.querySelectorAll(".job-card");
+    cards.forEach(card => {
+        card.addEventListener("click", async () => {
+            await openJobModal(card.dataset.jobId);
+        });
+    });
+}
+
+function updateBodyScrollLock() {
+    const isProfileOpen = els.profileModalOverlay && !els.profileModalOverlay.classList.contains("hidden");
+    const isJobOpen = els.jobModalOverlay && !els.jobModalOverlay.classList.contains("hidden");
+    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen);
+}
+
+function openProfileModal() {
+    state.isProfileModalOpen = true;
+    syncProfileModalState();
+    els.profileModalOverlay.classList.remove("hidden");
+    updateBodyScrollLock();
+}
+
+function closeProfileModal() {
+    state.isProfileModalOpen = false;
+    els.profileModalOverlay.classList.add("hidden");
+    updateBodyScrollLock();
+}
+
 // Backend not connected: profile saving is not available in the sample API, so this stays local.
 async function saveProfile() {
     const nextName = els.profileNameInput.value.trim() || state.profile.name;
