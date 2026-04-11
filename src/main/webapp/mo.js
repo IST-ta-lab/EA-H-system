@@ -626,17 +626,10 @@
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
     // POST /job?action=publish
+    // POST /job?action=update
     async function saveJob() {
       if (!dom.formCourseName.value.trim()) {
         showToast('Course name is required.');
-        return;
-      }
-
-      if (state.editingJobId) {
-        // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-        // The sample APIs do not provide MO-side update job endpoint.
-        showToast('Update endpoint is not available in current API sample.');
-        closeModal(dom.jobModal);
         return;
       }
 
@@ -644,23 +637,49 @@
       const courseName = dom.formCourseName.value.trim();
       const selectedTags = parseTagsText(dom.formTags.value);
       const tagsText = selectedTags.join(', ');
+      const editingJob = state.editingJobId ? findJob(state.editingJobId) : null;
 
-      // Keep UI identical to target screenshot while satisfying backend publish API.
-      const defaultJobType = '1';
+      // Keep UI identical to target screenshot while satisfying backend APIs.
+      const fallbackJobType = editingJob && editingJob.jobType !== undefined && editingJob.jobType !== null
+        ? String(editingJob.jobType)
+        : '1';
       const autoBelongModule = deriveBelongModule(courseName, tagsText);
       const d = new Date();
       d.setDate(d.getDate() + 30);
       const autoDeadline = formatDateYYYYMMDD(d);
+      const deadlineValue = editingJob && editingJob.deadline ? String(editingJob.deadline) : autoDeadline;
 
       params.append('jobName', dom.formCourseName.value.trim());
-      params.append('jobType', defaultJobType);
+      params.append('jobType', fallbackJobType);
       params.append('belongModule', autoBelongModule);
       params.append('jobDesc', dom.formRequirements.value.trim());
       params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
       params.append('recruitNum', dom.formMaxCapacity.value.trim());
-      params.append('applyDeadline', autoDeadline);
+      params.append('applyDeadline', deadlineValue);
       if (tagsText) {
         params.append('tags', tagsText);
+      }
+
+      if (state.editingJobId) {
+        params.append('jobId', String(state.editingJobId));
+        const updateRes = await request('/job?action=update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+
+        if (updateRes.ok && updateRes.data) {
+          showToast(updateRes.data.msg || 'Position updated.');
+        } else {
+          showToast('Failed to update position.');
+          return;
+        }
+
+        if (updateRes.ok && updateRes.data && updateRes.data.code === 200) {
+          closeModal(dom.jobModal);
+          await loadJobsWithApplicants();
+        }
+        return;
       }
 
       const r = await request('/job?action=publish', {
