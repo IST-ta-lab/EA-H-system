@@ -343,7 +343,11 @@ public class UserServlet extends BaseServlet {
             return;
         }
 
-        if (ta.getProfileVisible() == null || !ta.getProfileVisible()) {
+        HttpSession session = request.getSession();
+        TA currentUser = (TA) session.getAttribute("loginUser");
+        boolean isOwner = currentUser != null && currentUser.getUserId().equals(ta.getUserId());
+
+        if (!isOwner && (ta.getProfileVisible() == null || !ta.getProfileVisible())) {
             response.sendError(403, "该用户设置了隐私保护，无法下载");
             return;
         }
