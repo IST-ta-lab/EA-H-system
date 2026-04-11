@@ -19,6 +19,8 @@ const state = {
     jobs: [],
     applications: [],
     hasResume: false,
+    resumeName: "",
+    isUploadingResume: false,
 
     searchQuery: "",
     activeTags: [],
@@ -360,28 +362,61 @@ async function loadMyApplications() {
     renderSidebar();
 }
 
-// Backend not connected: resume upload is not available in the sample API, so this stays as a front-end demo.
-function handleUploadResume() {
-    if (state.hasResume) return;
+function createResumePicker() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/pdf";
+    return input;
+}
 
-    const uploadBtn = document.getElementById("resumeUploadBtn");
-    if (uploadBtn) {
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = `
-      <div class="fade-in" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-        <div class="profile-avatar" style="width:52px;height:52px;">...</div>
-        <div style="text-align:center;">
-          <p style="margin:0;font-weight:700;">Uploading...</p>
-          <p style="margin:6px 0 0;color:var(--text-soft);font-size:12px;">Please wait</p>
-        </div>
-      </div>
-    `;
+async function uploadResumeFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const r = await request("/user?action=uploadProfilePdf", {
+        method: "POST",
+        body: formData
+    });
+
+    if (r.ok && r.data && r.data.code === 200) {
+        return { ok: true, data: r.data };
     }
 
-    setTimeout(() => {
-        state.hasResume = true;
+    return { ok: false, error: (r.data && r.data.msg) || r.error || "Upload failed" };
+}
+
+async function handleUploadResume() {
+    if (state.isUploadingResume) return;
+
+    const picker = createResumePicker();
+    picker.addEventListener("change", async () => {
+        const file = picker.files && picker.files[0];
+        if (!file) return;
+
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+        if (!isPdf) {
+            showError("Please upload a PDF file.");
+            return;
+        }
+
+        state.isUploadingResume = true;
         renderSidebar();
-    }, 600);
+
+        const result = await uploadResumeFile(file);
+        state.isUploadingResume = false;
+
+        if (result.ok) {
+            state.hasResume = true;
+            state.resumeName = file.name;
+            renderSidebar();
+            return;
+        }
+
+        renderSidebar();
+        showError(result.error);
+    });
+
+    picker.click();
 }
 
 function renderFeedView() {
@@ -548,7 +583,19 @@ function renderSidebar() {
       <section class="glass-card section-card">
         <h3 class="side-title">${Icons.sparkles} Resume</h3>
         ${
-        state.hasResume
+        state.isUploadingResume
+            ? `
+              <div class="resume-box fade-in">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">...</div>
+                  <div>
+                    <strong style="display:block;margin-bottom:4px;">Uploading...</strong>
+                    <p style="margin:0;">Please wait</p>
+                  </div>
+                </div>
+              </div>
+            `
+            : state.hasResume
             ? `
               <div class="resume-box fade-in">
                 <div style="display:flex;align-items:center;gap:12px;">
@@ -557,7 +604,7 @@ function renderSidebar() {
                   </div>
                   <div>
                     <strong style="display:block;margin-bottom:4px;">Resume Uploaded</strong>
-                    <p style="margin:0;">alex_resume_2026.pdf</p>
+                    <p style="margin:0;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</p>
                   </div>
                   <div style="margin-left:auto;color:var(--success);width:22px;height:22px;">
                     ${Icons.checkCircle}
