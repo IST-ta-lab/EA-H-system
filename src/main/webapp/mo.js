@@ -49,6 +49,7 @@
       btnSaveJob: document.getElementById('btnSaveJob'),
 
       applicantModal: document.getElementById('applicantModal'),
+      applicantModalTitle: document.getElementById('applicantModalTitle'),
       applicantModalBody: document.getElementById('applicantModalBody'),
 
       deleteModal: document.getElementById('deleteModal'),
@@ -429,6 +430,7 @@
           + '      <h3 class="text-2xl font-bold tracking-tight truncate">' + escapeHtml(job.courseName) + '</h3>'
           + '    </div>'
           + '    <div class="flex items-center gap-2 self-start sm:self-auto">'
+          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-match-job" data-jobid="' + escapeHtml(job.id) + '">Recommend TAs</button>'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all" data-jobid="' + escapeHtml(job.id) + '">Accept All</button>'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-reject-all" data-jobid="' + escapeHtml(job.id) + '">Reject All</button>'
           + '    </div>'
@@ -536,6 +538,13 @@
         });
       });
 
+      dom.jobCards.querySelectorAll('.btn-match-job').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
+          await openMatchCandidatesModal(jobId);
+        });
+      });
+
       dom.jobCards.querySelectorAll('.btn-accept-all').forEach((btn) => {
         btn.addEventListener('click', async () => {
           const jobId = btn.getAttribute('data-jobid');
@@ -626,17 +635,10 @@
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
     // POST /job?action=publish
+    // POST /job?action=update
     async function saveJob() {
       if (!dom.formCourseName.value.trim()) {
         showToast('Course name is required.');
-        return;
-      }
-
-      if (state.editingJobId) {
-        // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-        // The sample APIs do not provide MO-side update job endpoint.
-        showToast('Update endpoint is not available in current API sample.');
-        closeModal(dom.jobModal);
         return;
       }
 
@@ -644,23 +646,49 @@
       const courseName = dom.formCourseName.value.trim();
       const selectedTags = parseTagsText(dom.formTags.value);
       const tagsText = selectedTags.join(', ');
+      const editingJob = state.editingJobId ? findJob(state.editingJobId) : null;
 
-      // Keep UI identical to target screenshot while satisfying backend publish API.
-      const defaultJobType = '1';
+      // Keep UI identical to target screenshot while satisfying backend APIs.
+      const fallbackJobType = editingJob && editingJob.jobType !== undefined && editingJob.jobType !== null
+        ? String(editingJob.jobType)
+        : '1';
       const autoBelongModule = deriveBelongModule(courseName, tagsText);
       const d = new Date();
       d.setDate(d.getDate() + 30);
       const autoDeadline = formatDateYYYYMMDD(d);
+      const deadlineValue = editingJob && editingJob.deadline ? String(editingJob.deadline) : autoDeadline;
 
       params.append('jobName', dom.formCourseName.value.trim());
-      params.append('jobType', defaultJobType);
+      params.append('jobType', fallbackJobType);
       params.append('belongModule', autoBelongModule);
       params.append('jobDesc', dom.formRequirements.value.trim());
       params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
       params.append('recruitNum', dom.formMaxCapacity.value.trim());
-      params.append('applyDeadline', autoDeadline);
+      params.append('applyDeadline', deadlineValue);
       if (tagsText) {
         params.append('tags', tagsText);
+      }
+
+      if (state.editingJobId) {
+        params.append('jobId', String(state.editingJobId));
+        const updateRes = await request('/job?action=update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+
+        if (updateRes.ok && updateRes.data) {
+          showToast(updateRes.data.msg || 'Position updated.');
+        } else {
+          showToast('Failed to update position.');
+          return;
+        }
+
+        if (updateRes.ok && updateRes.data && updateRes.data.code === 200) {
+          closeModal(dom.jobModal);
+          await loadJobsWithApplicants();
+        }
+        return;
       }
 
       const r = await request('/job?action=publish', {
@@ -681,7 +709,111 @@
       }
     }
 
+    async function queryApplicantResumePdf(taUserId) {
+      const resumeUrl = BASE_URL + '/user?action=downloadProfilePdf&uid=' + encodeURIComponent(taUserId);
+      try {
+        const res = await fetch(resumeUrl, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          return { ok: true, blob };
+        }
+
+        return { ok: false, status: res.status };
+      } catch (e) {
+        return { ok: false, error: e.message || 'Network error' };
+      }
+    }
+
+    function mapMatchedTa(raw) {
+      return {
+        userId: raw.userId || raw.taUserId || '',
+        realName: raw.realName || raw.username || 'Unnamed TA',
+        major: raw.major || 'Major not provided',
+        grade: raw.grade || '',
+        email: raw.email || '',
+        matchScore: Number(raw.matchScore || 0),
+        tags: Array.isArray(raw.tags) ? raw.tags : parseTagsText(raw.tags || '')
+      };
+    }
+
+    function renderMatchCandidates(job, matchList) {
+      const sorted = matchList.slice().sort((a, b) => b.matchScore - a.matchScore);
+      const jobTags = (job && Array.isArray(job.tags)) ? job.tags : [];
+
+      if (!sorted.length) {
+        dom.applicantModalBody.innerHTML = ''
+          + '<div class="space-y-4">'
+          + '  <div class="text-sm text-slate-600">No matched TA candidates for this role yet.</div>'
+          + '  <div class="text-xs text-slate-400">Try enriching job tags to improve matching results.</div>'
+          + '</div>';
+        return;
+      }
+
+      dom.applicantModalBody.innerHTML = ''
+        + '<div class="mb-5 text-sm text-slate-600">'
+        + '  Matching based on current job tags: '
+        + (jobTags.length > 0
+            ? jobTags.map((tag) => '<span class="inline-flex text-xs font-semibold bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 mr-1 mb-1">' + escapeHtml(tag) + '</span>').join('')
+            : '<span class="text-slate-400">No tags</span>')
+        + '</div>'
+        + '<div class="space-y-3">'
+        + sorted.map((ta) => {
+          return ''
+            + '<div class="p-4 rounded-xl border border-slate-200 bg-white/90">'
+            + '  <div class="flex items-start justify-between gap-3">'
+            + '    <div>'
+            + '      <div class="text-base font-bold text-slate-900">' + escapeHtml(ta.realName) + '</div>'
+            + '      <div class="text-sm text-slate-500">' + escapeHtml(ta.major || 'Major not provided') + (ta.grade ? ' · ' + escapeHtml(ta.grade) : '') + '</div>'
+            + '      <div class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(ta.userId || '-') + '</span>' + (ta.email ? ' · ' + escapeHtml(ta.email) : '') + '</div>'
+            + '    </div>'
+            + '    <div class="text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">' + escapeHtml(ta.matchScore) + '% Match</div>'
+            + '  </div>'
+            + '  <div class="mt-3 flex flex-wrap gap-2">'
+            + (ta.tags.length > 0
+                ? ta.tags.map((tag) => '<span class="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">' + escapeHtml(tag) + '</span>').join('')
+                : '<span class="text-xs text-slate-400">No tags</span>')
+            + '  </div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
+
+    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+    // GET /job?action=matchTAs&jobId=...
+    async function openMatchCandidatesModal(jobId) {
+      const job = findJob(jobId);
+      if (!job) {
+        showToast('Job not found.');
+        return;
+      }
+
+      if (dom.applicantModalTitle) {
+        dom.applicantModalTitle.textContent = 'Recommended TA Candidates';
+      }
+
+      dom.applicantModalBody.innerHTML = '<div class="text-sm text-slate-500">Loading recommendations...</div>';
+      openModal(dom.applicantModal);
+
+      const r = await request('/job?action=matchTAs&jobId=' + encodeURIComponent(jobId));
+      if (!(r.ok && r.data && r.data.code === 200)) {
+        dom.applicantModalBody.innerHTML = '<div class="text-sm text-red-600">Failed to load recommendations.</div>';
+        showToast((r.data && r.data.msg) || 'Failed to match TAs.');
+        return;
+      }
+
+      const list = Array.isArray(r.data.data) ? r.data.data.map(mapMatchedTa) : [];
+      renderMatchCandidates(job, list);
+    }
+
     function renderApplicantModal(app) {
+      if (dom.applicantModalTitle) {
+        dom.applicantModalTitle.textContent = 'Applicant Profile';
+      }
+
       const statusText = app.status.toUpperCase();
       const statusClass = app.status === 'approved'
         ? 'status-approved'
@@ -708,9 +840,8 @@
 
         + '  <div>'
         + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
-        + (app.resumeUrl
-            ? '<button id="btnResumeDownload" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Download Resume</button>'
-            : '<div class="text-sm text-slate-400">Resume not provided.</div>')
+    + '    <button id="btnQueryResumePdf" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Query Resume PDF</button>'
+    + '    <div id="resumeQueryStatus" class="text-sm text-slate-400 mt-2">Click the button to query resume PDF.</div>'
         + '  </div>'
         + '</div>';
 
@@ -727,13 +858,57 @@
           + '</div>';
       }
 
-      const downloadBtn = document.getElementById('btnResumeDownload');
-      if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-          // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-          // Sample APIs do not include resume file download endpoint.
-          showToast('Resume download endpoint is not available in current API sample.');
-        });
+      const queryResumeBtn = document.getElementById('btnQueryResumePdf');
+      const resumeQueryStatus = document.getElementById('resumeQueryStatus');
+      if (queryResumeBtn) {
+        if (!app.taUserId) {
+          queryResumeBtn.disabled = true;
+          queryResumeBtn.classList.add('opacity-60', 'cursor-not-allowed');
+          if (resumeQueryStatus) {
+            resumeQueryStatus.textContent = 'TA ID missing. Cannot query resume.';
+            resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+          }
+        } else {
+          queryResumeBtn.addEventListener('click', async () => {
+            queryResumeBtn.disabled = true;
+            queryResumeBtn.textContent = 'Querying...';
+            if (resumeQueryStatus) {
+              resumeQueryStatus.textContent = 'Checking resume status...';
+              resumeQueryStatus.className = 'text-sm text-slate-500 mt-2';
+            }
+
+            const r = await queryApplicantResumePdf(app.taUserId);
+            queryResumeBtn.disabled = false;
+            queryResumeBtn.textContent = 'Query Resume PDF';
+
+            if (r.ok) {
+              const blobUrl = URL.createObjectURL(r.blob);
+              window.open(blobUrl, '_blank', 'noopener');
+              window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60 * 1000);
+              if (resumeQueryStatus) {
+                resumeQueryStatus.textContent = 'Resume found. Opened in new tab.';
+                resumeQueryStatus.className = 'text-sm text-emerald-600 mt-2';
+              }
+              return;
+            }
+
+            if (resumeQueryStatus) {
+              if (r.status === 404) {
+                resumeQueryStatus.textContent = 'Resume not uploaded (未上传).';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 403) {
+                resumeQueryStatus.textContent = 'Resume is private and cannot be viewed.';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 401) {
+                resumeQueryStatus.textContent = 'Session expired. Please log in again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              } else {
+                resumeQueryStatus.textContent = 'Query failed. Please try again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              }
+            }
+          });
+        }
       }
 
       const rejectBtn = document.getElementById('btnModalReject');
