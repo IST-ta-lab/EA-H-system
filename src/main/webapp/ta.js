@@ -21,6 +21,7 @@ const state = {
     hasResume: false,
     resumeName: "",
     isUploadingResume: false,
+    availableTags: [...POPULAR_TAGS],
 
     searchQuery: "",
     activeTags: [],
@@ -37,7 +38,8 @@ const state = {
         email: "",
         isVisible: true,
         visibilityScope: "applied_only",
-        skills: ["Python", "Grading", "Java"]
+        skills: ["Python", "Grading", "Java"],
+        tags: []
     },
 
     appRemarks: "",
@@ -187,6 +189,9 @@ function mapUserToProfile(user) {
     if (Array.isArray(user.skillIds)) {
         state.profile.skills = user.skillIds;
     }
+    if (Array.isArray(user.tags)) {
+        state.profile.tags = user.tags;
+    }
     if (typeof user.profileVisible === "boolean") {
         state.profile.isVisible = user.profileVisible;
     }
@@ -194,15 +199,18 @@ function mapUserToProfile(user) {
 
 // Backend API connected
 function mapJobFromBackend(job) {
+    const backendTags = Array.isArray(job.tags) ? job.tags : [];
     return {
         id: job.jobId,
         course: job.jobName || "Untitled Role",
         prof: job.publisherName || job.moName || "Course Lead",
         hours: job.workHoursWeekly || 0,
-        tags: [
-            job.jobType === 1 ? "TA" : "Assistant",
-            job.belongModule || "Uncategorized"
-        ],
+        tags: backendTags.length > 0
+            ? backendTags
+            : [
+                job.jobType === 1 ? "TA" : "Assistant",
+                job.belongModule || "Uncategorized"
+            ],
         description: job.jobDesc || "No description available",
         raw: job
     };
@@ -285,14 +293,16 @@ function getMatchData(job) {
     if (!job) return null;
 
     const jobTags = job.tags || [];
-    const userSkills = state.profile.skills || [];
+    const userTags = (state.profile.tags && state.profile.tags.length > 0)
+        ? state.profile.tags
+        : (state.profile.skills || []);
 
     if (jobTags.length === 0) {
         return { score: 100, matched: [], missing: [] };
     }
 
-    const matched = jobTags.filter(tag => userSkills.includes(tag));
-    const missing = jobTags.filter(tag => !userSkills.includes(tag));
+    const matched = jobTags.filter(tag => userTags.includes(tag));
+    const missing = jobTags.filter(tag => !userTags.includes(tag));
     const score = Math.round((matched.length / jobTags.length) * 100);
 
     return { score, matched, missing };
@@ -362,6 +372,17 @@ async function loadMyApplications() {
     renderSidebar();
 }
 
+// Backend API connected
+async function loadTagList() {
+    const r = await request("/user?action=listTags");
+    if (r.ok && r.data && r.data.code === 200) {
+        const tags = Array.isArray(r.data.data) ? r.data.data : [];
+        if (tags.length > 0) {
+            state.availableTags = tags;
+        }
+    }
+}
+
 function createResumePicker() {
     const input = document.createElement("input");
     input.type = "file";
@@ -383,6 +404,26 @@ async function uploadResumeFile(file) {
     }
 
     return { ok: false, error: (r.data && r.data.msg) || r.error || "Upload failed" };
+}
+
+async function checkResumeStatus() {
+    if (!state.currentUser || !state.currentUser.userId) return;
+
+    const uid = state.currentUser.userId;
+    try {
+        const res = await fetch(`${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`, {
+            method: "HEAD",
+            credentials: "include"
+        });
+
+        if (res.ok) {
+            state.hasResume = true;
+            state.resumeName = `${uid}.pdf`;
+            renderSidebar();
+        }
+    } catch (e) {
+        // Ignore check failures to avoid blocking the UI.
+    }
 }
 
 async function handleUploadResume() {
@@ -447,7 +488,7 @@ function renderFeedView() {
     </div>
 
     <div class="filter-row">
-      ${POPULAR_TAGS.map(tag => `
+      ${state.availableTags.map(tag => `
         <button
           class="filter-chip ${state.activeTags.includes(tag) ? "active" : ""}"
           type="button"
@@ -528,7 +569,7 @@ function renderJobCard(job) {
       <div class="job-footer">
         <div class="job-stats">
           <span>RoleID: ${job.id}</span>
-          <span>${(job.tags || []).length} required skills</span>
+          <span>${(job.tags || []).length} required tags</span>
         </div>
         <div class="job-actions">
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
@@ -565,8 +606,10 @@ function renderSidebar() {
             <span>${state.profile.isVisible ? "Visible" : "Hidden"}</span>
           </div>
           <div class="info-line">
-            <span>Skills</span>
-            <span>${escapeHtml(state.profile.skills.join(", "))}</span>
+            <span>Tags</span>
+            <span>${escapeHtml((state.profile.tags && state.profile.tags.length > 0
+                ? state.profile.tags
+                : state.profile.skills).join(", "))}</span>
           </div>
         </div>
 
@@ -676,7 +719,9 @@ function renderSidebar() {
 
 function renderProfileView() {
     const applicationCount = state.applications.length;
-    const skillCount = state.profile.skills.length;
+    const tagCount = (state.profile.tags && state.profile.tags.length > 0
+        ? state.profile.tags
+        : state.profile.skills).length;
     const visibilityText = state.profile.isVisible ? "Visible to recruiters" : "Hidden";
 
     els.profileView.innerHTML = `
@@ -714,8 +759,8 @@ function renderProfileView() {
             <span>Applications Submitted</span>
           </div>
           <div class="kpi-card">
-            <strong>${skillCount}</strong>
-            <span>Skills Listed</span>
+              <strong>${tagCount}</strong>
+              <span>Tags Listed</span>
           </div>
           <div class="kpi-card">
             <strong>${state.hasResume ? "Yes" : "No"}</strong>
@@ -734,12 +779,16 @@ function renderProfileView() {
 
         <div class="glass-card section-card">
           <div class="skill-box">
-            <h3>Skills</h3>
+            <h3>Tags</h3>
             <div class="tag-list">
               ${
-        state.profile.skills.length > 0
-            ? state.profile.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")
-            : `<span class="tag">No skills yet</span>`
+        (state.profile.tags && state.profile.tags.length > 0
+            ? state.profile.tags
+            : state.profile.skills).length > 0
+            ? (state.profile.tags && state.profile.tags.length > 0
+                ? state.profile.tags
+                : state.profile.skills).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
+            : `<span class="tag">No tags yet</span>`
     }
             </div>
           </div>
@@ -893,10 +942,46 @@ function syncProfileModalState() {
     els.profileEmailInput.value = state.profile.email || "";
     els.profileMajorInput.value = state.profile.major || "";
     els.profileBioInput.value = state.profile.bio || "";
-    els.profileSkillsInput.value = (state.profile.skills || []).join(", ");
 
     els.profileVisibleToggle.classList.toggle("active", !!state.profile.isVisible);
     els.profileVisibleIcon.classList.toggle("active", !!state.profile.isVisible);
+    renderProfileTagOptions();
+}
+
+function renderProfileTagOptions() {
+    const container = document.getElementById("profileTagList");
+    if (!container) return;
+
+    const tags = state.availableTags || [];
+    if (tags.length === 0) {
+        container.innerHTML = `<span class="tag">No tags available</span>`;
+        return;
+    }
+
+    container.innerHTML = tags.map(tag => `
+        <button
+          class="filter-chip ${state.profile.tags.includes(tag) ? "active" : ""}"
+          type="button"
+          data-tag="${escapeHtml(tag)}"
+        >
+          ${escapeHtml(tag)}
+        </button>
+      `).join("");
+
+    const tagButtons = container.querySelectorAll("[data-tag]");
+    tagButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tag = btn.dataset.tag || "";
+            if (!tag) return;
+            if (state.profile.tags.includes(tag)) {
+                state.profile.tags = state.profile.tags.filter(item => item !== tag);
+                btn.classList.remove("active");
+            } else {
+                state.profile.tags = [...state.profile.tags, tag];
+                btn.classList.add("active");
+            }
+        });
+    });
 }
 
 function bindJobListEvents() {
@@ -952,18 +1037,15 @@ async function saveProfile() {
     const nextEmail = els.profileEmailInput.value.trim() || state.profile.email;
     const nextMajor = els.profileMajorInput.value.trim() || state.profile.major;
     const nextBio = els.profileBioInput.value.trim();
-    const nextSkills = els.profileSkillsInput.value
-        .split(",")
-        .map(item => item.trim())
-        .filter(Boolean);
+    const nextTags = state.profile.tags || [];
 
     const payload = new URLSearchParams({
         realName: nextName,
         email: nextEmail,
         major: nextMajor,
         selfIntro: nextBio,
-        skills: nextSkills.join(","),
-        profileVisible: state.profile.isVisible ? "1" : "0"
+        profileVisible: state.profile.isVisible ? "1" : "0",
+        tags: nextTags.join(",")
     });
 
     const r = await request("/user?action=updateProfile", {
@@ -1061,13 +1143,13 @@ function renderJobModal() {
     els.jobDescriptionText.textContent = job.description;
 
     els.matchCard.innerHTML = `
-    <strong>${Icons.target} Role Match: ${match.score}%</strong>
+    <strong>Role Match: ${match.score}%</strong>
     <p>
-      Matched skills: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
+      Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
       ${
         match.missing.length > 0
-            ? `Missing skills: ${escapeHtml(match.missing.join(", "))}.`
-            : " Your current skills cover the listed tags."
+            ? `Missing tags: ${escapeHtml(match.missing.join(", "))}.`
+            : " Your current tags cover the listed tags."
     }
     </p>
   `;
@@ -1243,7 +1325,6 @@ function cacheElements() {
     els.profileEmailInput = document.getElementById("profileEmailInput");
     els.profileMajorInput = document.getElementById("profileMajorInput");
     els.profileBioInput = document.getElementById("profileBioInput");
-    els.profileSkillsInput = document.getElementById("profileSkillsInput");
     els.profileVisibleToggle = document.getElementById("profileVisibleToggle");
     els.profileVisibleIcon = document.getElementById("profileVisibleIcon");
 
@@ -1273,7 +1354,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await loadLoginUser(); // Backend API connected
     if (!ok) return;
 
+    await loadTagList(); // Backend API connected
     await loadOpenJobs(); // Backend API connected
     await loadMyApplications(); // Backend API connected
+    await checkResumeStatus();
     render();
 });
