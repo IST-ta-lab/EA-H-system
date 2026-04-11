@@ -190,7 +190,7 @@ const Icons = {
 
 // 已实现后端接口连接
 function showError(message) {
-    alert(message || "请求失败");
+    alert(message || "Request failed");
 }
 
 // 已实现后端接口连接
@@ -254,10 +254,24 @@ async function loadLoginUser() {
 // 修复问题3：加载所有申请记录，用于计算TA工作负荷
 async function loadAllApplications() {
     const r = await request("/application?action=listAll");
+    console.log('=== 申请记录API响应 ===');
+    console.log('r.ok:', r.ok);
+    console.log('r.data:', r.data);
+    console.log('r.data.data:', r.data?.data);
+    console.log('r.data.code:', r.data?.code);
+
     if (r.ok && r.data && r.data.code === 200) {
         state.backendApplications = Array.isArray(r.data.data) ? r.data.data : [];
+        // 调试：打印申请记录的关键字段
+        console.log('=== 申请记录调试 ===');
+        console.log('申请记录数量:', state.backendApplications.length);
+        if (state.backendApplications.length > 0) {
+            console.log('第一条申请记录的所有字段:', Object.keys(state.backendApplications[0]));
+            console.log('第一条申请记录:', JSON.stringify(state.backendApplications[0], null, 2));
+        }
         return state.backendApplications;
     }
+    console.log('申请记录加载失败');
     state.backendApplications = [];
     return [];
 }
@@ -312,70 +326,92 @@ async function loadAllUsers() {
             });
 
         // 修复问题3：从用户列表中过滤出TA用户（userType=1），构建TA工作负载视图数据
-        // 计算逻辑：TA的工作负荷 = 该TA所有申请工作的总工作时间（每周工作时长总和）
-        state.taWorkloads = state.backendUsers
-            .filter(u => u.userType === 1) // 只保留TA用户
-            .map(ta => {
-                // 获取该TA的所有申请记录（无论是何种状态）
-                const allApps = state.backendApplications.filter(app =>
-                    String(app.taId) === String(ta.userId)
+        // 计算逻辑：TA的工作负荷 = 该TA申请岗位的总工作时间（每周工作时长总和）
+        // 实现方式：先通过 /admin?action=getUserDetail&userId=xxx 接口查询用户申请的所有岗位
+        // 然后从岗位列表获取每个岗位的时间并累加
+        const taUsers = state.backendUsers.filter(u => u.userType === 1); // 只保留TA用户
+        state.taWorkloads = [];
+
+        // 对每个TA用户分别调用接口获取申请岗位
+        for (const ta of taUsers) {
+            // 调用 getUserDetail 接口获取该用户的申请岗位列表
+            const userDetail = await loadUserDetail(ta.userId);
+
+            // 从接口返回数据中获取申请记录
+            // 正确的字段名是 taApplicationList
+            let userApplications = [];
+
+            if (userDetail) {
+                console.log(`TA ${ta.userId} - userDetail keys:`, Object.keys(userDetail));
+
+                // 使用正确的字段名 taApplicationList
+                userApplications = userDetail.taApplicationList || [];
+
+                console.log(`TA ${ta.userId} - taApplicationList:`, userApplications);
+            }
+
+            // 调试：打印匹配过程
+            console.log(`=== TA ${ta.userId} (${ta.realName || ta.username}) ===`);
+            console.log('找到的申请记录:', userApplications);
+
+            // 计算所有申请岗位的总工作时长
+            // 逻辑：先获取申请记录中的岗位ID，再从岗位列表中查找对应岗位的workHoursWeekly并累加
+            let totalWorkHours = 0;
+            let recentTasks = [];
+
+            userApplications.forEach(app => {
+                // 从申请记录中获取岗位ID
+                const appJobId = app.jobId;
+                // 从岗位列表中查找对应岗位的工作时长
+                const relatedJob = state.backendJobsList.find(j =>
+                    String(j.jobId) === String(appJobId)
                 );
-
-                // 计算所有申请岗位的总工作时长
-                let totalWorkHours = 0;
-                allApps.forEach(app => {
-                    // 尝试从申请记录中获取岗位信息的工作时长
-                    // 如果申请记录中有workHoursWeekly字段则使用，否则尝试从岗位列表中查找
-                    if (app.workHoursWeekly) {
-                        totalWorkHours += parseFloat(app.workHoursWeekly) || 0;
-                    } else {
-                        // 从岗位列表中查找对应岗位的工作时长
-                        const relatedJob = state.backendJobsList.find(j => String(j.jobId) === String(app.jobId));
-                        if (relatedJob && relatedJob.workHoursWeekly) {
-                            totalWorkHours += parseFloat(relatedJob.workHoursWeekly) || 0;
-                        }
-                    }
-                });
-
-                // 修复问题4：调整工作负荷状态为三个（红黄绿）
-                // 计算工作负荷状态：基于每周工作小时数
-                // 假设标准工作上限为20小时
-                const maxHours = 20;
-                const currentHours = totalWorkHours;
-                const workloadRatio = maxHours > 0 ? currentHours / maxHours : 0;
-
-                let workloadStatus;
-                // 三个状态：绿色（健康）、黄色（接近上限）、红色（超负荷）
-                if (workloadRatio > 1) {
-                    workloadStatus = "overloaded"; // 红色 - 超负荷
-                } else if (workloadRatio >= 0.8) {
-                    workloadStatus = "near_limit"; // 黄色 - 接近上限
+                console.log('查找岗位:', appJobId, '找到:', relatedJob ? relatedJob.jobName : '未找到', '工作时长:', relatedJob?.workHoursWeekly);
+                if (relatedJob && relatedJob.workHoursWeekly) {
+                    totalWorkHours += parseFloat(relatedJob.workHoursWeekly) || 0;
+                    recentTasks.push(`${relatedJob.jobName || "Unnamed Job"} (${relatedJob.workHoursWeekly}h/week)`);
                 } else {
-                    workloadStatus = "healthy"; // 绿色 - 健康
+                    recentTasks.push(`Job #${appJobId}`);
                 }
-
-                return {
-                    id: String(ta.userId), // 统一转换为字符串
-                    name: ta.realName || ta.username || "Unnamed TA",
-                    username: ta.username || "",
-                    course: ta.belongModule || "No Module Assigned",
-                    email: ta.email || "",
-                    workloadStatus: workloadStatus, // overloaded (红) / near_limit (黄) / healthy (绿)
-                    currentHours: currentHours,
-                    maxHours: maxHours,
-                    hoursDisplay: `${currentHours}/${maxHours} Hours`,
-                    summary: allApps.length > 0
-                        ? `This TA has applied for ${allApps.length} job(s) with a total weekly workload of ${currentHours} hours.`
-                        : "This TA has not applied for any jobs yet.",
-                    skills: ta.skills || [],
-                    taskCount: String(allApps.length),
-                    rating: ta.rating || "N/A",
-                    recentTasks: allApps.map(app => {
-                        const job = state.backendJobsList.find(j => String(j.jobId) === String(app.jobId));
-                        return job ? `${job.jobName || "Unnamed Job"} (${job.workHoursWeekly || 0}h/week)` : `Job #${app.jobId}`;
-                    })
-                };
             });
+            console.log('总工作时长:', totalWorkHours);
+
+            // 修复问题4：调整工作负荷状态为三个（红黄绿）
+            // 计算工作负荷状态：基于每周工作小时数
+            // 假设标准工作上限为20小时
+            const maxHours = 20;
+            const currentHours = totalWorkHours;
+            const workloadRatio = maxHours > 0 ? currentHours / maxHours : 0;
+
+            let workloadStatus;
+            // 三个状态：绿色（健康）、黄色（接近上限）、红色（超负荷）
+            if (workloadRatio > 1) {
+                workloadStatus = "overloaded"; // 红色 - 超负荷
+            } else if (workloadRatio >= 0.8) {
+                workloadStatus = "near_limit"; // 黄色 - 接近上限
+            } else {
+                workloadStatus = "healthy"; // 绿色 - 健康
+            }
+
+            state.taWorkloads.push({
+                id: String(ta.userId), // 统一转换为字符串
+                name: ta.realName || ta.username || "Unnamed TA",
+                username: ta.username || "",
+                course: ta.belongModule || "No Module Assigned",
+                email: ta.email || "",
+                workloadStatus: workloadStatus, // overloaded (红) / near_limit (黄) / healthy (绿)
+                currentHours: currentHours,
+                maxHours: maxHours,
+                hoursDisplay: `${currentHours}/${maxHours} Hours`,
+                summary: userApplications.length > 0
+                    ? `This TA has applied for ${userApplications.length} job(s) with a total weekly workload of ${currentHours} hours.`
+                    : "This TA has not applied for any jobs yet.",
+                skills: ta.skills || [],
+                taskCount: String(userApplications.length),
+                rating: ta.rating || "N/A",
+                recentTasks: recentTasks
+            });
+        }
 
         return state.backendUsers;
     }
@@ -431,9 +467,17 @@ async function logout() {
 // 已实现后端接口连接 - 加载所有岗位
 async function loadAllJobs() {
     const r = await request("/admin?action=listAllJobs");
+    console.log('=== 岗位列表API响应 ===');
+    console.log('r.ok:', r.ok);
+    console.log('r.data:', r.data);
+
     if (r.ok && r.data && r.data.code === 200) {
         // 直接使用后端返回的原始数据
         state.backendJobsList = Array.isArray(r.data.data) ? r.data.data : [];
+        console.log('岗位列表数量:', state.backendJobsList.length);
+        if (state.backendJobsList.length > 0) {
+            console.log('第一个岗位:', JSON.stringify(state.backendJobsList[0], null, 2));
+        }
 
         // 更新统计数据
         state.stats.totalPosts = state.backendJobsList.length;
@@ -441,6 +485,7 @@ async function loadAllJobs() {
         return state.backendJobsList;
     }
 
+    console.log('岗位列表加载失败');
     showError((r.data && r.data.msg) || r.error || "Failed to load job list");
     return [];
 }
@@ -467,6 +512,11 @@ async function deleteJob(jobId) {
 // 已实现后端接口连接 - 加载用户详情
 async function loadUserDetail(userId) {
     const r = await request(`/admin?action=getUserDetail&userId=${encodeURIComponent(userId)}`);
+    console.log(`=== getUserDetail API 响应 (userId: ${userId}) ===`);
+    console.log('r.ok:', r.ok);
+    console.log('r.data:', r.data);
+    console.log('r.data.data 完整内容:', JSON.stringify(r.data?.data, null, 2));
+
     if (r.ok && r.data && r.data.code === 200) {
         return r.data.data;
     }
@@ -552,7 +602,7 @@ function renderHeroActions() {
       </div>
       <h2 class="action-title">Statistics Report</h2>
       <p class="action-subtitle">
-        查看平台用户、岗位、申请和待处理事项的统计概览。统计数据来自后端实时更新。
+        View platform statistics overview including users, jobs, applications and pending items. Statistics are updated in real-time from the backend.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openStatsBtn" type="button">
@@ -568,7 +618,7 @@ function renderHeroActions() {
       </div>
       <h2 class="action-title">System Users</h2>
       <p class="action-subtitle">
-        管理全平台用户，查看其角色、状态与基础信息。用户数据来自后端接口。
+        Manage all platform users, view their roles, status and basic information. User data comes from the backend API.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openUsersBtn" type="button">
@@ -584,7 +634,7 @@ function renderHeroActions() {
       </div>
       <h2 class="action-title">All Jobs</h2>
       <p class="action-subtitle">
-        查看和管理所有发布的岗位，包括删除岗位操作。岗位数据来自后端接口。
+        View and manage all published jobs, including job deletion. Job data comes from the backend API.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openAllJobsBtn" type="button">
@@ -600,7 +650,7 @@ function renderHeroActions() {
       </div>
       <h2 class="action-title">User Details</h2>
       <p class="action-subtitle">
-        根据用户ID查询详细信息，包括用户的申请记录等。
+        Query user details by ID, including their application records and more.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openUserQueryBtn" type="button">
@@ -618,9 +668,6 @@ function renderSwitcher() {
     </button>
     <button class="switch-pill ${state.currentView === "mo" ? "active" : ""}" type="button" data-view="mo">
       MO
-    </button>
-    <button class="switch-pill ${state.currentView === "logs" ? "active" : ""}" type="button" data-view="logs">
-      Logs
     </button>
   `;
 }
@@ -656,18 +703,18 @@ function renderTAView() {
         <p>View all TA users and their workload status. Click the TA name to see detailed information.</p>
       </div>
 
-      <div class="toolbar-row" style="margin:0;">
-        <div class="search-box">
-          <span class="search-icon">${Icons.search}</span>
-          <input id="taSearchInput" type="text" placeholder="Search TA name..." value="${escapeHtml(state.filters.taSearch)}" />
-          <button id="taSearchBtn" class="search-btn" type="button">Search</button>
-        </div>
-
+      <div class="toolbar-row" style="margin:0;justify-content:flex-end;">
         <div class="filter-chips">
           <button class="filter-chip ${state.filters.taStatus === "all" ? "active" : ""}" data-ta-status="all" type="button">All</button>
           <button class="filter-chip ${state.filters.taStatus === "overloaded" ? "active" : ""}" data-ta-status="overloaded" type="button">Overloaded (Red)</button>
           <button class="filter-chip ${state.filters.taStatus === "near_limit" ? "active" : ""}" data-ta-status="near_limit" type="button">Near Limit (Yellow)</button>
           <button class="filter-chip ${state.filters.taStatus === "healthy" ? "active" : ""}" data-ta-status="healthy" type="button">Healthy (Green)</button>
+        </div>
+
+        <div class="search-box">
+          <span class="search-icon">${Icons.search}</span>
+          <input id="taSearchInput" type="text" placeholder="Search TA name..." value="${escapeHtml(state.filters.taSearch)}" />
+          <button id="taSearchBtn" class="search-btn" type="button">Search</button>
         </div>
       </div>
     </section>
@@ -1221,7 +1268,7 @@ function openTADetailModal(id) {
     const ta = getTAById(id);
     if (!ta) {
         console.error("TA not found, id:", id, "available ids:", state.taWorkloads.map(t => t.id));
-        alert("无法找到该TA用户，请刷新页面后重试");
+        alert("TA user not found. Please refresh the page and try again.");
         return;
     }
 
@@ -1297,6 +1344,13 @@ function openTADetailModal(id) {
     </div>
     ` : ''}
 
+    <!-- View PDF Button -->
+    <div style="margin-bottom:18px;">
+      <button class="btn btn-sm btn-soft" type="button" id="viewPdfBtn" data-uid="${escapeHtml(ta.id)}">
+        ${Icons.eye} View Profile PDF
+      </button>
+    </div>
+
     <div style="margin-bottom:18px;">
       <h3 style="margin:0 0 12px;font-size:16px;">Summary</h3>
       <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(ta.summary)}</p>
@@ -1318,6 +1372,37 @@ function openTADetailModal(id) {
 
     const header = els.taDetailModalOverlay.querySelector(".modal-header h2");
     if (header) header.textContent = "Teaching Assistant Details";
+
+    // 添加PDF查看按钮事件监听器（带403拦截）
+    const viewPdfBtn = els.taDetailModalOverlay.querySelector('#viewPdfBtn');
+    if (viewPdfBtn) {
+        viewPdfBtn.addEventListener('click', async function() {
+            const uid = this.getAttribute('data-uid');
+            const pdfUrl = `/tapj/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`;
+
+            // 先用fetch检查PDF是否存在
+            try {
+                const response = await fetch(pdfUrl, {
+                    method: 'HEAD',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    // PDF存在，打开新标签页
+                    window.open(pdfUrl, '_blank');
+                } else if (response.status === 403) {
+                    alert("You do not have permission to view this profile PDF.");
+                } else if (response.status === 404) {
+                    alert("Profile PDF not found for this user.");
+                } else {
+                    alert("Failed to load profile PDF. Please try again later.");
+                }
+            } catch (error) {
+                console.error('Error checking PDF:', error);
+                alert("An error occurred while checking the PDF.");
+            }
+        });
+    }
 
     els.taDetailModalOverlay.classList.remove("hidden");
 }
@@ -1380,25 +1465,25 @@ function openStatsModal() {
               <td>User Growth</td>
               <td>${escapeHtml(state.stats.totalUsers)}</td>
               <td><span class="badge badge-success">Stable</span></td>
-              <td>整体注册用户规模稳定增长</td>
+              <td>Overall user registration is growing steadily</td>
             </tr>
             <tr>
               <td>Post Review Queue</td>
               <td>${escapeHtml(state.stats.pendingPostReviews)}</td>
               <td><span class="badge badge-warning">Attention</span></td>
-              <td>仍有岗位等待管理员处理</td>
+              <td>Some posts are awaiting admin processing</td>
             </tr>
             <tr>
               <td>Role Change Requests</td>
               <td>${escapeHtml(state.stats.pendingRoleRequests)}</td>
               <td><span class="badge badge-warning">Pending</span></td>
-              <td>存在待处理权限申请</td>
+              <td>Has pending role request</td>
             </tr>
             <tr>
               <td>System Activity</td>
               <td>${escapeHtml(state.stats.activeLogsToday)}</td>
               <td><span class="badge badge-success">Healthy</span></td>
-              <td>今日系统事件记录正常</td>
+              <td>System event logs are normal today</td>
             </tr>
           </tbody>
         </table>
