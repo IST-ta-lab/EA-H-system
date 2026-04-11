@@ -626,17 +626,10 @@
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
     // POST /job?action=publish
+    // POST /job?action=update
     async function saveJob() {
       if (!dom.formCourseName.value.trim()) {
         showToast('Course name is required.');
-        return;
-      }
-
-      if (state.editingJobId) {
-        // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-        // The sample APIs do not provide MO-side update job endpoint.
-        showToast('Update endpoint is not available in current API sample.');
-        closeModal(dom.jobModal);
         return;
       }
 
@@ -644,23 +637,49 @@
       const courseName = dom.formCourseName.value.trim();
       const selectedTags = parseTagsText(dom.formTags.value);
       const tagsText = selectedTags.join(', ');
+      const editingJob = state.editingJobId ? findJob(state.editingJobId) : null;
 
-      // Keep UI identical to target screenshot while satisfying backend publish API.
-      const defaultJobType = '1';
+      // Keep UI identical to target screenshot while satisfying backend APIs.
+      const fallbackJobType = editingJob && editingJob.jobType !== undefined && editingJob.jobType !== null
+        ? String(editingJob.jobType)
+        : '1';
       const autoBelongModule = deriveBelongModule(courseName, tagsText);
       const d = new Date();
       d.setDate(d.getDate() + 30);
       const autoDeadline = formatDateYYYYMMDD(d);
+      const deadlineValue = editingJob && editingJob.deadline ? String(editingJob.deadline) : autoDeadline;
 
       params.append('jobName', dom.formCourseName.value.trim());
-      params.append('jobType', defaultJobType);
+      params.append('jobType', fallbackJobType);
       params.append('belongModule', autoBelongModule);
       params.append('jobDesc', dom.formRequirements.value.trim());
       params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
       params.append('recruitNum', dom.formMaxCapacity.value.trim());
-      params.append('applyDeadline', autoDeadline);
+      params.append('applyDeadline', deadlineValue);
       if (tagsText) {
         params.append('tags', tagsText);
+      }
+
+      if (state.editingJobId) {
+        params.append('jobId', String(state.editingJobId));
+        const updateRes = await request('/job?action=update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+
+        if (updateRes.ok && updateRes.data) {
+          showToast(updateRes.data.msg || 'Position updated.');
+        } else {
+          showToast('Failed to update position.');
+          return;
+        }
+
+        if (updateRes.ok && updateRes.data && updateRes.data.code === 200) {
+          closeModal(dom.jobModal);
+          await loadJobsWithApplicants();
+        }
+        return;
       }
 
       const r = await request('/job?action=publish', {
@@ -678,6 +697,25 @@
       if (r.ok && r.data && r.data.code === 200) {
         closeModal(dom.jobModal);
         await loadJobsWithApplicants();
+      }
+    }
+
+    async function queryApplicantResumePdf(taUserId) {
+      const resumeUrl = BASE_URL + '/user?action=downloadProfilePdf&uid=' + encodeURIComponent(taUserId);
+      try {
+        const res = await fetch(resumeUrl, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          return { ok: true, blob };
+        }
+
+        return { ok: false, status: res.status };
+      } catch (e) {
+        return { ok: false, error: e.message || 'Network error' };
       }
     }
 
@@ -708,9 +746,8 @@
 
         + '  <div>'
         + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
-        + (app.resumeUrl
-            ? '<button id="btnResumeDownload" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Download Resume</button>'
-            : '<div class="text-sm text-slate-400">Resume not provided.</div>')
+    + '    <button id="btnQueryResumePdf" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Query Resume PDF</button>'
+    + '    <div id="resumeQueryStatus" class="text-sm text-slate-400 mt-2">Click the button to query resume PDF.</div>'
         + '  </div>'
         + '</div>';
 
@@ -727,13 +764,57 @@
           + '</div>';
       }
 
-      const downloadBtn = document.getElementById('btnResumeDownload');
-      if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-          // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-          // Sample APIs do not include resume file download endpoint.
-          showToast('Resume download endpoint is not available in current API sample.');
-        });
+      const queryResumeBtn = document.getElementById('btnQueryResumePdf');
+      const resumeQueryStatus = document.getElementById('resumeQueryStatus');
+      if (queryResumeBtn) {
+        if (!app.taUserId) {
+          queryResumeBtn.disabled = true;
+          queryResumeBtn.classList.add('opacity-60', 'cursor-not-allowed');
+          if (resumeQueryStatus) {
+            resumeQueryStatus.textContent = 'TA ID missing. Cannot query resume.';
+            resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+          }
+        } else {
+          queryResumeBtn.addEventListener('click', async () => {
+            queryResumeBtn.disabled = true;
+            queryResumeBtn.textContent = 'Querying...';
+            if (resumeQueryStatus) {
+              resumeQueryStatus.textContent = 'Checking resume status...';
+              resumeQueryStatus.className = 'text-sm text-slate-500 mt-2';
+            }
+
+            const r = await queryApplicantResumePdf(app.taUserId);
+            queryResumeBtn.disabled = false;
+            queryResumeBtn.textContent = 'Query Resume PDF';
+
+            if (r.ok) {
+              const blobUrl = URL.createObjectURL(r.blob);
+              window.open(blobUrl, '_blank', 'noopener');
+              window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60 * 1000);
+              if (resumeQueryStatus) {
+                resumeQueryStatus.textContent = 'Resume found. Opened in new tab.';
+                resumeQueryStatus.className = 'text-sm text-emerald-600 mt-2';
+              }
+              return;
+            }
+
+            if (resumeQueryStatus) {
+              if (r.status === 404) {
+                resumeQueryStatus.textContent = 'Resume not uploaded (未上传).';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 403) {
+                resumeQueryStatus.textContent = 'Resume is private and cannot be viewed.';
+                resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
+              } else if (r.status === 401) {
+                resumeQueryStatus.textContent = 'Session expired. Please log in again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              } else {
+                resumeQueryStatus.textContent = 'Query failed. Please try again.';
+                resumeQueryStatus.className = 'text-sm text-red-600 mt-2';
+              }
+            }
+          });
+        }
       }
 
       const rejectBtn = document.getElementById('btnModalReject');

@@ -397,6 +397,19 @@ async function loadTagList() {
             state.availableTags = tags;
         }
     }
+async function logout() {
+    if (!confirm("Are you sure you want to logout?")) {
+        return;
+    }
+
+    const r = await request("/user?action=logout", { method: "POST" });
+    if (r.ok && r.data && r.data.code === 200) {
+        alert(r.data.msg || "Logged out successfully");
+        location.href = "index.html";
+        return;
+    }
+
+    location.href = "index.html";
 }
 
 function createResumePicker() {
@@ -462,12 +475,12 @@ async function handleUploadResume() {
         const result = await uploadResumeFile(file);
         state.isUploadingResume = false;
 
-        if (result.ok) {
-            state.hasResume = true;
-            state.resumeName = file.name;
-            renderSidebar();
-            return;
-        }
+    if (result.ok) {
+        state.hasResume = true;
+        state.resumeName = file.name;
+        renderSidebar();
+        return;
+    }
 
         renderSidebar();
         showError(result.error);
