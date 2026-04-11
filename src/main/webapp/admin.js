@@ -85,7 +85,6 @@ function cacheElements() {
     els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
-    els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
     els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
 
     els.taDetailModalBody = document.getElementById("taDetailModalBody");
@@ -94,10 +93,7 @@ function cacheElements() {
     els.userDetailModalBody = document.getElementById("userDetailModalBody");
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
-    els.userQueryModalBody = document.getElementById("userQueryModalBody");
     els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
-    els.queryUserIdInput = document.getElementById("queryUserIdInput");
-    els.userQueryResult = document.getElementById("userQueryResult");
 
     els.rejectReasonInput = document.getElementById("rejectReasonInput");
 }
@@ -667,22 +663,6 @@ function renderHeroActions() {
         </button>
       </div>
     </article>
-
-    <article class="action-card">
-      <div class="action-top">
-        <div class="action-icon" style="background: linear-gradient(135deg, var(--success) 0%, var(--primary-2) 100%);">${Icons.activity}</div>
-        <span class="badge badge-soft">Backend API</span>
-      </div>
-      <h2 class="action-title">User Details</h2>
-      <p class="action-subtitle">
-        Query user details by ID, including their application records and more.
-      </p>
-      <div class="action-button-row">
-        <button class="btn btn-primary action-btn" id="openUserQueryBtn" type="button">
-          Query User
-        </button>
-      </div>
-    </article>
   `;
 }
 
@@ -1023,7 +1003,6 @@ function cacheElements() {
     els.rejectPostModalOverlay = document.getElementById("rejectPostModalOverlay");
     els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
     els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
-    els.userQueryModalOverlay = document.getElementById("userQueryModalOverlay");
     els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
 
     els.taDetailModalBody = document.getElementById("taDetailModalBody");
@@ -1032,10 +1011,7 @@ function cacheElements() {
     els.userDetailModalBody = document.getElementById("userDetailModalBody");
     els.requestsModalBody = document.getElementById("requestsModalBody");
     els.allJobsModalBody = document.getElementById("allJobsModalBody");
-    els.userQueryModalBody = document.getElementById("userQueryModalBody");
     els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
-    els.queryUserIdInput = document.getElementById("queryUserIdInput");
-    els.userQueryResult = document.getElementById("userQueryResult");
 
     els.rejectReasonInput = document.getElementById("rejectReasonInput");
 }
@@ -1044,7 +1020,6 @@ function bindPageEvents() {
     const openStatsBtn = document.getElementById("openStatsBtn");
     const openUsersBtn = document.getElementById("openUsersBtn");
     const openAllJobsBtn = document.getElementById("openAllJobsBtn");
-    const openUserQueryBtn = document.getElementById("openUserQueryBtn");
     const switchBtns = document.querySelectorAll("[data-view]");
 
     if (openStatsBtn) {
@@ -1057,10 +1032,6 @@ function bindPageEvents() {
 
     if (openAllJobsBtn) {
         openAllJobsBtn.addEventListener("click", openAllJobsModal);
-    }
-
-    if (openUserQueryBtn) {
-        openUserQueryBtn.addEventListener("click", openUserQueryModal);
     }
 
     switchBtns.forEach(btn => {
@@ -1384,19 +1355,7 @@ function openTADetailModal(id) {
       <p style="margin:0 0 16px;font-size:13px;color:var(--text-soft);">Click on a job to view full details</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
         ${ta.appliedJobs.map((job, index) => `
-          <button class="job-detail-btn" type="button" data-job-index="${index}" style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            width:100%;
-            padding:14px 16px;
-            background:var(--bg-soft);
-            border:1px solid var(--border);
-            border-radius:10px;
-            cursor:pointer;
-            transition:all 0.2s ease;
-            text-align:left;
-          " onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--bg-hover)';" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-soft)';">
+          <button class="job-detail-btn" type="button" data-job-index="${index}">
             <div style="display:flex;align-items:center;gap:12px;">
               <div style="width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;">
                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;color:white;" fill="none" stroke="currentColor" stroke-width="2">
@@ -2242,57 +2201,6 @@ function handleRoleRequest(id, nextStatus) {
     openRequestsModal();
 }
 
-// 已实现后端接口连接 - 用户查询弹窗
-function openUserQueryModal() {
-    els.queryUserIdInput.value = "";
-    els.userQueryResult.innerHTML = "";
-    els.userQueryModalOverlay.classList.remove("hidden");
-}
-
-function closeUserQueryModal() {
-    els.userQueryModalOverlay.classList.add("hidden");
-}
-
-// 已实现后端接口连接 - 执行用户查询
-async function confirmQueryUser() {
-    const userId = els.queryUserIdInput.value.trim();
-    if (!userId) {
-        alert("Please enter user ID");
-        return;
-    }
-
-    els.userQueryResult.innerHTML = '<p style="color:var(--text-soft);">Loading...</p>';
-
-    const userData = await loadUserDetail(userId);
-    if (userData) {
-        const roleText = userData.userType === 1 ? "TA" : userData.userType === 2 ? "MO" : userData.userType === 3 ? "Admin" : "Unknown";
-        els.userQueryResult.innerHTML = `
-        <div class="detail-row">
-          <span>User ID</span>
-          <span>${escapeHtml(userData.userId || userId)}</span>
-        </div>
-        <div class="detail-row">
-          <span>Username</span>
-          <span>${escapeHtml(userData.username || "-")}</span>
-        </div>
-        <div class="detail-row">
-          <span>Real Name</span>
-          <span>${escapeHtml(userData.realName || "-")}</span>
-        </div>
-        <div class="detail-row">
-          <span>Email</span>
-          <span>${escapeHtml(userData.email || "-")}</span>
-        </div>
-        <div class="detail-row">
-          <span>User Type</span>
-          <span>${escapeHtml(roleText)}</span>
-        </div>
-      `;
-    } else {
-        els.userQueryResult.innerHTML = '<p style="color:var(--danger);">Failed to get user details. Please check if the user ID is correct.</p>';
-    }
-}
-
 function bindModalEvents() {
     const closeTaDetailModalBtn = document.getElementById("closeTaDetailModalBtn");
     const closeStatsModalBtn = document.getElementById("closeStatsModalBtn");
@@ -2303,9 +2211,7 @@ function bindModalEvents() {
     const confirmRejectPostBtn = document.getElementById("confirmRejectPostBtn");
     const closeRequestsModalBtn = document.getElementById("closeRequestsModalBtn");
     const closeAllJobsModalBtn = document.getElementById("closeAllJobsModalBtn");
-    const closeUserQueryModalBtn = document.getElementById("closeUserQueryModalBtn");
     const closeJobDetailModalBtn = document.getElementById("closeJobDetailModalBtn");
-    const confirmQueryUserBtn = document.getElementById("confirmQueryUserBtn");
 
     if (closeTaDetailModalBtn) {
         closeTaDetailModalBtn.addEventListener("click", closeTADetailModal);
@@ -2343,16 +2249,8 @@ function bindModalEvents() {
         closeAllJobsModalBtn.addEventListener("click", closeAllJobsModal);
     }
 
-    if (closeUserQueryModalBtn) {
-        closeUserQueryModalBtn.addEventListener("click", closeUserQueryModal);
-    }
-
     if (closeJobDetailModalBtn) {
         closeJobDetailModalBtn.addEventListener("click", closeJobDetailModal);
-    }
-
-    if (confirmQueryUserBtn) {
-        confirmQueryUserBtn.addEventListener("click", confirmQueryUser);
     }
 
     if (els.openRequestsBtn) {
@@ -2378,7 +2276,6 @@ function bindModalEvents() {
         [els.rejectPostModalOverlay, closeRejectPostModal],
         [els.requestsModalOverlay, closeRequestsModal],
         [els.allJobsModalOverlay, closeAllJobsModal],
-        [els.userQueryModalOverlay, closeUserQueryModal],
         [els.jobDetailModalOverlay, closeJobDetailModal]
     ].forEach(([overlay, closer]) => {
         if (!overlay) return;
@@ -2397,7 +2294,6 @@ function bindModalEvents() {
         if (!els.rejectPostModalOverlay.classList.contains("hidden")) closeRejectPostModal();
         if (!els.requestsModalOverlay.classList.contains("hidden")) closeRequestsModal();
         if (!els.allJobsModalOverlay.classList.contains("hidden")) closeAllJobsModal();
-        if (!els.userQueryModalOverlay.classList.contains("hidden")) closeUserQueryModal();
         if (!els.jobDetailModalOverlay.classList.contains("hidden")) closeJobDetailModal();
     });
 }
