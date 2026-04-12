@@ -428,17 +428,26 @@ async function checkResumeStatus() {
     const uid = state.currentUser.userId;
     try {
         const res = await fetch(`${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`, {
-            method: "HEAD",
+            method: "GET",
             credentials: "include"
         });
 
-        if (res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const json = await res.json();
+            if (json.code === 200) {
+                state.hasResume = true;
+                state.resumeName = `${uid}.pdf`;
+                renderSidebar();
+            }
+        } else if (res.ok) {
             state.hasResume = true;
             state.resumeName = `${uid}.pdf`;
             renderSidebar();
         }
     } catch (e) {
-        // Ignore check failures to avoid blocking the UI.
+        state.hasResume = false;
+        state.resumeName = "";
     }
 }
 
