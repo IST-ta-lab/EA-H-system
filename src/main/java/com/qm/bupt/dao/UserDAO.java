@@ -3,6 +3,8 @@ package com.qm.bupt.dao;
 import com.qm.bupt.entity.User;
 import jakarta.servlet.ServletContext;
 
+import java.util.List;
+
 /**
  * 用户数据访问层
  */
@@ -35,5 +37,15 @@ public class UserDAO extends BaseDAO<User> {
     @Override
     protected Class<User> getEntityClass() {
         return User.class;
+    }
+
+    public User findById(String userId) {
+        List<User> list = listAll();
+        for (User u : list) {
+            if (u.getUserId().equals(userId)) {
+                return u;
+            }
+        }
+        return null;
     }
 }

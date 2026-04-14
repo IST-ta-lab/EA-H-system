@@ -22,6 +22,7 @@ public class SystemInitListener implements ServletContextListener {
         MODAO.getInstance().init(context);
         JobDAO.getInstance().init(context);
         ApplicationDAO.getInstance().init(context);
+        MessageDAO.getInstance().init(context);
         System.out.println("===== DAO层初始化完成 =====");
     }
 
