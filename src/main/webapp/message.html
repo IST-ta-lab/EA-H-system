@@ -636,10 +636,10 @@
 
 <script>
     const BASE_URL = '/tapj';
-    let currentUserId = null; // 当前登录用户的ID
-    let currentTargetUserId = null; // 当前聊天的对方ID
-    let currentTargetUserName = null; // 当前聊天的对方姓名
-    let conversations = {}; // 会话列表
+    let currentUserId = null;
+    let currentTargetUserId = null;
+    let currentTargetUserName = null;
+    let conversations = {};
 
     // ==================== 工具函数 ====================
     function showToast(message, type = 'success') {
@@ -652,7 +652,7 @@
         }, 3000);
     }
 
-    // ==================== 核心修复：获取当前登录用户信息 ====================
+    // ==================== 获取当前登录用户 ====================
     async function getCurrentUserInfo() {
         try {
             const res = await fetch(BASE_URL + '/user?action=getLoginUser', {
@@ -676,7 +676,7 @@
         }
     }
 
-    // ==================== 1. 获取未读消息数 ====================
+    // ==================== 1. 未读 ====================
     async function loadUnreadCount() {
         if (!currentUserId) return;
         try {
@@ -691,12 +691,10 @@
             } else {
                 document.getElementById('unreadBadge').classList.remove('show');
             }
-        } catch (e) {
-            console.error('加载未读数失败', e);
-        }
+        } catch (e) { }
     }
 
-    // ==================== 2. 获取会话列表 ====================
+    // ==================== 2. 会话列表 ====================
     async function loadConversations() {
         const convItems = document.getElementById('convItems');
         convItems.innerHTML = '<div class="conv-empty">加载中...</div>';
@@ -729,16 +727,11 @@
                     `;
                 });
                 convItems.innerHTML = html;
-            } else {
-                convItems.innerHTML = '<div class="conv-empty">加载失败</div>';
             }
-        } catch (e) {
-            console.error('加载会话列表失败', e);
-            convItems.innerHTML = '<div class="conv-empty">网络错误</div>';
-        }
+        } catch (e) { }
     }
 
-    // ==================== 3. 新建会话弹窗控制 ====================
+    // ==================== 3. 新建会话（备注改为非必填） ====================
     function openNewConvModal() {
         document.getElementById('newConvModal').classList.add('show');
         document.getElementById('targetUserId').value = '';
@@ -749,17 +742,11 @@
         document.getElementById('newConvModal').classList.remove('show');
     }
 
-    // 新建会话
-    function createNewConversation() {
+    async function createNewConversation() {
         const targetId = document.getElementById('targetUserId').value.trim();
-        const targetName = document.getElementById('targetUserName').value.trim();
 
         if (!targetId) {
             showToast('请输入对方用户ID', 'error');
-            return;
-        }
-        if (!targetName) {
-            showToast('请输入对方姓名/备注', 'error');
             return;
         }
         if (targetId === currentUserId) {
@@ -767,23 +754,32 @@
             return;
         }
 
-        // 直接进入聊天窗口
-        currentTargetUserId = targetId;
-        currentTargetUserName = targetName;
-        closeNewConvModal();
+        // 自动获取对方真实姓名，不需要填备注
+        try {
+            const res = await fetch(BASE_URL + `/user?action=getById&userId=${targetId}`, {
+                credentials: 'include'
+            });
+            const result = await res.json();
+            let targetName = "未知用户";
+            if (result.code === 200 && result.data) {
+                targetName = result.data.realName || targetName;
+            }
 
-        // 更新UI
-        document.querySelectorAll('.conv-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        document.getElementById('chatTitle').textContent = targetName;
-        document.getElementById('chatInputArea').style.display = 'block';
-        document.getElementById('chatMessages').innerHTML = `
-            <div class="chat-empty">
-                <div class="chat-empty-icon">✉️</div>
-                <div>发送第一条消息，开始和${targetName}聊天</div>
-            </div>
-        `;
+            currentTargetUserId = targetId;
+            currentTargetUserName = targetName;
+            closeNewConvModal();
+
+            document.getElementById('chatTitle').textContent = targetName;
+            document.getElementById('chatInputArea').style.display = 'block';
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="chat-empty">
+                    <div class="chat-empty-icon">✉️</div>
+                    <div>发送第一条消息，开始和${targetName}聊天</div>
+                </div>
+            `;
+        } catch (e) {
+            showToast('获取用户信息失败', 'error');
+        }
     }
 
     // ==================== 4. 选择会话 ====================
@@ -791,24 +787,16 @@
         currentTargetUserId = uid;
         currentTargetUserName = name;
 
-        // 更新UI
-        document.querySelectorAll('.conv-item').forEach(item => {
-            item.classList.remove('active');
-        });
+        document.querySelectorAll('.conv-item').forEach(item => item.classList.remove('active'));
         document.querySelector(`[data-uid="${uid}"]`).classList.add('active');
 
         document.getElementById('chatTitle').textContent = name;
         document.getElementById('chatInputArea').style.display = 'block';
 
-        // 清除未读标记
-        const unreadDot = document.getElementById(`unread-${uid}`);
-        if (unreadDot) unreadDot.classList.remove('show');
-
-        // 加载历史消息
         await loadHistory(uid);
     }
 
-    // ==================== 5. 加载历史消息 ====================
+    // ==================== 5. 加载历史消息（✅ 修复顺序：最新消息在底部） ====================
     async function loadHistory(otherUserId) {
         const chatMessages = document.getElementById('chatMessages');
         chatMessages.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">⏳</div><div>加载中...</div></div>';
@@ -820,14 +808,13 @@
             const result = await res.json();
 
             if (result.code === 200 && result.data) {
-                const messages = result.data;
+                let messages = result.data;
+
+                // ✅ 关键修复：倒序 → 最新消息显示在底部
+                messages = messages.reverse();
+
                 if (messages.length === 0) {
-                    chatMessages.innerHTML = `
-                        <div class="chat-empty">
-                            <div class="chat-empty-icon">💬</div>
-                            <div>暂无消息，发送第一条吧</div>
-                        </div>
-                    `;
+                    chatMessages.innerHTML = `<div class="chat-empty"><div class="chat-empty-icon">💬</div><div>暂无消息</div></div>`;
                     return;
                 }
 
@@ -836,9 +823,7 @@
                     const isSent = msg.senderId === currentUserId;
                     const time = msg.createTime || new Date().toLocaleString();
                     const jobInfo = msg.jobId ? `
-                        <div class="job-info">
-                            📌 关联岗位：${msg.jobTitle || msg.jobId}
-                        </div>
+                        <div class="job-info">📌 ${msg.jobTitle || msg.jobId}</div>
                     ` : '';
 
                     html += `
@@ -854,29 +839,22 @@
                     `;
                 });
                 chatMessages.innerHTML = html;
-                chatMessages.scrollTop = chatMessages.scrollHeight; // 滚动到底部
-
-                // 标记为已读
+                chatMessages.scrollTop = chatMessages.scrollHeight;
                 markAsRead(messages);
-            } else {
-                chatMessages.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">❌</div><div>加载失败</div></div>';
             }
-        } catch (e) {
-            console.error('加载历史消息失败', e);
-            chatMessages.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">❌</div><div>网络错误</div></div>';
-        }
+        } catch (e) { }
     }
 
     // ==================== 6. 发送消息 ====================
     async function sendMessage() {
         if (!currentTargetUserId) {
-            showToast('请先选择一个会话', 'error');
+            showToast('请先选择会话', 'error');
             return;
         }
 
         const content = document.getElementById('messageInput').value.trim();
         if (!content) {
-            showToast('请输入消息内容', 'error');
+            showToast('请输入消息', 'error');
             return;
         }
 
@@ -905,17 +883,12 @@
             if (result.code === 200) {
                 showToast('发送成功');
                 document.getElementById('messageInput').value = '';
-                document.getElementById('jobIdInput').value = '';
-                document.getElementById('jobTitleInput').value = '';
-                // 重新加载历史消息
                 await loadHistory(currentTargetUserId);
-                // 重新加载会话列表（新会话会出现在列表里）
                 await loadConversations();
             } else {
-                showToast('发送失败：' + (result.msg || '未知错误'), 'error');
+                showToast('发送失败：' + result.msg, 'error');
             }
         } catch (e) {
-            console.error('发送失败', e);
             showToast('网络错误', 'error');
         }
 
@@ -926,52 +899,34 @@
     // ==================== 7. 标记已读 ====================
     async function markAsRead(messages) {
         if (!messages || messages.length === 0) return;
-
-        const messageIds = messages
-            .filter(m => m.senderId !== currentUserId)
-            .map(m => m.messageId)
-            .filter(id => id);
-
-        if (messageIds.length === 0) return;
+        const ids = messages.filter(m => m.senderId !== currentUserId).map(m => m.messageId).filter(Boolean);
+        if (ids.length === 0) return;
 
         try {
-            const params = new URLSearchParams();
-            params.append('messageIds', messageIds.join(','));
+            const p = new URLSearchParams();
+            p.append('messageIds', ids.join(','));
             await fetch(BASE_URL + '/message?action=markRead', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: params
+                body: p
             });
-            // 重新加载未读数
-            await loadUnreadCount();
-        } catch (e) {
-            console.error('标记已读失败', e);
-        }
+            loadUnreadCount();
+        } catch (e) { }
     }
 
-    // ==================== 页面初始化 ====================
-    window.onload = async function() {
-        // 先获取当前用户信息
-        const userInfo = await getCurrentUserInfo();
-        if (!userInfo) return;
-
-        // 加载数据
+    // ==================== 初始化 ====================
+    window.onload = async function () {
+        await getCurrentUserInfo();
         await loadUnreadCount();
         await loadConversations();
 
-        // 回车发送消息
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         });
 
-        // 点击弹窗背景关闭
         document.getElementById('newConvModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('newConvModal')) {
-                closeNewConvModal();
-            }
+            if (e.target === document.getElementById('newConvModal')) closeNewConvModal();
         });
     };
 </script>
