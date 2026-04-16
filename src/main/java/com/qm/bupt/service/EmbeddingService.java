@@ -3,6 +3,8 @@ package com.qm.bupt.service;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.qm.bupt.dao.EmbeddingDAO;
+import com.qm.bupt.util.ConfigUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -17,7 +19,7 @@ import java.util.List;
 public class EmbeddingService {
 
     private static final String EMBEDDING_API_URL = "https://ai.gitee.com/v1/embeddings";
-    private static final String API_TOKEN = "PLGPQO7Z8JBDBWA7Z8N2C0M5BVIKKAZXPPLCAXMP";
+    private static final String API_TOKEN_KEY = "EMBEDDING_API_TOKEN";
     private static final String MODEL_NAME = "bge-m3";
 
     private static final EmbeddingService INSTANCE = new EmbeddingService();
@@ -34,13 +36,21 @@ public class EmbeddingService {
         return INSTANCE;
     }
 
+    private String getApiToken() {
+        String token = ConfigUtil.get(API_TOKEN_KEY);
+        if (token == null || token.isEmpty()) {
+            throw new RuntimeException("Embedding API token not configured. Set environment variable EMBEDDING_API_TOKEN or create config.properties with embedding.api.token");
+        }
+        return token;
+    }
+
     public List<Double> generateEmbedding(String text) throws Exception {
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("model", MODEL_NAME);
         requestBody.addProperty("input", text);
 
         HttpPost httpPost = new HttpPost(EMBEDDING_API_URL);
-        httpPost.setHeader("Authorization", "Bearer " + API_TOKEN);
+        httpPost.setHeader("Authorization", "Bearer " + getApiToken());
         httpPost.setHeader("Content-Type", "application/json");
         httpPost.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
 
@@ -101,5 +111,13 @@ public class EmbeddingService {
             sb.append(String.join(", ", tags));
         }
         return sb.toString();
+    }
+
+    public void saveTAEmbedding(String taId, List<Double> embedding) {
+        EmbeddingDAO.getInstance().saveTAEmbedding(taId, embedding);
+    }
+
+    public void saveJobEmbedding(String jobId, List<Double> embedding) {
+        EmbeddingDAO.getInstance().saveJobEmbedding(jobId, embedding);
     }
 }
