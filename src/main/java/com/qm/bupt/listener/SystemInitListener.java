@@ -1,6 +1,7 @@
 package com.qm.bupt.listener;
 
 import com.qm.bupt.dao.*;
+import com.qm.bupt.util.ConfigUtil;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -17,6 +18,7 @@ public class SystemInitListener implements ServletContextListener {
         System.out.println("===== 系统启动，初始化DAO层 =====");
         // 初始化所有DAO的文件路径
         ServletContext context = sce.getServletContext();
+        ConfigUtil.init(context.getRealPath("/"));
         UserDAO.getInstance().init(context);
         TADAO.getInstance().init(context);
         MODAO.getInstance().init(context);
