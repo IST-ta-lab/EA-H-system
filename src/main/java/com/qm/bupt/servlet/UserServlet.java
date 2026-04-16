@@ -5,6 +5,7 @@ import com.qm.bupt.entity.MO;
 import com.qm.bupt.entity.Admin;
 import com.qm.bupt.entity.User;
 import com.qm.bupt.service.UserService;
+import com.qm.bupt.service.EmbeddingService;
 import com.qm.bupt.service.impl.UserServiceImpl;
 import com.qm.bupt.util.Result;
 import jakarta.servlet.ServletException;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 public class UserServlet extends BaseServlet {
 
     private final UserService userService = UserServiceImpl.getInstance();
+    private final EmbeddingService embeddingService = EmbeddingService.getInstance();
 
     /**
      * 登录接口
@@ -176,6 +178,21 @@ public class UserServlet extends BaseServlet {
         if (!ok) {
             writeJson(response, Result.error(500, "更新失败"));
             return;
+        }
+
+        boolean needUpdateEmbedding = (selfIntro != null && !selfIntro.isEmpty()) 
+                || (tags != null && !tags.isEmpty());
+        
+        if (needUpdateEmbedding) {
+            try {
+                String textToEmbed = embeddingService.buildTAText(ta.getSelfIntro(), ta.getTags());
+                if (textToEmbed != null && !textToEmbed.isEmpty()) {
+                    List<Double> embedding = embeddingService.generateEmbedding(textToEmbed);
+                    embeddingService.saveTAEmbedding(ta.getUserId(), embedding);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         session.setAttribute("loginUser", ta);
