@@ -854,7 +854,7 @@
                 let html = '';
                 messages.forEach(msg => {
                     const isSent = msg.senderId === currentUserId;
-                    const time = msg.createTime || new Date().toLocaleString();
+                    const time = msg.sendTime|| new Date().toLocaleString();
                     const jobInfo = msg.jobId ? `
                         <div class="job-info">📌 ${msg.jobTitle || msg.jobId}</div>
                     ` : '';
