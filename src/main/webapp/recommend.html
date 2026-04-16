@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能推荐中心 - TA Hiring System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #4facfe;
+            --success: #00b472;
+            --gray: #f5f7fa;
+            --text: #333;
+            --light-text: #888;
+            --border: #e4e7ed;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: rgba(255,255,255,0.95);
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky; top:0; z-index:999;
+        }
+
+        .logo {
+            display: flex; align-items:center; gap:12px;
+        }
+        .logo-icon {
+            width:40px; height:40px; border-radius:10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display:flex; align-items:center; justify-content: center;
+            color:white; font-size:20px;
+        }
+        .back-btn {
+            padding:10px 20px; border:2px solid var(--primary);
+            background:white; color:var(--primary);
+            border-radius:8px; cursor:pointer;
+            font-weight:600; text-decoration:none;
+        }
+
+        .container {
+            max-width:1400px; margin:30px auto;
+            padding:0 20px; display:flex; gap:24px;
+        }
+
+        .card {
+            flex:1; background:white; border-radius:16px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.05);
+            padding:28px;
+        }
+
+        .card-header {
+            display:flex; align-items:center; gap:14px;
+            margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border);
+        }
+        .card-icon {
+            width:46px; height:46px; border-radius:12px;
+            display:flex; align-items:center; justify-content: center;
+            font-size:22px; color:white;
+        }
+        .icon-job { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .icon-ta { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+        .input-group {
+            display:flex; gap:12px; margin-bottom:16px;
+        }
+        input {
+            padding:12px 16px; border:1px solid var(--border);
+            border-radius:10px; font-size:14px;
+            flex:1; outline:none; transition:0.2s;
+        }
+        input:focus { border-color:var(--primary); }
+        .btn {
+            padding:12px 24px; background:var(--primary);
+            color:white; border:none; border-radius:10px;
+            font-weight:600; cursor:pointer; transition:0.2s;
+        }
+        .btn:hover { transform:translateY(-2px); }
+
+        .list {
+            margin-top:20px; display:flex; flex-direction:column; gap:12px;
+            max-height:600px; overflow-y:auto;
+        }
+        .item {
+            padding:18px; border:1px solid var(--border);
+            border-radius:12px; cursor:pointer;
+            transition:0.2s;
+        }
+        .item:hover {
+            border-color:var(--primary);
+            box-shadow:0 4px 12px rgba(102,126,234,0.1);
+        }
+        .item-title {
+            font-weight:600; font-size:16px; margin-bottom:6px;
+            display:flex; justify-content:space-between;
+        }
+        .score {
+            background:#e6f7ef; color:#00b472;
+            padding:4px 10px; border-radius:20px; font-size:12px;
+        }
+        .tags {
+            display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;
+        }
+        .tag {
+            background:#f1f3f6; color:#666;
+            padding:4px 8px; border-radius:6px; font-size:12px;
+        }
+
+        /* 弹窗 */
+        .modal {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content: center;
+            z-index:9999; opacity:0; pointer-events:none; transition:0.2s;
+        }
+        .modal.show { opacity:1; pointer-events:all; }
+        .modal-content {
+            background:white; width:90%; max-width:600px;
+            border-radius:16px; padding:28px; max-height:80vh; overflow-y:auto;
+        }
+        .close {
+            float:right; font-size:22px; cursor:pointer; color:#999;
+        }
+        .modal-title {
+            font-size:20px; font-weight:700; margin-bottom:20px;
+        }
+        .field {
+            margin-bottom:14px; line-height:1.6;
+        }
+        .label {
+            font-weight:600; color:#555; width:110px; display:inline-block;
+        }
+
+        .empty {
+            padding:60px 20px; text-align:center; color:#999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="logo">
+        <div class="logo-icon">🎯</div>
+        <div style="font-size:18px; font-weight:700;">智能推荐中心</div>
+    </div>
+    <a href="ta.html" class="back-btn">返回主页</a>
+</div>
+
+<div class="container">
+    <!-- 给TA推荐岗位 -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-ta">👤</div>
+            <div>
+                <div style="font-size:20px; font-weight:700;">为 TA 推荐岗位</div>
+                <div style="color:#888; font-size:13px;">输入 TA ID 获取匹配岗位</div>
+            </div>
+        </div>
+        <div class="input-group">
+            <input id="taId" placeholder="TA ID" value="3ec3a12268ed4867a1fe1a1099c6007d">
+            <button class="btn" onclick="loadJobs()">获取推荐</button>
+        </div>
+        <div id="jobList" class="list"></div>
+    </div>
+
+    <!-- 给岗位推荐TA -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-job">💼</div>
+            <div>
+                <div style="font-size:20px; font-weight:700;">为岗位推荐 TA</div>
+                <div style="color:#888; font-size:13px;">输入岗位 ID 获取匹配人选</div>
+            </div>
+        </div>
+        <div class="input-group">
+            <input id="jobId" placeholder="Job ID" value="f2599567708a4e16a52d94c5e536737a">
+            <button class="btn" onclick="loadTAs()">获取推荐</button>
+        </div>
+        <div id="taList" class="list"></div>
+    </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal" id="detailModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-title" id="modalTitle">详情</div>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    const BASE = "/tapj";
+
+    // 加载岗位推荐
+    async function loadJobs() {
+        const taId = document.getElementById("taId").value;
+        const res = await fetch(`${BASE}/recommend?action=recommendJobsForTA&taId=${taId}&topK=10`);
+        const data = await res.json();
+        const list = document.getElementById("jobList");
+        if(!data.data || data.data.length===0) { list.innerHTML="<div class='empty'>暂无匹配</div>"; return; }
+
+        list.innerHTML = data.data.map((j, i) => `
+            <div class="item" onclick="showJobDetail('${j.id}')">
+                <div class="item-title">
+                    <span>${i+1}. ${j.name}</span>
+                    <span class="score">${(j.score*100).toFixed(1)}%</span>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // 加载TA推荐
+    async function loadTAs() {
+        const jobId = document.getElementById("jobId").value;
+        const res = await fetch(`${BASE}/recommend?action=recommendTAsForJob&jobId=${jobId}&topK=10`);
+        const data = await res.json();
+        const list = document.getElementById("taList");
+        if(!data.data || data.data.length===0) { list.innerHTML="<div class='empty'>暂无匹配</div>"; return; }
+
+        list.innerHTML = data.data.map((t, i) => `
+            <div class="item" onclick="showTaDetail('${t.id}')">
+                <div class="item-title">
+                    <span>${i+1}. ${t.name}</span>
+                    <span class="score">${(t.score*100).toFixed(1)}%</span>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // 显示岗位详情
+    async function showJobDetail(jobId) {
+        const r = await fetch(`${BASE}/job?action=getDetail&jobId=${jobId}`);
+        const d = await r.json();
+        if(!d.data) return;
+        const j = d.data;
+        document.getElementById("modalTitle").textContent = "岗位详情";
+        document.getElementById("modalBody").innerHTML = `
+            <div class="field"><span class="label">岗位名称</span>${j.jobName}</div>
+            <div class="field"><span class="label">所属模块</span>${j.belongModule||'-'}</div>
+            <div class="field"><span class="label">工作时长</span>${j.workHoursWeekly} 小时/周</div>
+            <div class="field"><span class="label">招聘人数</span>${j.recruitNum} 人</div>
+            <div class="field"><span class="label">截止日期</span>${j.applyDeadline}</div>
+            <div class="field"><span class="label">发布时间</span>${j.publishTime}</div>
+            <div class="field"><span class="label">岗位描述</span>${j.jobDesc||'无'}</div>
+            <div class="field"><span class="label">标签</span>
+                ${j.tags ? j.tags.map(t=>`<span class='tag'>${t}</span>`).join('') : '-'}</div>
+        `;
+        document.getElementById("detailModal").classList.add("show");
+    }
+
+    // 显示TA详情（完整修复版，适配你的真实接口）
+    async function showTaDetail(userId) {
+        const r = await fetch(`${BASE}/admin?action=getUserDetail&userId=${userId}`);
+        const d = await r.json();
+        if(!d.data) return;
+
+        const u = d.data;
+        const taInfo = u.taInfo || {};
+
+        document.getElementById("modalTitle").textContent = "TA 详情";
+        document.getElementById("modalBody").innerHTML = `
+            <div class="field"><span class="label">姓名</span>${u.realName || '-'}</div>
+            <div class="field"><span class="label">邮箱</span>${u.email || '-'}</div>
+            <div class="field"><span class="label">用户类型</span>${u.userTypeDesc || '-'}</div>
+            <div class="field"><span class="label">学号</span>${taInfo.studentId || '-'}</div>
+            <div class="field"><span class="label">专业</span>${taInfo.major || '-'}</div>
+            <div class="field"><span class="label">学历</span>${taInfo.education || '-'}</div>
+            <div class="field"><span class="label">年级</span>${taInfo.grade || '-'}</div>
+            <div class="field"><span class="label">自我介绍</span>${taInfo.selfIntro || '无'}</div>
+            <div class="field"><span class="label">技能标签</span>
+                ${taInfo.tags ? taInfo.tags.map(t=>`<span class='tag'>${t}</span>`).join('') : '-'}</div>
+        `;
+        document.getElementById("detailModal").classList.add("show");
+    }
+
+    function closeModal() {
+        document.getElementById("detailModal").classList.remove("show");
+    }
+</script>
+</body>
+</html>
