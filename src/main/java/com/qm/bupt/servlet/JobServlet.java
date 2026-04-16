@@ -3,6 +3,7 @@ package com.qm.bupt.servlet;
 import com.qm.bupt.entity.Job;
 import com.qm.bupt.entity.TA;
 import com.qm.bupt.entity.User;
+import com.qm.bupt.service.EmbeddingService;
 import com.qm.bupt.service.JobService;
 import com.qm.bupt.service.UserService;
 import com.qm.bupt.service.impl.JobServiceImpl;
@@ -24,6 +25,7 @@ public class JobServlet extends BaseServlet {
 
     private final JobService jobService = JobServiceImpl.getInstance();
     private final UserService userService = UserServiceImpl.getInstance();
+    private final EmbeddingService embeddingService = EmbeddingService.getInstance();
 
     /**
      * 1. MO发布岗位（必须登录）
@@ -63,7 +65,20 @@ public class JobServlet extends BaseServlet {
         }
 
         boolean success = jobService.publishJob(job, loginUser.getUserId());
-        writeJson(response, success ? Result.success("岗位发布成功") : Result.error(500, "发布失败"));
+        if (success) {
+            try {
+                String textToEmbed = embeddingService.buildJobText(job.getJobName(), job.getJobDesc(), job.getTags());
+                if (textToEmbed != null && !textToEmbed.isEmpty()) {
+                    List<Double> embedding = embeddingService.generateEmbedding(textToEmbed);
+                    embeddingService.saveJobEmbedding(job.getJobId(), embedding);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            writeJson(response, Result.success("岗位发布成功"));
+        } else {
+            writeJson(response, Result.error(500, "发布失败"));
+        }
     }
 
     /**
@@ -245,6 +260,19 @@ public class JobServlet extends BaseServlet {
         }
 
         boolean success = jobService.updateJob(updatedJob, loginUser.getUserId());
-        writeJson(response, success ? Result.success("岗位修改成功") : Result.error(500, "修改失败"));
+        if (success) {
+            try {
+                String textToEmbed = embeddingService.buildJobText(updatedJob.getJobName(), updatedJob.getJobDesc(), updatedJob.getTags());
+                if (textToEmbed != null && !textToEmbed.isEmpty()) {
+                    List<Double> embedding = embeddingService.generateEmbedding(textToEmbed);
+                    embeddingService.saveJobEmbedding(jobId, embedding);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            writeJson(response, Result.success("岗位修改成功"));
+        } else {
+            writeJson(response, Result.error(500, "修改失败"));
+        }
     }
 }
