@@ -23,6 +23,10 @@ public class SystemInitListener implements ServletContextListener {
         JobDAO.getInstance().init(context);
         ApplicationDAO.getInstance().init(context);
         MessageDAO.getInstance().init(context);
+        EmbeddingDAO.getInstance().init(
+            context.getRealPath("/WEB-INF/data/ta_embeddings.json"),
+            context.getRealPath("/WEB-INF/data/job_embeddings.json")
+        );
         System.out.println("===== DAO层初始化完成 =====");
     }
 

@@ -30,7 +30,9 @@ public class AuthFilter implements Filter {
             "/user?action=listTags",  // 【新增】获取Tag列表
             "/static/",
             "/admin",
-            "guest.html"
+            "guest.html",
+            "/embedding",    // embedding接口自己处理权限
+            "/recommend"     // recommend接口自己处理权限
     );
 
     @Override
