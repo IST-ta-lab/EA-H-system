@@ -63,6 +63,12 @@
       <artifactId>gson-extras</artifactId>
       <version>0.2.1</version>
     </dependency>
+    <!-- Apache HttpClient for embedding API calls -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.14</version>
+    </dependency>
   </dependencies>
 
   <build>
