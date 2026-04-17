@@ -4,6 +4,8 @@
       currentUser: null,
       currentUserDisplayName: 'MO User',
       jobs: [],
+      recommendedByJob: {},
+      recommendLoadingByJob: {},
       availableTags: [],
       selectedTags: [],
       tagLoadWarned: false,
@@ -28,6 +30,7 @@
 
     const dom = {
       headerRealName: document.getElementById('headerRealName'),
+      btnMessageCenter: document.getElementById('btnMessageCenter'),
       btnLogout: document.getElementById('btnLogout'),
       btnOpenCreate: document.getElementById('btnOpenCreate'),
       btnOpenCreateFromPencil: document.getElementById('btnOpenCreateFromPencil'),
@@ -67,6 +70,9 @@
     }
 
     function showToast(message) {
+      if (!dom.toast) {
+        return;
+      }
       dom.toast.textContent = message;
       dom.toast.classList.add('show');
       window.setTimeout(() => {
@@ -75,10 +81,12 @@
     }
 
     function openModal(el) {
+      if (!el) return;
       el.classList.add('show');
     }
 
     function closeModal(el) {
+      if (!el) return;
       el.classList.remove('show');
     }
 
@@ -92,6 +100,7 @@
       });
 
       [dom.jobModal, dom.applicantModal, dom.deleteModal].forEach((modal) => {
+        if (!modal) return;
         modal.addEventListener('click', (e) => {
           if (e.target === modal) closeModal(modal);
         });
@@ -142,7 +151,25 @@
       if (name === 'search') {
         return '<svg class="' + c + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>';
       }
+      if (name === 'message') {
+        return '<svg class="' + c + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+      }
       return '';
+    }
+
+    function buildMessageCenterUrl(targetUserId, targetUserName, job) {
+      const params = new URLSearchParams();
+      if (targetUserId) params.append('targetUserId', String(targetUserId));
+      if (targetUserName) params.append('targetUserName', String(targetUserName));
+      if (job && job.id) params.append('jobId', String(job.id));
+      if (job && job.courseName) params.append('jobTitle', String(job.courseName));
+
+      const query = params.toString();
+      return 'message.html' + (query ? ('?' + query) : '');
+    }
+
+    function gotoMessageCenter(targetUserId, targetUserName, job) {
+      window.location.href = buildMessageCenterUrl(targetUserId, targetUserName, job);
     }
 
     function toEnglishDisplayName(realName, username) {
@@ -163,6 +190,20 @@
       return name;
     }
 
+    function normalizeUserType(userType) {
+      if (userType === null || userType === undefined) return null;
+
+      if (typeof userType === 'number') return userType;
+
+      const text = String(userType).trim().toLowerCase();
+      if (text === 'ta' || text === '1') return 1;
+      if (text === 'mo' || text === '2') return 2;
+      if (text === 'admin' || text === '3') return 3;
+
+      const numeric = Number(text);
+      return Number.isFinite(numeric) ? numeric : null;
+    }
+
     function getRawApplyStatus(app) {
       if (app && app.status !== undefined && app.status !== null) return app.status;
       if (app && app.applyStatus !== undefined && app.applyStatus !== null) return app.applyStatus;
@@ -175,9 +216,12 @@
         applicationId: rawApp.applicationId,
         taUserId: rawApp.taUserId || rawApp.taId || '',
         name: rawApp.taRealName || ('TA #' + (rawApp.taUserId || rawApp.taId || '?')),
+        studentId: rawApp.studentId || rawApp.taStudentId || '',
         major: rawApp.major || rawApp.taMajor || 'Major not provided',
+        education: rawApp.education || rawApp.taEducation || '',
         status: normalizedStatus,
         remarks: rawApp.remark || rawApp.remarks || '',
+        selfIntro: rawApp.selfIntro || rawApp.taSelfIntro || '',
         email: rawApp.email || rawApp.taEmail || 'Email not provided',
         resumeUrl: rawApp.resumeUrl || rawApp.resume || ''
       };
@@ -307,14 +351,15 @@
     // GET /user?action=getLoginUser
     async function loadCurrentUser() {
       const r = await request('/user?action=getLoginUser');
-      if (!(r.ok && r.data && r.data.code === 200)) {
+      if (!(r.ok && r.data && r.data.code === 200 && r.data.data)) {
         alert('Login expired. Please sign in again.');
         window.location.href = 'index.html';
         return false;
       }
 
       state.currentUser = r.data.data;
-      if (state.currentUser.userType !== 2 && state.currentUser.userType !== 3) {
+      const userType = normalizeUserType(state.currentUser.userType);
+      if (userType !== 2 && userType !== 3) {
         alert('Only MO/Admin can access this page.');
         window.location.href = 'main.html';
         return false;
@@ -322,8 +367,12 @@
 
       const displayName = toEnglishDisplayName(state.currentUser.realName, state.currentUser.username);
       state.currentUserDisplayName = displayName;
-      dom.headerRealName.textContent = displayName;
-      dom.profileUserLine.textContent = displayName;
+      if (dom.headerRealName) {
+        dom.headerRealName.textContent = displayName;
+      }
+      if (dom.profileUserLine) {
+        dom.profileUserLine.textContent = displayName;
+      }
       return true;
     }
 
@@ -346,18 +395,20 @@
         return;
       }
 
-      const rawJobs = jobsRes.data.data || [];
+      const rawJobs = Array.isArray(jobsRes.data.data) ? jobsRes.data.data : [];
       const currentUserId = state.currentUser
         ? (state.currentUser.userId || state.currentUser.uid || state.currentUser.id || '')
         : '';
 
       // Enforce strict owner-only rendering on frontend side as a safety net,
       // even though /job?action=listMy should already be filtered by backend.
-      const ownerOnlyJobs = rawJobs.filter((job) => {
-        const ownerId = job.publisherMoId || job.publisherId || job.publisherUserId || job.moId || job.userId;
-        if (!ownerId || !currentUserId) return false;
-        return String(ownerId) === String(currentUserId);
-      });
+      const ownerOnlyJobs = currentUserId
+        ? rawJobs.filter((job) => {
+            const ownerId = job.publisherMoId || job.publisherId || job.publisherUserId || job.moId || job.userId;
+            if (!ownerId) return false;
+            return String(ownerId) === String(currentUserId);
+          })
+        : rawJobs;
 
       const resultJobs = [];
 
@@ -372,6 +423,8 @@
       }
 
       state.jobs = resultJobs;
+      state.recommendedByJob = {};
+      state.recommendLoadingByJob = {};
       renderAll();
     }
 
@@ -472,6 +525,7 @@
                         : '')
                     + '  </div>'
                     + '  <div class="flex items-center gap-2 shrink-0 app-action-zone">'
+                    + '<button class="icon-btn btn-chat-app" data-jobid="' + escapeHtml(job.id) + '" data-uid="' + escapeHtml(app.taUserId) + '" data-name="' + escapeHtml(app.name) + '">' + icon('message', 'icon-svg-sm') + '</button>'
                     + (app.status === 'pending'
                         ? '<button class="icon-btn good btn-approve-app" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">' + icon('check', 'icon-svg-sm') + '</button>'
                           + '<button class="icon-btn danger btn-reject-app" data-jobid="' + escapeHtml(job.id) + '" data-appid="' + escapeHtml(app.applicationId) + '">' + icon('x', 'icon-svg-sm') + '</button>'
@@ -570,6 +624,16 @@
         btn.addEventListener('click', async () => {
           const appId = btn.getAttribute('data-appid');
           await auditApplication(appId, 2);
+        });
+      });
+
+      dom.jobCards.querySelectorAll('.btn-chat-app').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const jobId = btn.getAttribute('data-jobid');
+          const taUserId = btn.getAttribute('data-uid');
+          const taName = btn.getAttribute('data-name') || 'TA';
+          const job = findJob(jobId);
+          gotoMessageCenter(taUserId, taName, job);
         });
       });
 
@@ -732,16 +796,140 @@
       return {
         userId: raw.userId || raw.taUserId || '',
         realName: raw.realName || raw.username || 'Unnamed TA',
+        studentId: raw.studentId || '',
         major: raw.major || 'Major not provided',
+        education: raw.education || '',
         grade: raw.grade || '',
         email: raw.email || '',
+        selfIntro: raw.selfIntro || '',
+        profilePdfPath: raw.profilePdfPath || '',
         matchScore: Number(raw.matchScore || 0),
+        recommendScore: null,
         tags: Array.isArray(raw.tags) ? raw.tags : parseTagsText(raw.tags || '')
       };
     }
 
+    function mapRecommendedTa(raw) {
+      return {
+        userId: raw.id || '',
+        realName: raw.name || 'Unnamed TA',
+        studentId: '',
+        major: 'Major not provided',
+        education: '',
+        grade: '',
+        email: '',
+        selfIntro: '',
+        profilePdfPath: '',
+        matchScore: 0,
+        recommendScore: Number(raw.score || 0),
+        tags: []
+      };
+    }
+
+    function mergeRecommendedCandidates(recommendedList, detailList) {
+      const mergedMap = new Map();
+
+      recommendedList.forEach((item, index) => {
+        const key = String(item.userId || '');
+        if (!key) return;
+        mergedMap.set(key, {
+          ...item,
+          rank: index + 1
+        });
+      });
+
+      detailList.forEach((detail) => {
+        const key = String(detail.userId || '');
+        if (!key) return;
+        if (mergedMap.has(key)) {
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, {
+            ...detail,
+            ...existing,
+            realName: existing.realName || detail.realName,
+            major: detail.major || existing.major,
+            education: detail.education || existing.education,
+            grade: detail.grade || existing.grade,
+            email: detail.email || existing.email,
+            selfIntro: detail.selfIntro || existing.selfIntro,
+            tags: detail.tags.length ? detail.tags : existing.tags
+          });
+        } else {
+          mergedMap.set(key, {
+            ...detail,
+            rank: null
+          });
+        }
+      });
+
+      const mergedList = Array.from(mergedMap.values());
+      mergedList.sort((a, b) => {
+        const scoreA = typeof a.recommendScore === 'number' ? a.recommendScore : -1;
+        const scoreB = typeof b.recommendScore === 'number' ? b.recommendScore : -1;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return Number(b.matchScore || 0) - Number(a.matchScore || 0);
+      });
+
+      return mergedList;
+    }
+
+    function formatRecommendScore(ta) {
+      if (typeof ta.recommendScore === 'number' && ta.recommendScore > 0) {
+        return (ta.recommendScore * 100).toFixed(1) + '% AI Match';
+      }
+      if (typeof ta.matchScore === 'number' && ta.matchScore > 0) {
+        return 'Tag Match +' + String(ta.matchScore);
+      }
+      return 'Pending score';
+    }
+
+    async function loadRecommendationsByJob(jobId, forceReload) {
+      const key = String(jobId || '');
+      if (!key) return [];
+
+      if (!forceReload && Array.isArray(state.recommendedByJob[key])) {
+        return state.recommendedByJob[key];
+      }
+
+      if (state.recommendLoadingByJob[key]) {
+        return state.recommendedByJob[key] || [];
+      }
+
+      state.recommendLoadingByJob[key] = true;
+
+      const [recommendRes, matchRes] = await Promise.all([
+        request('/recommend?action=recommendTAsForJob&jobId=' + encodeURIComponent(key) + '&topK=8'),
+        request('/job?action=matchTAs&jobId=' + encodeURIComponent(key))
+      ]);
+
+      const recommendList = (recommendRes.ok && recommendRes.data && recommendRes.data.code === 200 && Array.isArray(recommendRes.data.data))
+        ? recommendRes.data.data.map(mapRecommendedTa)
+        : [];
+
+      const detailList = (matchRes.ok && matchRes.data && matchRes.data.code === 200 && Array.isArray(matchRes.data.data))
+        ? matchRes.data.data.map(mapMatchedTa)
+        : [];
+
+      const merged = mergeRecommendedCandidates(recommendList, detailList);
+      state.recommendedByJob[key] = merged.slice(0, 8);
+      state.recommendLoadingByJob[key] = false;
+
+      return state.recommendedByJob[key];
+    }
+
+    function findRecommendedCandidate(jobId, taUserId) {
+      const list = state.recommendedByJob[String(jobId || '')] || [];
+      return list.find((item) => String(item.userId) === String(taUserId)) || null;
+    }
+
+
     function renderMatchCandidates(job, matchList) {
-      const sorted = matchList.slice().sort((a, b) => b.matchScore - a.matchScore);
+      const sorted = matchList.slice().sort((a, b) => {
+        const scoreA = typeof a.recommendScore === 'number' ? a.recommendScore : -1;
+        const scoreB = typeof b.recommendScore === 'number' ? b.recommendScore : -1;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return Number(b.matchScore || 0) - Number(a.matchScore || 0);
+      });
       const jobTags = (job && Array.isArray(job.tags)) ? job.tags : [];
 
       if (!sorted.length) {
@@ -770,16 +958,140 @@
             + '      <div class="text-sm text-slate-500">' + escapeHtml(ta.major || 'Major not provided') + (ta.grade ? ' · ' + escapeHtml(ta.grade) : '') + '</div>'
             + '      <div class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(ta.userId || '-') + '</span>' + (ta.email ? ' · ' + escapeHtml(ta.email) : '') + '</div>'
             + '    </div>'
-            + '    <div class="text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">' + escapeHtml(ta.matchScore) + '% Match</div>'
+            + '    <div class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 whitespace-nowrap">' + escapeHtml(formatRecommendScore(ta)) + '</div>'
             + '  </div>'
+            + '  <div class="mt-2 text-xs text-slate-600 line-clamp-2">' + escapeHtml(ta.selfIntro || 'No introduction available yet.') + '</div>'
             + '  <div class="mt-3 flex flex-wrap gap-2">'
             + (ta.tags.length > 0
                 ? ta.tags.map((tag) => '<span class="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">' + escapeHtml(tag) + '</span>').join('')
                 : '<span class="text-xs text-slate-400">No tags</span>')
             + '  </div>'
+            + '  <div class="mt-3 flex items-center gap-2">'
+            + '    <button class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-full px-3 py-1.5 transition btn-rec-view" data-jobid="' + escapeHtml(job.id) + '" data-uid="' + escapeHtml(ta.userId) + '">View Details</button>'
+            + '    <button class="text-xs font-semibold text-white bg-slate-900 hover:bg-slate-700 rounded-full px-3 py-1.5 transition btn-rec-chat" data-jobid="' + escapeHtml(job.id) + '" data-uid="' + escapeHtml(ta.userId) + '" data-name="' + escapeHtml(ta.realName) + '">Message</button>'
+            + '  </div>'
             + '</div>';
         }).join('')
         + '</div>';
+    }
+
+    function renderRecommendedCandidateModal(job, ta) {
+      if (dom.applicantModalTitle) {
+        dom.applicantModalTitle.textContent = 'Recommended Candidate Details';
+      }
+
+      dom.applicantModalBody.innerHTML = ''
+        + '<div class="flex items-center gap-5 mb-6">'
+        + '  <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold text-3xl shadow-inner">' + escapeHtml((ta.realName || '?').charAt(0)) + '</div>'
+        + '  <div class="min-w-0">'
+        + '    <h3 class="text-2xl font-bold text-slate-900 truncate">' + escapeHtml(ta.realName || 'Unnamed TA') + '</h3>'
+        + '    <p class="text-slate-500 font-medium">' + escapeHtml(ta.major || 'Major not provided') + (ta.grade ? (' · ' + escapeHtml(ta.grade)) : '') + '</p>'
+        + '    <p class="text-sm text-slate-400 mt-1">' + escapeHtml(ta.email || 'Email not provided') + '</p>'
+        + '    <p class="text-xs text-slate-400 mt-1">TA ID: <span class="mono">' + escapeHtml(ta.userId || '-') + '</span></p>'
+        + '    <p class="text-xs text-emerald-700 mt-1 font-semibold">' + escapeHtml(formatRecommendScore(ta)) + '</p>'
+        + '  </div>'
+        + '</div>'
+
+        + '<div class="space-y-5">'
+        + '  <div>'
+        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Profile Summary</h4>'
+        + '    <div class="bg-slate-50 p-4 rounded-xl text-sm text-slate-700 border border-slate-100">' + escapeHtml(ta.selfIntro || 'No self introduction provided yet.') + '</div>'
+        + '  </div>'
+        + '  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">'
+        + '    <div class="bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-slate-600"><span class="font-semibold text-slate-800">Student ID:</span> ' + escapeHtml(ta.studentId || '-') + '</div>'
+        + '    <div class="bg-white border border-slate-100 rounded-xl px-3 py-2 text-sm text-slate-600"><span class="font-semibold text-slate-800">Education:</span> ' + escapeHtml(ta.education || '-') + '</div>'
+        + '  </div>'
+        + '  <div>'
+        + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Tags</h4>'
+        + '    <div class="flex flex-wrap gap-2">'
+        + (Array.isArray(ta.tags) && ta.tags.length > 0
+            ? ta.tags.map((tag) => '<span class="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">' + escapeHtml(tag) + '</span>').join('')
+            : '<span class="text-xs text-slate-400">No tags</span>')
+        + '    </div>'
+        + '  </div>'
+        + '</div>'
+
+        + '<div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3">'
+        + '  <button id="btnOpenRecMessage" class="px-4 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-700 transition">Start Conversation</button>'
+        + '  <button id="btnOpenRecResume" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:border-indigo-300 hover:bg-indigo-50 transition">Query Resume PDF</button>'
+        + '</div>'
+        + '<div id="recResumeStatus" class="text-sm text-slate-400 mt-3"></div>';
+
+      const chatBtn = document.getElementById('btnOpenRecMessage');
+      if (chatBtn) {
+        chatBtn.addEventListener('click', () => {
+          gotoMessageCenter(ta.userId, ta.realName || 'TA', job);
+        });
+      }
+
+      const resumeBtn = document.getElementById('btnOpenRecResume');
+      const resumeStatus = document.getElementById('recResumeStatus');
+      if (resumeBtn) {
+        resumeBtn.addEventListener('click', async () => {
+          if (!ta.userId) {
+            if (resumeStatus) {
+              resumeStatus.textContent = 'TA ID missing. Cannot query resume.';
+              resumeStatus.className = 'text-sm text-amber-600 mt-3';
+            }
+            return;
+          }
+
+          resumeBtn.disabled = true;
+          resumeBtn.textContent = 'Querying...';
+          if (resumeStatus) {
+            resumeStatus.textContent = 'Checking resume status...';
+            resumeStatus.className = 'text-sm text-slate-500 mt-3';
+          }
+
+          const r = await queryApplicantResumePdf(ta.userId);
+          resumeBtn.disabled = false;
+          resumeBtn.textContent = 'Query Resume PDF';
+
+          if (r.ok) {
+            const blobUrl = URL.createObjectURL(r.blob);
+            window.open(blobUrl, '_blank', 'noopener');
+            window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60 * 1000);
+            if (resumeStatus) {
+              resumeStatus.textContent = 'Resume found. Opened in new tab.';
+              resumeStatus.className = 'text-sm text-emerald-600 mt-3';
+            }
+            return;
+          }
+
+          if (resumeStatus) {
+            if (r.status === 404) {
+              resumeStatus.textContent = 'Resume not uploaded (未上传).';
+              resumeStatus.className = 'text-sm text-amber-600 mt-3';
+            } else if (r.status === 403) {
+              resumeStatus.textContent = 'Resume is private and cannot be viewed.';
+              resumeStatus.className = 'text-sm text-amber-600 mt-3';
+            } else if (r.status === 401) {
+              resumeStatus.textContent = 'Session expired. Please log in again.';
+              resumeStatus.className = 'text-sm text-red-600 mt-3';
+            } else {
+              resumeStatus.textContent = 'Query failed. Please try again.';
+              resumeStatus.className = 'text-sm text-red-600 mt-3';
+            }
+          }
+        });
+      }
+    }
+
+    function openRecommendedCandidateModal(jobId, taUserId) {
+      const job = findJob(jobId);
+      if (!job) {
+        showToast('Job not found.');
+        return;
+      }
+
+      const candidate = findRecommendedCandidate(jobId, taUserId);
+      if (!candidate) {
+        showToast('Candidate details not loaded yet.');
+        return;
+      }
+
+      renderRecommendedCandidateModal(job, candidate);
+      openModal(dom.applicantModal);
     }
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
@@ -798,15 +1110,29 @@
       dom.applicantModalBody.innerHTML = '<div class="text-sm text-slate-500">Loading recommendations...</div>';
       openModal(dom.applicantModal);
 
-      const r = await request('/job?action=matchTAs&jobId=' + encodeURIComponent(jobId));
-      if (!(r.ok && r.data && r.data.code === 200)) {
+      const list = await loadRecommendationsByJob(jobId, true);
+      if (!Array.isArray(list)) {
         dom.applicantModalBody.innerHTML = '<div class="text-sm text-red-600">Failed to load recommendations.</div>';
-        showToast((r.data && r.data.msg) || 'Failed to match TAs.');
+        showToast('Failed to match TAs.');
         return;
       }
 
-      const list = Array.isArray(r.data.data) ? r.data.data.map(mapMatchedTa) : [];
       renderMatchCandidates(job, list);
+
+      dom.applicantModalBody.querySelectorAll('.btn-rec-view').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const taUserId = btn.getAttribute('data-uid');
+          openRecommendedCandidateModal(job.id, taUserId);
+        });
+      });
+
+      dom.applicantModalBody.querySelectorAll('.btn-rec-chat').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const taUserId = btn.getAttribute('data-uid');
+          const taName = btn.getAttribute('data-name') || 'TA';
+          gotoMessageCenter(taUserId, taName, job);
+        });
+      });
     }
 
     function renderApplicantModal(app) {
@@ -842,6 +1168,7 @@
         + '    <h4 class="text-sm font-bold text-slate-900 mb-2">Resume</h4>'
     + '    <button id="btnQueryResumePdf" class="w-full px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold">Query Resume PDF</button>'
     + '    <div id="resumeQueryStatus" class="text-sm text-slate-400 mt-2">Click the button to query resume PDF.</div>'
+      + '    <button id="btnMessageApplicant" class="w-full mt-3 px-4 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-700 transition">Start Conversation</button>'
         + '  </div>'
         + '</div>';
 
@@ -860,6 +1187,14 @@
 
       const queryResumeBtn = document.getElementById('btnQueryResumePdf');
       const resumeQueryStatus = document.getElementById('resumeQueryStatus');
+      const messageApplicantBtn = document.getElementById('btnMessageApplicant');
+      if (messageApplicantBtn) {
+        const currentJob = state.viewingApplicant ? findJob(state.viewingApplicant.jobId) : null;
+        messageApplicantBtn.addEventListener('click', () => {
+          gotoMessageCenter(app.taUserId, app.name || 'TA', currentJob);
+        });
+      }
+
       if (queryResumeBtn) {
         if (!app.taUserId) {
           queryResumeBtn.disabled = true;
@@ -993,11 +1328,25 @@
     }
 
     function bindGlobalEvents() {
-      dom.btnLogout.addEventListener('click', logout);
+      if (dom.btnMessageCenter) {
+        dom.btnMessageCenter.addEventListener('click', () => {
+          gotoMessageCenter();
+        });
+      }
 
-      dom.btnOpenCreate.addEventListener('click', () => openJobModal(null));
-      dom.btnOpenCreateFromPencil.addEventListener('click', () => openJobModal(null));
-      dom.btnSaveJob.addEventListener('click', saveJob);
+      if (dom.btnLogout) {
+        dom.btnLogout.addEventListener('click', logout);
+      }
+
+      if (dom.btnOpenCreate) {
+        dom.btnOpenCreate.addEventListener('click', () => openJobModal(null));
+      }
+      if (dom.btnOpenCreateFromPencil) {
+        dom.btnOpenCreateFromPencil.addEventListener('click', () => openJobModal(null));
+      }
+      if (dom.btnSaveJob) {
+        dom.btnSaveJob.addEventListener('click', saveJob);
+      }
 
       if (dom.formTagOptions) {
         dom.formTagOptions.addEventListener('click', (e) => {
@@ -1008,22 +1357,31 @@
         });
       }
 
-      dom.btnConfirmDelete.addEventListener('click', () => {
-        // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-        // Sample APIs do not include MO-side delete job endpoint.
-        closeModal(dom.deleteModal);
-        showToast('Delete endpoint is not available in current API sample.');
-      });
+      if (dom.btnConfirmDelete) {
+        dom.btnConfirmDelete.addEventListener('click', () => {
+          // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
+          // Sample APIs do not include MO-side delete job endpoint.
+          closeModal(dom.deleteModal);
+          showToast('Delete endpoint is not available in current API sample.');
+        });
+      }
 
       bindModalClose();
     }
 
     async function bootstrap() {
-      const ok = await loadCurrentUser();
-      if (!ok) return;
-      await loadAvailableTags();
-      bindGlobalEvents();
-      await loadJobsWithApplicants();
+      try {
+        const ok = await loadCurrentUser();
+        if (!ok) return;
+        await loadAvailableTags();
+        bindGlobalEvents();
+        await loadJobsWithApplicants();
+      } catch (e) {
+        if (dom.headerRealName && dom.headerRealName.textContent === 'Loading...') {
+          dom.headerRealName.textContent = 'Init failed';
+        }
+        showToast('Initialization failed. Please refresh and try again.');
+      }
     }
 
     bootstrap();
