@@ -1,7 +1,8 @@
 package com.qm.bupt.servlet;
 
-import com.qm.bupt.entity.Message;
-import com.qm.bupt.entity.User;
+import com.qm.bupt.dao.ApplicationDAO;
+import com.qm.bupt.dao.JobDAO;
+import com.qm.bupt.entity.*;
 import com.qm.bupt.service.MessageService;
 import com.qm.bupt.service.impl.MessageServiceImpl;
 import com.qm.bupt.util.Result;
@@ -12,16 +13,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @WebServlet("/message")
 public class MessageServlet extends BaseServlet {
 
     private final MessageService messageService = MessageServiceImpl.getInstance();
+    private final JobDAO jobDAO = JobDAO.getInstance();
+    private final ApplicationDAO applicationDAO = ApplicationDAO.getInstance();
 
     public void send(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -96,13 +95,75 @@ public class MessageServlet extends BaseServlet {
         }
 
         List<String> conversationUserIds = messageService.getConversationUsers(loginUser.getUserId());
-        Map<String, Object> result = new HashMap<>();
-        
+        List<ConversationDTO> result = new ArrayList<>();
+
+        // 获取当前用户发布的岗位ID列表（如果是MO）
+        Set<String> myPublishedJobIds = new HashSet<>();
+        if (loginUser instanceof MO) {
+            MO mo = (MO) loginUser;
+            if (mo.getPublishedJobIds() != null) {
+                myPublishedJobIds.addAll(mo.getPublishedJobIds());
+            }
+        }
+        // 获取当前用户申请过的岗位ID列表（如果是TA）
+        Set<String> myAppliedJobIds = new HashSet<>();
+        if (loginUser instanceof TA) {
+            TA ta = (TA) loginUser;
+            List<Application> applications = applicationDAO.listAll();
+            for (Application app : applications) {
+                if (app.getTaUserId().equals(ta.getUserId())) {
+                    myAppliedJobIds.add(app.getJobId());
+                }
+            }
+        }
+
         for (String uid : conversationUserIds) {
             User user = com.qm.bupt.dao.UserDAO.getInstance().findById(uid);
-            if (user != null) {
-                result.put(uid, user.getRealName());
+            if (user == null) continue;
+
+            ConversationDTO dto = new ConversationDTO();
+            dto.setUserId(uid);
+            dto.setUserName(user.getRealName());
+            dto.setUserType(user.getUserType());
+            dto.setUserTypeDesc(user.getRoleDesc());
+
+            // 查找该用户与当前用户消息中关联的Job
+            List<JobSimple> relatedJobs = new ArrayList<>();
+            boolean isRelated = false;
+
+            if (user instanceof TA) {
+                // 对方是TA：查找该TA申请过的岗位中，有哪些是当前MO发布的
+                List<Application> applications = applicationDAO.listAll();
+                for (Application app : applications) {
+                    if (app.getTaUserId().equals(uid)) {
+                        Job job = jobDAO.getById(app.getJobId(), "jobId").orElse(null);
+                        if (job != null) {
+                            relatedJobs.add(new JobSimple(job.getJobId(), job.getJobName()));
+                            if (myPublishedJobIds.contains(job.getJobId())) {
+                                isRelated = true;
+                            }
+                        }
+                    }
+                }
+            } else if (user instanceof MO) {
+                // 对方是MO：查找该MO发布的岗位中，有哪些是当前TA申请过的
+                MO otherMo = (MO) user;
+                if (otherMo.getPublishedJobIds() != null) {
+                    for (String jobId : otherMo.getPublishedJobIds()) {
+                        Job job = jobDAO.getById(jobId, "jobId").orElse(null);
+                        if (job != null) {
+                            relatedJobs.add(new JobSimple(job.getJobId(), job.getJobName()));
+                            if (myAppliedJobIds.contains(jobId)) {
+                                isRelated = true;
+                            }
+                        }
+                    }
+                }
             }
+
+            dto.setRelatedJobs(relatedJobs);
+            dto.setRelated(isRelated);
+            result.add(dto);
         }
 
         writeJson(response, Result.success("获取成功", result));
