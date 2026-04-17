@@ -107,6 +107,31 @@ body::before {
   box-shadow: 0 14px 24px rgba(14, 40, 67, 0.16);
 }
 
+.top-msg-btn {
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(36, 74, 108, 0.18);
+  background: linear-gradient(145deg, #ffffff, #edf6ff);
+  color: #2b4866;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 18px rgba(14, 40, 67, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.top-msg-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #1d4ed8;
+  box-shadow: 0 14px 24px rgba(14, 40, 67, 0.16);
+}
+
 .icon-svg {
   width: 16px;
   height: 16px;
