@@ -711,6 +711,16 @@
         }, 3000);
     }
 
+    function getConversationPrefill() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            targetUserId: (params.get('targetUserId') || '').trim(),
+            targetUserName: (params.get('targetUserName') || '').trim(),
+            jobId: (params.get('jobId') || '').trim(),
+            jobTitle: (params.get('jobTitle') || '').trim()
+        };
+    }
+
     // ==================== 获取当前登录用户 ====================
     async function getCurrentUserInfo() {
         try {
@@ -794,6 +804,7 @@
     function openNewConvModal() {
         document.getElementById('newConvModal').classList.add('show');
         document.getElementById('targetUserId').value = '';
+        document.getElementById('targetUserName').value = '';
     }
 
     function closeNewConvModal() {
@@ -802,6 +813,7 @@
 
     async function createNewConversation() {
         const targetId = document.getElementById('targetUserId').value.trim();
+        const targetNameInput = document.getElementById('targetUserName').value.trim();
 
         if (!targetId) {
             showToast('请输入对方用户ID', 'error');
@@ -812,32 +824,20 @@
             return;
         }
 
-        // 自动获取对方真实姓名
-        try {
-            const res = await fetch(BASE_URL + `/user?action=getById&userId=${targetId}`, {
-                credentials: 'include'
-            });
-            const result = await res.json();
-            let targetName = "未知用户";
-            if (result.code === 200 && result.data) {
-                targetName = result.data.realName || targetName;
-            }
+        const targetName = targetNameInput || conversations[targetId] || ('用户 ' + targetId.slice(0, 8));
 
-            currentTargetUserId = targetId;
-            currentTargetUserName = targetName;
-            closeNewConvModal();
+        currentTargetUserId = targetId;
+        currentTargetUserName = targetName;
+        closeNewConvModal();
 
-            document.getElementById('chatTitle').textContent = targetName;
-            document.getElementById('chatInputArea').style.display = 'block';
-            document.getElementById('chatMessages').innerHTML = `
-                <div class="chat-empty">
-                    <div class="chat-empty-icon">✉️</div>
-                    <div>发送第一条消息，开始和${targetName}聊天</div>
-                </div>
-            `;
-        } catch (e) {
-            showToast('获取用户信息失败', 'error');
-        }
+        document.getElementById('chatTitle').textContent = targetName;
+        document.getElementById('chatInputArea').style.display = 'block';
+        document.getElementById('chatMessages').innerHTML = `
+            <div class="chat-empty">
+                <div class="chat-empty-icon">✉️</div>
+                <div>发送第一条消息，开始和${targetName}聊天</div>
+            </div>
+        `;
     }
 
     // ==================== 4. 选择会话 ====================
@@ -846,12 +846,49 @@
         currentTargetUserName = name;
 
         document.querySelectorAll('.conv-item').forEach(item => item.classList.remove('active'));
-        document.querySelector(`[data-uid="${uid}"]`).classList.add('active');
+        const activeItem = document.querySelector(`[data-uid="${uid}"]`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+        }
 
         document.getElementById('chatTitle').textContent = name;
         document.getElementById('chatInputArea').style.display = 'block';
 
         await loadHistory(uid);
+    }
+
+    async function applyPrefillConversation() {
+        const prefill = getConversationPrefill();
+        if (!prefill.targetUserId || prefill.targetUserId === currentUserId) {
+            return;
+        }
+
+        if (prefill.jobId) {
+            document.getElementById('jobIdInput').value = prefill.jobId;
+        }
+        if (prefill.jobTitle) {
+            document.getElementById('jobTitleInput').value = prefill.jobTitle;
+        }
+
+        const targetName = prefill.targetUserName || conversations[prefill.targetUserId] || ('用户 ' + prefill.targetUserId.slice(0, 8));
+        const hasConversation = Object.prototype.hasOwnProperty.call(conversations, prefill.targetUserId);
+
+        if (hasConversation) {
+            await selectConversation(prefill.targetUserId, targetName);
+            return;
+        }
+
+        currentTargetUserId = prefill.targetUserId;
+        currentTargetUserName = targetName;
+        document.querySelectorAll('.conv-item').forEach(item => item.classList.remove('active'));
+        document.getElementById('chatTitle').textContent = targetName;
+        document.getElementById('chatInputArea').style.display = 'block';
+        document.getElementById('chatMessages').innerHTML = `
+            <div class="chat-empty">
+                <div class="chat-empty-icon">✉️</div>
+                <div>已定位到目标用户，发送第一条消息即可建立会话</div>
+            </div>
+        `;
     }
 
     // ==================== 5. 加载历史消息 ====================
@@ -977,9 +1014,11 @@
 
     // ==================== 页面初始化 ====================
     window.onload = async function () {
-        await getCurrentUserInfo();
+        const user = await getCurrentUserInfo();
+        if (!user) return;
         await loadUnreadCount();
         await loadConversations();
+        await applyPrefillConversation();
 
         // 回车发送消息
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
