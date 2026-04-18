@@ -155,38 +155,6 @@
             color: var(--text-dark);
         }
 
-        .conv-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-tabs {
-            display: flex;
-            gap: 4px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            padding: 3px;
-        }
-
-        .filter-tab {
-            padding: 6px 12px;
-            font-size: 13px;
-            font-weight: 500;
-            border: none;
-            background: transparent;
-            color: var(--text-gray);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .filter-tab.active {
-            background: white;
-            color: var(--primary-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
         .new-conv-btn {
             width: 32px;
             height: 32px;
@@ -220,7 +188,7 @@
             transition: all 0.3s ease;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
         }
 
@@ -233,64 +201,15 @@
             border-left: 4px solid var(--primary-color);
         }
 
-        .conv-item.related {
-            border-left: 4px solid #00b472;
-        }
-
-        .conv-item.related.active {
-            border-left: 4px solid var(--primary-color);
-        }
-
         .conv-info {
             flex: 1;
-        }
-
-        .conv-name-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
         }
 
         .conv-name {
             font-size: 15px;
             font-weight: 600;
             color: var(--text-dark);
-        }
-
-        .conv-user-type {
-            font-size: 11px;
-            padding: 2px 6px;
-            background: #e8f0fe;
-            color: #667eea;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .conv-related-badge {
-            font-size: 11px;
-            padding: 2px 6px;
-            background: #e6f7ef;
-            color: #00b472;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .conv-jobs {
-            font-size: 12px;
-            color: var(--text-gray);
-            margin-top: 4px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .conv-job-tag {
-            padding: 2px 8px;
-            background: #f0f4ff;
-            color: #667eea;
-            border-radius: 4px;
-            font-size: 11px;
+            margin-bottom: 4px;
         }
 
         .conv-unread-dot {
@@ -299,8 +218,6 @@
             background: #ff6b6b;
             border-radius: 50%;
             display: none;
-            flex-shrink: 0;
-            margin-top: 4px;
         }
 
         .conv-unread-dot.show {
@@ -698,13 +615,7 @@
     <div class="conversation-list">
         <div class="conv-header">
             <div class="conv-title">会话列表</div>
-            <div class="conv-actions">
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all" onclick="switchFilter('all')">全部</button>
-                    <button class="filter-tab" data-filter="related" onclick="switchFilter('related')">相关</button>
-                </div>
-                <button class="new-conv-btn" onclick="openNewConvModal()">+</button>
-            </div>
+            <button class="new-conv-btn" onclick="openNewConvModal()">+</button>
         </div>
         <div class="conv-items" id="convItems">
             <div class="conv-empty">暂无会话，点击右上角+新建</div>
@@ -763,8 +674,7 @@
     let currentUserId = null;
     let currentTargetUserId = null;
     let currentTargetUserName = null;
-    let conversations = []; // 改为数组存储完整数据
-    let currentFilter = 'all'; // 当前筛选状态
+    let conversations = {};
 
     // ====================== 🔥 新增：智能返回主页（只加这一个函数） ======================
     async function goHome() {
@@ -799,54 +709,6 @@
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
-    }
-
-    // ==================== 筛选功能 ====================
-    function switchFilter(filter) {
-        currentFilter = filter;
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.filter === filter);
-        });
-        renderConversations();
-    }
-
-    function renderConversations() {
-        const convItems = document.getElementById('convItems');
-        let filtered = conversations;
-
-        if (currentFilter === 'related') {
-            filtered = conversations.filter(c => c.isRelated);
-        }
-
-        if (filtered.length === 0) {
-            convItems.innerHTML = `<div class="conv-empty">${currentFilter === 'related' ? '暂无相关的会话' : '暂无会话，点击右上角+新建'}</div>`;
-            return;
-        }
-
-        let html = '';
-        filtered.forEach(conv => {
-            const isActive = conv.userId === currentTargetUserId;
-            const jobsHtml = conv.relatedJobs && conv.relatedJobs.length > 0
-                ? `<div class="conv-jobs">${conv.relatedJobs.map(j => `<span class="conv-job-tag">📌 ${j.jobName}</span>`).join('')}</div>`
-                : '';
-            const relatedBadge = conv.isRelated ? '<span class="conv-related-badge">相关</span>' : '';
-            const itemClass = `conv-item${isActive ? ' active' : ''}${conv.isRelated ? ' related' : ''}`;
-
-            html += `
-                <div class="${itemClass}" data-uid="${conv.userId}" onclick="selectConversation('${conv.userId}')">
-                    <div class="conv-info">
-                        <div class="conv-name-row">
-                            <div class="conv-name">${conv.userName}</div>
-                            <span class="conv-user-type">${conv.userTypeDesc}</span>
-                            ${relatedBadge}
-                        </div>
-                        ${jobsHtml}
-                    </div>
-                    <div class="conv-unread-dot" id="unread-${conv.userId}"></div>
-                </div>
-            `;
-        });
-        convItems.innerHTML = html;
     }
 
     // ==================== 获取当前登录用户 ====================
@@ -903,14 +765,27 @@
             const result = await res.json();
 
             if (result.code === 200 && result.data) {
-                conversations = result.data; // 直接使用数组
+                conversations = result.data;
+                const uids = Object.keys(conversations);
 
-                if (conversations.length === 0) {
+                if (uids.length === 0) {
                     convItems.innerHTML = '<div class="conv-empty">暂无会话，点击右上角+新建</div>';
                     return;
                 }
 
-                renderConversations();
+                let html = '';
+                uids.forEach(uid => {
+                    const name = conversations[uid] || '未知用户';
+                    html += `
+                        <div class="conv-item" data-uid="${uid}" onclick="selectConversation('${uid}', '${name}')">
+                            <div class="conv-info">
+                                <div class="conv-name">${name}</div>
+                            </div>
+                            <div class="conv-unread-dot" id="unread-${uid}"></div>
+                        </div>
+                    `;
+                });
+                convItems.innerHTML = html;
             }
         } catch (e) { }
     }
@@ -966,23 +841,14 @@
     }
 
     // ==================== 4. 选择会话 ====================
-    async function selectConversation(uid) {
-        const conv = conversations.find(c => c.userId === uid);
-        if (!conv) return;
-
+    async function selectConversation(uid, name) {
         currentTargetUserId = uid;
-        currentTargetUserName = conv.userName;
+        currentTargetUserName = name;
 
-        // 更新选中状态
         document.querySelectorAll('.conv-item').forEach(item => item.classList.remove('active'));
         document.querySelector(`[data-uid="${uid}"]`).classList.add('active');
 
-        // 更新聊天标题
-        let titleHtml = conv.userName;
-        if (conv.relatedJobs && conv.relatedJobs.length > 0) {
-            titleHtml += ` <span style="font-size:13px;color:#666;">(${conv.relatedJobs.map(j => j.jobName).join(', ')})</span>`;
-        }
-        document.getElementById('chatTitle').innerHTML = titleHtml;
+        document.getElementById('chatTitle').textContent = name;
         document.getElementById('chatInputArea').style.display = 'block';
 
         await loadHistory(uid);
