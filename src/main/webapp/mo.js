@@ -212,10 +212,12 @@
 
     function mapApplicant(rawApp) {
       const normalizedStatus = appStatusToWord(getRawApplyStatus(rawApp));
+      const resolvedTaUserId = rawApp.taUserId || rawApp.taId || rawApp.userId || rawApp.uid || '';
+      const resolvedTaName = rawApp.taRealName || rawApp.realName || rawApp.taName || ('TA #' + (resolvedTaUserId || '?'));
       return {
         applicationId: rawApp.applicationId,
-        taUserId: rawApp.taUserId || rawApp.taId || '',
-        name: rawApp.taRealName || ('TA #' + (rawApp.taUserId || rawApp.taId || '?')),
+        taUserId: resolvedTaUserId,
+        name: resolvedTaName,
         studentId: rawApp.studentId || rawApp.taStudentId || '',
         major: rawApp.major || rawApp.taMajor || 'Major not provided',
         education: rawApp.education || rawApp.taEducation || '',
