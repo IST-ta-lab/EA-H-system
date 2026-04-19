@@ -28,6 +28,11 @@
 
             <div class="nav-right">
                 <span class="nav-username" id="navUserName"></span>
+                <button class="icon-btn" id="messageBtn" type="button" aria-label="Open messages">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 8h12M6 12h8m-8 6 3.6-2.7c.35-.26.77-.4 1.2-.4H18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
                 <button class="btn btn-ghost" id="logoutBtn" type="button">Logout</button>
                 <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Open profile">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -157,6 +162,36 @@
         <div class="modal-footer">
             <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">Cancel</button>
             <button class="btn btn-primary" id="submitApplicationBtn" type="button">Submit Application</button>
+        </div>
+    </div>
+</div>
+
+<!-- Resume preview modal -->
+<div class="modal-overlay hidden" id="resumePreviewModalOverlay">
+    <div class="modal-card modal-xl scale-enter" id="resumePreviewModalCard">
+        <div class="modal-header">
+            <div>
+                <h2>Resume Preview</h2>
+                <div class="job-meta-row">
+                    <span class="badge badge-soft" id="resumePreviewFileName">profile.pdf</span>
+                </div>
+            </div>
+            <button class="icon-btn" id="closeResumePreviewModalBtn" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="resume-preview-frame-wrap">
+                <iframe id="resumePreviewFrame" class="resume-preview-frame" title="Resume preview"></iframe>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="replaceResumeBtnFromModal" type="button">Replace File</button>
+            <button class="btn btn-primary" id="closeResumePreviewFooterBtn" type="button">Close</button>
         </div>
     </div>
 </div>

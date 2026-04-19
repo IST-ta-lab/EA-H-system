@@ -20,6 +20,7 @@ const state = {
     applications: [],
     hasResume: false,
     resumeName: "",
+    resumePreviewUrl: "",
     isUploadingResume: false,
     availableTags: [...POPULAR_TAGS],
 
@@ -200,11 +201,15 @@ function mapUserToProfile(user) {
 // Backend API connected
 function mapJobFromBackend(job) {
     const backendTags = Array.isArray(job.tags) ? job.tags : [];
+    const contactUserId = job.publisherMoId || job.publisherId || job.publisherUserId || job.moId || job.userId || "";
+    const contactName = job.publisherName || job.moName || "Course Lead";
     return {
         id: job.jobId,
         course: job.jobName || "Untitled Role",
-        prof: job.publisherName || job.moName || "Course Lead",
+        prof: contactName,
         hours: job.workHoursWeekly || 0,
+        contactUserId: contactUserId ? String(contactUserId) : "",
+        contactName,
         tags: backendTags.length > 0
             ? backendTags
             : [
@@ -312,6 +317,18 @@ function isJobApplied(jobId) {
     return state.applications.some(app => String(app.jobId) === String(jobId));
 }
 
+function getJobContactInfo(job) {
+    if (!job) return { userId: "", name: "Course Lead" };
+
+    const raw = job.raw || {};
+    const userId = raw.publisherMoId || raw.publisherId || raw.publisherUserId || raw.moId || raw.userId || job.contactUserId || "";
+    const name = raw.publisherName || raw.moName || job.contactName || job.prof || "Course Lead";
+    return {
+        userId: userId ? String(userId) : "",
+        name
+    };
+}
+
 function setView(viewName) {
     state.currentView = viewName;
     render();
@@ -406,6 +423,11 @@ function createResumePicker() {
     return input;
 }
 
+function getResumePreviewUrl() {
+    if (!state.currentUser || !state.currentUser.userId) return "";
+    return `${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(state.currentUser.userId)}`;
+}
+
 async function uploadResumeFile(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -426,8 +448,9 @@ async function checkResumeStatus() {
     if (!state.currentUser || !state.currentUser.userId) return;
 
     const uid = state.currentUser.userId;
+    const previewUrl = getResumePreviewUrl();
     try {
-        const res = await fetch(`${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(uid)}`, {
+        const res = await fetch(previewUrl, {
             method: "GET",
             credentials: "include"
         });
@@ -438,16 +461,29 @@ async function checkResumeStatus() {
             if (json.code === 200) {
                 state.hasResume = true;
                 state.resumeName = `${uid}.pdf`;
+                state.resumePreviewUrl = previewUrl;
                 renderSidebar();
+                if (state.currentView === "profile") {
+                    renderProfileView();
+                }
             }
         } else if (res.ok) {
             state.hasResume = true;
             state.resumeName = `${uid}.pdf`;
+            state.resumePreviewUrl = previewUrl;
             renderSidebar();
+            if (state.currentView === "profile") {
+                renderProfileView();
+            }
+        } else {
+            state.hasResume = false;
+            state.resumeName = "";
+            state.resumePreviewUrl = "";
         }
     } catch (e) {
         state.hasResume = false;
         state.resumeName = "";
+        state.resumePreviewUrl = "";
     }
 }
 
@@ -471,18 +507,103 @@ async function handleUploadResume() {
         const result = await uploadResumeFile(file);
         state.isUploadingResume = false;
 
-    if (result.ok) {
-        state.hasResume = true;
-        state.resumeName = file.name;
-        renderSidebar();
-        return;
-    }
+        if (result.ok) {
+            state.hasResume = true;
+            state.resumeName = file.name;
+            state.resumePreviewUrl = getResumePreviewUrl();
+            renderSidebar();
+            if (state.currentView === "profile") {
+                renderProfileView();
+            }
+            return;
+        }
 
         renderSidebar();
         showError(result.error);
     });
 
     picker.click();
+}
+
+function openMessageCenter() {
+    location.href = "message.html";
+}
+
+async function openMessageCenterForJob(jobId) {
+    let job = state.jobs.find(item => String(item.id) === String(jobId));
+
+    if (!job) {
+        showError("Unable to find this role.");
+        return;
+    }
+
+    let contact = getJobContactInfo(job);
+    if (!contact.userId) {
+        const r = await request(`/job?action=getDetail&jobId=${encodeURIComponent(jobId)}`);
+        if (r.ok && r.data && r.data.code === 200) {
+            job = mapJobFromBackend(r.data.data || {});
+            contact = getJobContactInfo(job);
+        }
+    }
+
+    if (!contact.userId) {
+        showError("This role does not expose a teacher ID yet.");
+        return;
+    }
+
+    const messageWindow = window.open("message.html", "_blank");
+    if (!messageWindow) {
+        showError("Please allow pop-ups for this site to open the message page.");
+        return;
+    }
+
+    const deadline = Date.now() + 15000;
+    const timer = window.setInterval(async () => {
+        try {
+            if (messageWindow.closed) {
+                window.clearInterval(timer);
+                return;
+            }
+
+            if (!messageWindow.document || typeof messageWindow.createNewConversation !== "function") {
+                if (Date.now() > deadline) {
+                    window.clearInterval(timer);
+                    messageWindow.focus();
+                }
+                return;
+            }
+
+            const targetInput = messageWindow.document.getElementById("targetUserId");
+            if (!targetInput) {
+                return;
+            }
+
+            window.clearInterval(timer);
+
+            if (typeof messageWindow.openNewConvModal === "function") {
+                messageWindow.openNewConvModal();
+            }
+
+            targetInput.value = contact.userId;
+            await Promise.resolve(messageWindow.createNewConversation());
+
+            const jobIdInput = messageWindow.document.getElementById("jobIdInput");
+            const jobTitleInput = messageWindow.document.getElementById("jobTitleInput");
+            if (jobIdInput) {
+                jobIdInput.value = job.id || "";
+            }
+            if (jobTitleInput) {
+                jobTitleInput.value = job.course || "";
+            }
+
+            messageWindow.focus();
+        } catch (error) {
+            if (Date.now() > deadline) {
+                window.clearInterval(timer);
+                messageWindow.focus();
+            }
+        }
+    }, 250);
 }
 
 function renderFeedView() {
@@ -600,6 +721,9 @@ function renderJobCard(job) {
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
             View Details
           </button>
+          <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
+            Message
+          </button>
           <button class="btn btn-primary apply-job-btn" type="button" data-job-id="${job.id}" ${applyDisabled}>
             ${applyLabel}${applyIcon ? " " + applyIcon : ""}
           </button>
@@ -677,6 +801,10 @@ function renderSidebar() {
                   <div style="margin-left:auto;color:var(--success);width:22px;height:22px;">
                     ${Icons.checkCircle}
                   </div>
+                </div>
+                <div class="resume-actions">
+                  <button class="btn btn-soft" id="resumePreviewBtn" type="button">Preview</button>
+                  <button class="btn btn-ghost" id="resumeReplaceBtn" type="button">Replace</button>
                 </div>
               </div>
             `
@@ -823,6 +951,49 @@ function renderProfileView() {
       <section class="glass-card section-card">
         <div class="page-title-row" style="margin-bottom:16px;">
           <div class="page-title">
+            <h2 style="font-size:20px;">Resume</h2>
+            <p>Preview your uploaded PDF or replace it with a newer version.</p>
+          </div>
+        </div>
+
+        ${
+        state.hasResume
+            ? `
+              <div class="resume-box">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:44px;height:44px;border-radius:14px;">
+                    ${Icons.file}
+                  </div>
+                  <div>
+                    <strong style="display:block;margin-bottom:4px;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</strong>
+                    <p style="margin:0;">PDF file ready for preview and replacement.</p>
+                  </div>
+                </div>
+                <div class="resume-actions">
+                  <button class="btn btn-soft" id="profileResumePreviewBtn" type="button">Preview Resume</button>
+                  <button class="btn btn-ghost" id="profileResumeReplaceBtn" type="button">Replace File</button>
+                </div>
+              </div>
+            `
+            : `
+              <button class="resume-box" id="profileResumeUploadBtn" type="button" style="width:100%;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">
+                    ${Icons.upload}
+                  </div>
+                  <div style="text-align:center;">
+                    <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
+                    <p style="margin:0;">Add a PDF first, then you can preview or replace it here.</p>
+                  </div>
+                </div>
+              </button>
+            `
+    }
+      </section>
+
+      <section class="glass-card section-card">
+        <div class="page-title-row" style="margin-bottom:16px;">
+          <div class="page-title">
             <h2 style="font-size:20px;">Profile Details</h2>
             <p>Basic account and visibility information.</p>
           </div>
@@ -858,6 +1029,7 @@ function bindFeedEvents() {
     const searchInput = document.getElementById("jobSearchInput");
     const tagButtons = els.feedView.querySelectorAll("[data-tag]");
     const openButtons = els.feedView.querySelectorAll(".open-job-btn");
+    const contactButtons = els.feedView.querySelectorAll(".contact-job-btn");
     const applyButtons = els.feedView.querySelectorAll(".apply-job-btn");
     const filterStubBtn = document.getElementById("filterStubBtn");
 
@@ -883,6 +1055,14 @@ function bindFeedEvents() {
             event.stopPropagation();
             const id = btn.dataset.jobId;
             await openJobModal(id);
+        });
+    });
+
+    contactButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await openMessageCenterForJob(id);
         });
     });
 
@@ -912,6 +1092,8 @@ function bindSidebarEvents() {
     const openProfileEditBtn = document.getElementById("openProfileEditBtn");
     const sidebarViewProfileBtn = document.getElementById("sidebarViewProfileBtn");
     const resumeUploadBtn = document.getElementById("resumeUploadBtn");
+    const resumePreviewBtn = document.getElementById("resumePreviewBtn");
+    const resumeReplaceBtn = document.getElementById("resumeReplaceBtn");
     const cancelButtons = els.sidebar.querySelectorAll(".cancel-application-btn");
 
     if (openProfileEditBtn) {
@@ -924,6 +1106,14 @@ function bindSidebarEvents() {
 
     if (resumeUploadBtn) {
         resumeUploadBtn.addEventListener("click", handleUploadResume);
+    }
+
+    if (resumePreviewBtn) {
+        resumePreviewBtn.addEventListener("click", openResumePreviewModal);
+    }
+
+    if (resumeReplaceBtn) {
+        resumeReplaceBtn.addEventListener("click", handleUploadResume);
     }
 
     cancelButtons.forEach(btn => {
@@ -952,6 +1142,9 @@ function bindSidebarEvents() {
 function bindProfileViewEvents() {
     const backBtn = document.getElementById("profileBackToFeedBtn");
     const editBtn = document.getElementById("profileEditMainBtn");
+    const profileResumeUploadBtn = document.getElementById("profileResumeUploadBtn");
+    const profileResumePreviewBtn = document.getElementById("profileResumePreviewBtn");
+    const profileResumeReplaceBtn = document.getElementById("profileResumeReplaceBtn");
 
     if (backBtn) {
         backBtn.addEventListener("click", () => setView("feed"));
@@ -959,6 +1152,18 @@ function bindProfileViewEvents() {
 
     if (editBtn) {
         editBtn.addEventListener("click", openProfileModal);
+    }
+
+    if (profileResumeUploadBtn) {
+        profileResumeUploadBtn.addEventListener("click", handleUploadResume);
+    }
+
+    if (profileResumePreviewBtn) {
+        profileResumePreviewBtn.addEventListener("click", openResumePreviewModal);
+    }
+
+    if (profileResumeReplaceBtn) {
+        profileResumeReplaceBtn.addEventListener("click", handleUploadResume);
     }
 }
 
@@ -1011,6 +1216,7 @@ function renderProfileTagOptions() {
 
 function bindJobListEvents() {
     const openButtons = els.feedView.querySelectorAll(".open-job-btn");
+    const contactButtons = els.feedView.querySelectorAll(".contact-job-btn");
     const applyButtons = els.feedView.querySelectorAll(".apply-job-btn");
 
     openButtons.forEach(btn => {
@@ -1018,6 +1224,14 @@ function bindJobListEvents() {
             event.stopPropagation();
             const id = btn.dataset.jobId;
             await openJobModal(id);
+        });
+    });
+
+    contactButtons.forEach(btn => {
+        btn.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = btn.dataset.jobId;
+            await openMessageCenterForJob(id);
         });
     });
 
@@ -1040,7 +1254,8 @@ function bindJobListEvents() {
 function updateBodyScrollLock() {
     const isProfileOpen = els.profileModalOverlay && !els.profileModalOverlay.classList.contains("hidden");
     const isJobOpen = els.jobModalOverlay && !els.jobModalOverlay.classList.contains("hidden");
-    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen);
+    const isResumePreviewOpen = els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden");
+    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen || isResumePreviewOpen);
 }
 
 function openProfileModal() {
@@ -1053,6 +1268,31 @@ function openProfileModal() {
 function closeProfileModal() {
     state.isProfileModalOpen = false;
     els.profileModalOverlay.classList.add("hidden");
+    updateBodyScrollLock();
+}
+
+function openResumePreviewModal() {
+    if (!state.hasResume || !state.resumePreviewUrl) {
+        showError("No resume is available to preview yet.");
+        return;
+    }
+
+    if (els.resumePreviewFileName) {
+        els.resumePreviewFileName.textContent = state.resumeName || "profile.pdf";
+    }
+    if (els.resumePreviewFrame) {
+        els.resumePreviewFrame.src = state.resumePreviewUrl;
+    }
+
+    els.resumePreviewModalOverlay.classList.remove("hidden");
+    updateBodyScrollLock();
+}
+
+function closeResumePreviewModal() {
+    if (els.resumePreviewFrame) {
+        els.resumePreviewFrame.src = "about:blank";
+    }
+    els.resumePreviewModalOverlay.classList.add("hidden");
     updateBodyScrollLock();
 }
 
@@ -1114,12 +1354,16 @@ async function openJobModal(jobId) {
 
     if (r.ok && r.data && r.data.code === 200) {
         const detail = r.data.data || {};
+        const contactUserId = detail.publisherMoId || detail.publisherId || detail.publisherUserId || detail.moId || detail.userId || "";
+        const contactName = detail.publisherName || detail.moName || "Course Lead";
 
         state.selectedJob = {
             id: detail.jobId,
             course: detail.jobName || "Untitled Role",
-            prof: detail.publisherName || detail.moName || "Course Lead",
+            prof: contactName,
             hours: detail.workHoursWeekly || 0,
+            contactUserId: contactUserId ? String(contactUserId) : "",
+            contactName,
             tags: [
                 detail.jobType === 1 ? "TA" : "Assistant",
                 detail.belongModule || "Uncategorized"
@@ -1236,6 +1480,9 @@ function bindModalEvents() {
     const closeJobModalBtn = document.getElementById("closeJobModalBtn");
     const cancelJobModalBtn = document.getElementById("cancelJobModalBtn");
     const submitApplicationBtn = document.getElementById("submitApplicationBtn");
+    const closeResumePreviewModalBtn = document.getElementById("closeResumePreviewModalBtn");
+    const closeResumePreviewFooterBtn = document.getElementById("closeResumePreviewFooterBtn");
+    const replaceResumeBtnFromModal = document.getElementById("replaceResumeBtnFromModal");
 
     if (closeProfileModalBtn) {
         closeProfileModalBtn.addEventListener("click", closeProfileModal);
@@ -1267,6 +1514,21 @@ function bindModalEvents() {
     if (submitApplicationBtn) {
         submitApplicationBtn.addEventListener("click", async () => {
             await submitApplicationFromModal();
+        });
+    }
+
+    if (closeResumePreviewModalBtn) {
+        closeResumePreviewModalBtn.addEventListener("click", closeResumePreviewModal);
+    }
+
+    if (closeResumePreviewFooterBtn) {
+        closeResumePreviewFooterBtn.addEventListener("click", closeResumePreviewModal);
+    }
+
+    if (replaceResumeBtnFromModal) {
+        replaceResumeBtnFromModal.addEventListener("click", async () => {
+            closeResumePreviewModal();
+            await handleUploadResume();
         });
     }
 
@@ -1306,6 +1568,14 @@ function bindModalEvents() {
         });
     }
 
+    if (els.resumePreviewModalOverlay) {
+        els.resumePreviewModalOverlay.addEventListener("click", event => {
+            if (event.target === els.resumePreviewModalOverlay) {
+                closeResumePreviewModal();
+            }
+        });
+    }
+
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             if (!els.profileModalOverlay.classList.contains("hidden")) {
@@ -1313,6 +1583,9 @@ function bindModalEvents() {
             }
             if (!els.jobModalOverlay.classList.contains("hidden")) {
                 closeJobModal();
+            }
+            if (els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden")) {
+                closeResumePreviewModal();
             }
         }
     });
@@ -1342,10 +1615,12 @@ function cacheElements() {
     els.profileView = document.getElementById("profileView");
     els.sidebar = document.getElementById("sidebar");
     els.avatarBtn = document.getElementById("avatarBtn");
+    els.messageBtn = document.getElementById("messageBtn");
     els.logoutBtn = document.getElementById("logoutBtn");
 
     els.profileModalOverlay = document.getElementById("profileModalOverlay");
     els.jobModalOverlay = document.getElementById("jobModalOverlay");
+    els.resumePreviewModalOverlay = document.getElementById("resumePreviewModalOverlay");
 
     els.profileNameInput = document.getElementById("profileNameInput");
     els.profileEmailInput = document.getElementById("profileEmailInput");
@@ -1364,11 +1639,16 @@ function cacheElements() {
     els.takenCourseIcon = document.getElementById("takenCourseIcon");
     els.inPersonToggle = document.getElementById("inPersonToggle");
     els.inPersonIcon = document.getElementById("inPersonIcon");
+    els.resumePreviewFrame = document.getElementById("resumePreviewFrame");
+    els.resumePreviewFileName = document.getElementById("resumePreviewFileName");
 }
 
 function bindGlobalEvents() {
     if (els.avatarBtn) {
         els.avatarBtn.addEventListener("click", () => setView("profile"));
+    }
+    if (els.messageBtn) {
+        els.messageBtn.addEventListener("click", openMessageCenter);
     }
     if (els.logoutBtn) {
         els.logoutBtn.addEventListener("click", logout);

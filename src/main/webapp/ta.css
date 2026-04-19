@@ -624,6 +624,32 @@ button {
     line-height: 1.7;
 }
 
+.resume-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.resume-actions .btn {
+    flex: 1 1 140px;
+}
+
+.resume-preview-frame-wrap {
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.88);
+    min-height: 68vh;
+}
+
+.resume-preview-frame {
+    width: 100%;
+    min-height: 68vh;
+    border: none;
+    background: #f8fafc;
+}
+
 .application-list {
     display: grid;
     gap: 12px;
@@ -1161,5 +1187,14 @@ button {
     .modal-footer {
         padding-left: 16px;
         padding-right: 16px;
+    }
+
+    .resume-actions .btn {
+        flex-basis: 100%;
+    }
+
+    .resume-preview-frame-wrap,
+    .resume-preview-frame {
+        min-height: 56vh;
     }
 }
