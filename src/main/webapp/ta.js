@@ -23,6 +23,8 @@ const state = {
     resumePreviewUrl: "",
     resumeObjectUrl: "",
     isUploadingResume: false,
+    recommendedJobs: {},
+    recommendationLoaded: false,
     availableTags: [...POPULAR_TAGS],
 
     searchQuery: "",
@@ -153,6 +155,14 @@ function getInitials(name) {
         .join("");
 }
 
+function normalizeTagList(tags) {
+    if (!Array.isArray(tags)) return [];
+
+    return tags
+        .map(tag => String(tag || "").trim())
+        .filter(Boolean);
+}
+
 // Backend API connected
 function showError(message) {
     alert(message || "Request failed");
@@ -201,7 +211,7 @@ function mapUserToProfile(user) {
 
 // Backend API connected
 function mapJobFromBackend(job) {
-    const backendTags = Array.isArray(job.tags) ? job.tags : [];
+    const backendTags = normalizeTagList(job.tags);
     const contactUserId = job.publisherMoId || job.publisherId || job.publisherUserId || job.moId || job.userId || "";
     const contactName = job.publisherName || job.moName || "Course Lead";
     return {
@@ -282,7 +292,7 @@ function formatJobType(jobType) {
 }
 
 function getFilteredJobs() {
-    return state.jobs.filter(job => {
+    const filteredJobs = state.jobs.filter(job => {
         const matchesSearch =
             String(job.course || "").toLowerCase().includes(state.searchQuery.toLowerCase()) ||
             String(job.prof || "").toLowerCase().includes(state.searchQuery.toLowerCase());
@@ -293,25 +303,81 @@ function getFilteredJobs() {
 
         return matchesSearch && matchesTags;
     });
+
+    return [...filteredJobs].sort((left, right) => {
+        const recommendationGap = getJobRecommendationScore(right) - getJobRecommendationScore(left);
+        if (recommendationGap !== 0) {
+            return recommendationGap;
+        }
+
+        const matchGap = getMatchData(right).score - getMatchData(left).score;
+        if (matchGap !== 0) {
+            return matchGap;
+        }
+
+        return String(left.course || "").localeCompare(String(right.course || ""));
+    });
 }
 
 function getMatchData(job) {
     if (!job) return null;
 
-    const jobTags = job.tags || [];
-    const userTags = (state.profile.tags && state.profile.tags.length > 0)
-        ? state.profile.tags
-        : (state.profile.skills || []);
+    const jobTags = normalizeTagList(job.tags);
+    const userTags = normalizeTagList(
+        state.profile.tags && state.profile.tags.length > 0
+            ? state.profile.tags
+            : state.profile.skills
+    );
+    const userTagSet = new Set(userTags.map(tag => tag.toLowerCase()));
 
     if (jobTags.length === 0) {
         return { score: 100, matched: [], missing: [] };
     }
 
-    const matched = jobTags.filter(tag => userTags.includes(tag));
-    const missing = jobTags.filter(tag => !userTags.includes(tag));
+    const matched = jobTags.filter(tag => userTagSet.has(tag.toLowerCase()));
+    const missing = jobTags.filter(tag => !userTagSet.has(tag.toLowerCase()));
     const score = Math.round((matched.length / jobTags.length) * 100);
 
     return { score, matched, missing };
+}
+
+function getRecommendationTaId() {
+    if (!state.currentUser) return "";
+
+    return state.currentUser.userId
+        || state.currentUser.taId
+        || state.currentUser.uid
+        || "";
+}
+
+function getJobRecommendationScore(job) {
+    if (!job || !job.id) return 0;
+    return Number(state.recommendedJobs[String(job.id)] || 0);
+}
+
+async function loadRecommendedJobs() {
+    const taId = getRecommendationTaId();
+    if (!taId) {
+        state.recommendedJobs = {};
+        state.recommendationLoaded = true;
+        return;
+    }
+
+    const r = await request(`/recommend?action=recommendJobsForTA&taId=${encodeURIComponent(taId)}&topK=10`);
+    if (r.ok && r.data && r.data.code === 200) {
+        const recommendations = Array.isArray(r.data.data) ? r.data.data : [];
+        state.recommendedJobs = recommendations.reduce((acc, item) => {
+            const jobId = item.id || item.jobId;
+            if (!jobId) return acc;
+            acc[String(jobId)] = Number(item.score || 0);
+            return acc;
+        }, {});
+        state.recommendationLoaded = true;
+        return;
+    }
+
+    state.recommendedJobs = {};
+    state.recommendationLoaded = true;
 }
 
 function isJobApplied(jobId) {
@@ -652,14 +718,16 @@ async function openMessageCenterForJob(jobId) {
 
 function renderFeedView() {
     const filteredJobs = getFilteredJobs();
+    const recommendedCount = filteredJobs.filter(job => getJobRecommendationScore(job) > 0).length;
 
     els.feedView.innerHTML = `
     <div class="page-title-row">
       <div class="page-title">
         <h1>Discover Roles.</h1>
         <p>
-          Explore and apply for teaching assistant positions. Enhance your academic
-          journey by mentoring others.
+          ${recommendedCount > 0
+            ? `Recommended roles are shown first based on your TA profile, with ${recommendedCount} matched position${recommendedCount === 1 ? "" : "s"} available now.`
+            : `Explore and apply for teaching assistant positions. Enhance your academic journey by mentoring others.`}
         </p>
       </div>
       <div class="inline-actions">
@@ -737,6 +805,10 @@ function renderJobCard(job) {
     const applyLabel = applied ? "Applied" : "Apply";
     const applyIcon = applied ? "" : Icons.chevronRight;
     const applyDisabled = applied ? "disabled" : "";
+    const recommendationScore = getJobRecommendationScore(job);
+    const recommendationBadge = recommendationScore > 0
+        ? `<span class="badge badge-success">Recommended ${(recommendationScore * 100).toFixed(1)}%</span>`
+        : "";
     return `
     <article class="job-card" data-job-id="${job.id}">
       <div class="job-top">
@@ -745,6 +817,7 @@ function renderJobCard(job) {
           <div class="job-sub">
             <span class="badge badge-soft">${Icons.user} ${escapeHtml(job.prof)}</span>
             <span class="badge badge-soft">${Icons.clock} ${escapeHtml(job.hours)} hrs/wk</span>
+            ${recommendationBadge}
           </div>
         </div>
         <span class="badge badge-primary">Open</span>
@@ -1374,6 +1447,7 @@ async function saveProfile() {
 
     if (r.ok && r.data && r.data.code === 200) {
         mapUserToProfile(r.data.data);
+        await loadRecommendedJobs();
         closeProfileModal();
         render();
         return;
@@ -1405,22 +1479,20 @@ async function openJobModal(jobId) {
 
     if (r.ok && r.data && r.data.code === 200) {
         const detail = r.data.data || {};
-        const contactUserId = detail.publisherMoId || detail.publisherId || detail.publisherUserId || detail.moId || detail.userId || "";
-        const contactName = detail.publisherName || detail.moName || "Course Lead";
+        const existingJob = state.jobs.find(job => String(job.id) === String(jobId));
+        const mappedDetailJob = mapJobFromBackend(detail);
 
         state.selectedJob = {
-            id: detail.jobId,
-            course: detail.jobName || "Untitled Role",
-            prof: contactName,
-            hours: detail.workHoursWeekly || 0,
-            contactUserId: contactUserId ? String(contactUserId) : "",
-            contactName,
-            tags: [
-                detail.jobType === 1 ? "TA" : "Assistant",
-                detail.belongModule || "Uncategorized"
-            ],
-            description: detail.jobDesc || "No description available",
-            raw: detail
+            ...existingJob,
+            ...mappedDetailJob,
+            tags: normalizeTagList(detail.tags).length > 0
+                ? normalizeTagList(detail.tags)
+                : normalizeTagList(existingJob && existingJob.tags),
+            description: detail.jobDesc || (existingJob && existingJob.description) || "No description available",
+            raw: {
+                ...((existingJob && existingJob.raw) || {}),
+                ...detail
+            }
         };
 
         state.appRemarks = "";
@@ -1712,6 +1784,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadTagList(); // Backend API connected
     await loadOpenJobs(); // Backend API connected
     await loadMyApplications(); // Backend API connected
+    await loadRecommendedJobs();
     await checkResumeStatus();
     render();
 });
