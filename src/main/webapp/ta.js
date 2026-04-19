@@ -805,6 +805,7 @@ function renderJobCard(job) {
     const applyLabel = applied ? "Applied" : "Apply";
     const applyIcon = applied ? "" : Icons.chevronRight;
     const applyDisabled = applied ? "disabled" : "";
+    const match = getMatchData(job);
     const recommendationScore = getJobRecommendationScore(job);
     const recommendationBadge = recommendationScore > 0
         ? `<span class="badge badge-success">Recommended ${(recommendationScore * 100).toFixed(1)}%</span>`
@@ -820,7 +821,7 @@ function renderJobCard(job) {
             ${recommendationBadge}
           </div>
         </div>
-        <span class="badge badge-primary">Open</span>
+        <span class="badge badge-primary">Role Match: ${match.score}%</span>
       </div>
 
       <p class="job-desc">${escapeHtml(job.description)}</p>
@@ -1520,7 +1521,6 @@ function renderJobModal() {
     const job = state.selectedJob;
     if (!job) return;
 
-    const match = getMatchData(job);
     const raw = job.raw || {};
     const alreadyApplied = isJobApplied(job.id);
 
@@ -1533,18 +1533,6 @@ function renderJobModal() {
   `;
 
     els.jobDescriptionText.textContent = job.description;
-
-    els.matchCard.innerHTML = `
-    <strong>Role Match: ${match.score}%</strong>
-    <p>
-      Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
-      ${
-        match.missing.length > 0
-            ? `Missing tags: ${escapeHtml(match.missing.join(", "))}.`
-            : " Your current tags cover the listed tags."
-    }
-    </p>
-  `;
 
     els.jobRequiredTags.innerHTML = (job.tags || [])
         .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
@@ -1750,7 +1738,6 @@ function cacheElements() {
     els.jobModalTitle = document.getElementById("jobModalTitle");
     els.jobModalMeta = document.getElementById("jobModalMeta");
     els.jobDescriptionText = document.getElementById("jobDescriptionText");
-    els.matchCard = document.getElementById("matchCard");
     els.jobRequiredTags = document.getElementById("jobRequiredTags");
     els.appRemarksInput = document.getElementById("appRemarksInput");
     els.takenCourseToggle = document.getElementById("takenCourseToggle");
