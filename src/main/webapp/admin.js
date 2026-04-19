@@ -15,7 +15,8 @@ const state = {
         logSearch: "",
         taStatus: "all",
         moStatus: "all",
-        logType: "all"
+        logType: "all",
+        jobsSearch: ""
     },
 
     selectedTA: null,
@@ -1280,7 +1281,7 @@ function openTADetailModal(id) {
         </span>
       </div>
 
-      <!-- TA详情页的工作负荷进度条 - 红黄绿三色（修复问题4） -->
+      <!-- TA详情页的工作负荷进度条 - 红黄绿三色 -->
       <div class="workload-progress-container" style="margin-bottom:20px;">
         <div class="workload-progress-header">
           <span class="workload-progress-label">Weekly Workload</span>
@@ -1582,22 +1583,6 @@ function openStatsModal() {
         <strong>${escapeHtml(state.stats.totalPosts)}</strong>
         <span>Total Posts</span>
       </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalApplications)}</strong>
-        <span>Total Applications</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.pendingPostReviews)}</strong>
-        <span>Pending Post Reviews</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.pendingRoleRequests)}</strong>
-        <span>Pending Role Requests</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.activeLogsToday)}</strong>
-        <span>Logs Today</span>
-      </div>
     </div>
 
     <div class="table-card">
@@ -1831,11 +1816,28 @@ async function openAllJobsModal() {
 }
 
 function renderAllJobsModal() {
+    const filteredJobs = state.backendJobsList.filter(job => {
+        const searchLower = state.filters.jobsSearch.toLowerCase();
+        const matchSearch = !state.filters.jobsSearch ||
+            (job.jobName && job.jobName.toLowerCase().includes(searchLower)) ||
+            (job.belongModule && job.belongModule.toLowerCase().includes(searchLower)) ||
+            (job.jobDesc && job.jobDesc.toLowerCase().includes(searchLower));
+        return matchSearch;
+    });
+
     els.allJobsModalBody.innerHTML = `
     <div class="section-header">
       <div class="section-title-block">
         <h3>All Jobs Management</h3>
         <p>View all jobs and perform delete operations. Data from backend API.</p>
+      </div>
+    </div>
+
+    <div class="users-filter-bar">
+      <div class="search-box">
+        <span class="search-icon">${Icons.search}</span>
+        <input id="jobsSearchInput" type="text" placeholder="Search jobs by name, module, description..." value="${escapeHtml(state.filters.jobsSearch)}" />
+        <button id="jobsSearchBtn" class="search-btn" type="button">Search</button>
       </div>
     </div>
 
@@ -1853,10 +1855,9 @@ function renderAllJobsModal() {
             </tr>
           </thead>
           <tbody>
-            ${state.backendJobsList.length > 0 ? state.backendJobsList.map(job => {
+            ${filteredJobs.length > 0 ? filteredJobs.map(job => {
         const statusText = job.jobStatus === 0 ? "Open" : job.jobStatus === 1 ? "Closed" : job.jobStatus === 2 ? "Filled" : job.jobStatus === 3 ? "Cancelled" : "Unknown";
         const statusClass = job.jobStatus === 0 ? "badge-success" : job.jobStatus === 1 ? "badge-warning" : job.jobStatus === 2 ? "badge-danger" : "badge-soft";
-        // 尝试从用户列表中查找MO的名称
         const moUser = state.backendUsers.find(u => String(u.userId) === String(job.publisherMoId) && u.userType === 2);
         const moDisplay = moUser ? (moUser.realName || moUser.username) : `MO #${job.publisherMoId}`;
         return `
@@ -1893,6 +1894,27 @@ function renderAllJobsModal() {
 
 function bindAllJobsModalEvents() {
     const modalBody = els.allJobsModalBody;
+
+    // 搜索框事件
+    const searchInput = modalBody.querySelector("#jobsSearchInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", e => {
+            state.filters.jobsSearch = e.target.value;
+        });
+        searchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                renderAllJobsModal();
+            }
+        });
+    }
+
+    // 搜索按钮
+    const searchBtn = modalBody.querySelector("#jobsSearchBtn");
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+            renderAllJobsModal();
+        });
+    }
 
     // 查看岗位详情按钮
     const viewDetailBtns = modalBody.querySelectorAll(".view-job-detail-btn");
