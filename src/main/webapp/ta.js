@@ -21,6 +21,7 @@ const state = {
     hasResume: false,
     resumeName: "",
     resumePreviewUrl: "",
+    resumeObjectUrl: "",
     isUploadingResume: false,
     availableTags: [...POPULAR_TAGS],
 
@@ -426,6 +427,49 @@ function createResumePicker() {
 function getResumePreviewUrl() {
     if (!state.currentUser || !state.currentUser.userId) return "";
     return `${BASE_URL}/user?action=downloadProfilePdf&uid=${encodeURIComponent(state.currentUser.userId)}`;
+}
+
+function releaseResumeObjectUrl() {
+    if (state.resumeObjectUrl) {
+        URL.revokeObjectURL(state.resumeObjectUrl);
+        state.resumeObjectUrl = "";
+    }
+}
+
+async function fetchResumePreviewObjectUrl() {
+    const previewUrl = getResumePreviewUrl();
+    if (!previewUrl) {
+        return { ok: false, error: "No resume preview is available." };
+    }
+
+    try {
+        const res = await fetch(previewUrl, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        const contentType = (res.headers.get("content-type") || "").toLowerCase();
+        if (!res.ok) {
+            return { ok: false, error: "Failed to load resume preview." };
+        }
+
+        if (contentType.includes("application/json")) {
+            const json = await res.json();
+            return { ok: false, error: json.msg || "No resume is available to preview yet." };
+        }
+
+        const blob = await res.blob();
+        const blobType = (blob.type || contentType || "").toLowerCase();
+        if (!blobType.includes("pdf")) {
+            return { ok: false, error: "The resume preview endpoint did not return a PDF file." };
+        }
+
+        releaseResumeObjectUrl();
+        state.resumeObjectUrl = URL.createObjectURL(blob);
+        return { ok: true, url: state.resumeObjectUrl };
+    } catch (error) {
+        return { ok: false, error: error.message || "Failed to load resume preview." };
+    }
 }
 
 async function uploadResumeFile(file) {
@@ -1271,9 +1315,15 @@ function closeProfileModal() {
     updateBodyScrollLock();
 }
 
-function openResumePreviewModal() {
+async function openResumePreviewModal() {
     if (!state.hasResume || !state.resumePreviewUrl) {
         showError("No resume is available to preview yet.");
+        return;
+    }
+
+    const previewResult = await fetchResumePreviewObjectUrl();
+    if (!previewResult.ok) {
+        showError(previewResult.error);
         return;
     }
 
@@ -1281,7 +1331,7 @@ function openResumePreviewModal() {
         els.resumePreviewFileName.textContent = state.resumeName || "profile.pdf";
     }
     if (els.resumePreviewFrame) {
-        els.resumePreviewFrame.src = state.resumePreviewUrl;
+        els.resumePreviewFrame.src = previewResult.url;
     }
 
     els.resumePreviewModalOverlay.classList.remove("hidden");
@@ -1292,6 +1342,7 @@ function closeResumePreviewModal() {
     if (els.resumePreviewFrame) {
         els.resumePreviewFrame.src = "about:blank";
     }
+    releaseResumeObjectUrl();
     els.resumePreviewModalOverlay.classList.add("hidden");
     updateBodyScrollLock();
 }
@@ -1592,11 +1643,6 @@ function bindModalEvents() {
 }
 
 function render() {
-    const navUserNameEl = document.getElementById("navUserName");
-    if (navUserNameEl) {
-        navUserNameEl.textContent = state.profile.name || "";
-    }
-
     renderSidebar();
 
     if (state.currentView === "feed") {
