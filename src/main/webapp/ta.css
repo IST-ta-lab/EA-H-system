@@ -169,11 +169,6 @@ button {
     gap: 12px;
 }
 
-.nav-username {
-    color: var(--text-soft);
-    font-size: 14px;
-}
-
 .avatar-btn,
 .icon-btn {
     display: inline-grid;
@@ -341,7 +336,7 @@ button {
 .search-box input {
     width: 100%;
     height: 52px;
-    padding: 0 18px 0 48px;
+    padding: 0 18px 0 66px;
     border-radius: 16px;
     border: 1px solid rgba(148, 163, 184, 0.24);
     outline: none;
@@ -358,7 +353,7 @@ button {
 
 .search-box .search-icon {
     position: absolute;
-    left: 16px;
+    left: 38px;
     top: 50%;
     width: 18px;
     height: 18px;
@@ -1160,10 +1155,6 @@ button {
 
     .brand-name {
         font-size: 18px;
-    }
-
-    .nav-username {
-        display: none;
     }
 
     .page-title-row,
