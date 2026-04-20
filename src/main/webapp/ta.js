@@ -14,6 +14,44 @@ const POPULAR_TAGS = [
     "C++"
 ];
 
+const DEFAULT_PORTAL_CONFIG = {
+    role: "ta",
+    allowProfileView: true,
+    allowProfileEdit: true,
+    allowApply: true,
+    allowResumeUpload: true,
+    allowResumePreview: true,
+    allowMessage: true,
+    allowLogout: true,
+    showRecommendations: true,
+    showJobCardMatch: true,
+    showJobDetailMatch: true,
+    showContactButton: true,
+    showGuestPrompt: false,
+    guestPromptMessage: "You are not registered. Please login/register first.",
+    loginPage: "index.html",
+    profileDefaults: {
+        name: "Guest User",
+        major: "Not provided",
+        bio: "Passionate about teaching and helping others learn programming.",
+        email: "",
+        isVisible: true,
+        visibilityScope: "applied_only",
+        skills: ["Python", "Grading", "Java"],
+        tags: []
+    }
+};
+
+const runtimeConfig = window.TA_PORTAL_CONFIG || {};
+const portalConfig = {
+    ...DEFAULT_PORTAL_CONFIG,
+    ...runtimeConfig,
+    profileDefaults: {
+        ...DEFAULT_PORTAL_CONFIG.profileDefaults,
+        ...(runtimeConfig.profileDefaults || {})
+    }
+};
+
 const state = {
     currentView: "feed",
     jobs: [],
@@ -36,14 +74,7 @@ const state = {
     currentUser: null, // Backend API connected
 
     profile: {
-        name: "Guest User",
-        major: "Not provided",
-        bio: "Passionate about teaching and helping others learn programming.",
-        email: "",
-        isVisible: true,
-        visibilityScope: "applied_only",
-        skills: ["Python", "Grading", "Java"],
-        tags: []
+        ...portalConfig.profileDefaults
     },
 
     appRemarks: "",
@@ -137,6 +168,38 @@ const Icons = {
   `
 };
 
+function showGuestPrompt() {
+    if (!portalConfig.showGuestPrompt) return false;
+
+    const overlay = document.getElementById("guestModalOverlay");
+    const description = overlay && overlay.querySelector(".guest-modal-desc");
+    if (!overlay) return false;
+
+    if (description) {
+        description.textContent = portalConfig.guestPromptMessage;
+    }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("modal-open");
+    return true;
+}
+
+function closeGuestPrompt() {
+    const overlay = document.getElementById("guestModalOverlay");
+    if (!overlay) return;
+
+    overlay.classList.add("hidden");
+    updateBodyScrollLock();
+}
+
+function goToLoginPage() {
+    location.href = portalConfig.loginPage;
+}
+
+function handleRestrictedAction() {
+    return showGuestPrompt();
+}
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -156,11 +219,20 @@ function getInitials(name) {
 }
 
 function normalizeTagList(tags) {
-    if (!Array.isArray(tags)) return [];
+    if (Array.isArray(tags)) {
+        return tags
+            .map(tag => String(tag || "").trim())
+            .filter(Boolean);
+    }
 
-    return tags
-        .map(tag => String(tag || "").trim())
-        .filter(Boolean);
+    if (typeof tags === "string") {
+        return tags
+            .split(/[,，]/)
+            .map(tag => tag.trim())
+            .filter(Boolean);
+    }
+
+    return [];
 }
 
 // Backend API connected
@@ -221,12 +293,7 @@ function mapJobFromBackend(job) {
         hours: job.workHoursWeekly || 0,
         contactUserId: contactUserId ? String(contactUserId) : "",
         contactName,
-        tags: backendTags.length > 0
-            ? backendTags
-            : [
-                job.jobType === 1 ? "TA" : "Assistant",
-                job.belongModule || "Uncategorized"
-            ],
+        tags: backendTags,
         description: job.jobDesc || "No description available",
         raw: job
     };
@@ -356,6 +423,12 @@ function getJobRecommendationScore(job) {
 }
 
 async function loadRecommendedJobs() {
+    if (!portalConfig.showRecommendations) {
+        state.recommendedJobs = {};
+        state.recommendationLoaded = true;
+        return;
+    }
+
     const taId = getRecommendationTaId();
     if (!taId) {
         state.recommendedJobs = {};
@@ -397,6 +470,11 @@ function getJobContactInfo(job) {
 }
 
 function setView(viewName) {
+    if (viewName === "profile" && !portalConfig.allowProfileView) {
+        handleRestrictedAction();
+        return;
+    }
+
     state.currentView = viewName;
     render();
 }
@@ -412,6 +490,15 @@ function toggleTag(tag) {
 
 // Backend API connected
 async function loadLoginUser() {
+    if (portalConfig.role === "guest") {
+        state.currentUser = null;
+        state.profile = {
+            ...portalConfig.profileDefaults
+        };
+        render();
+        return true;
+    }
+
     const r = await request("/user?action=getLoginUser");
     if (r.ok && r.data.code === 200) {
         mapUserToProfile(r.data.data);
@@ -441,6 +528,15 @@ async function loadOpenJobs() {
 
 // Backend API connected
 async function loadMyApplications() {
+    if (!portalConfig.allowApply) {
+        state.applications = [];
+        renderSidebar();
+        if (state.currentView === "profile") {
+            renderProfileView();
+        }
+        return;
+    }
+
     const r = await request("/application?action=listMy");
     if (r.ok && r.data.code === 200) {
         const apps = Array.isArray(r.data.data) ? r.data.data : [];
@@ -458,6 +554,11 @@ async function loadMyApplications() {
 
 // Backend API connected
 async function logout() {
+    if (!portalConfig.allowLogout) {
+        handleRestrictedAction();
+        return;
+    }
+
     if (!confirm("Are you sure you want to logout?")) {
         return;
     }
@@ -555,6 +656,13 @@ async function uploadResumeFile(file) {
 }
 
 async function checkResumeStatus() {
+    if (!portalConfig.allowResumeUpload) {
+        state.hasResume = false;
+        state.resumeName = "";
+        state.resumePreviewUrl = "";
+        return;
+    }
+
     if (!state.currentUser || !state.currentUser.userId) return;
 
     const uid = state.currentUser.userId;
@@ -598,6 +706,11 @@ async function checkResumeStatus() {
 }
 
 async function handleUploadResume() {
+    if (!portalConfig.allowResumeUpload) {
+        handleRestrictedAction();
+        return;
+    }
+
     if (state.isUploadingResume) return;
 
     const picker = createResumePicker();
@@ -636,10 +749,20 @@ async function handleUploadResume() {
 }
 
 function openMessageCenter() {
+    if (!portalConfig.allowMessage) {
+        handleRestrictedAction();
+        return;
+    }
+
     location.href = "message.html";
 }
 
 async function openMessageCenterForJob(jobId) {
+    if (!portalConfig.allowMessage) {
+        handleRestrictedAction();
+        return;
+    }
+
     let job = state.jobs.find(item => String(item.id) === String(jobId));
 
     if (!job) {
@@ -718,7 +841,9 @@ async function openMessageCenterForJob(jobId) {
 
 function renderFeedView() {
     const filteredJobs = getFilteredJobs();
-    const recommendedCount = filteredJobs.filter(job => getJobRecommendationScore(job) > 0).length;
+    const recommendedCount = portalConfig.showRecommendations
+        ? filteredJobs.filter(job => getJobRecommendationScore(job) > 0).length
+        : 0;
 
     els.feedView.innerHTML = `
     <div class="page-title-row">
@@ -806,9 +931,17 @@ function renderJobCard(job) {
     const applyIcon = applied ? "" : Icons.chevronRight;
     const applyDisabled = applied ? "disabled" : "";
     const match = getMatchData(job);
-    const recommendationScore = getJobRecommendationScore(job);
+    const recommendationScore = portalConfig.showRecommendations ? getJobRecommendationScore(job) : 0;
     const recommendationBadge = recommendationScore > 0
         ? `<span class="badge badge-success">Recommended ${(recommendationScore * 100).toFixed(1)}%</span>`
+        : "";
+    const jobStatusBadge = `<span class="badge badge-primary">Role Match: ${match.score}%</span>`;
+    const contactButton = portalConfig.showContactButton
+        ? `
+          <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
+            Message
+          </button>
+        `
         : "";
     return `
     <article class="job-card" data-job-id="${job.id}">
@@ -821,7 +954,7 @@ function renderJobCard(job) {
             ${recommendationBadge}
           </div>
         </div>
-        <span class="badge badge-primary">Role Match: ${match.score}%</span>
+        ${jobStatusBadge}
       </div>
 
       <p class="job-desc">${escapeHtml(job.description)}</p>
@@ -839,9 +972,7 @@ function renderJobCard(job) {
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
             View Details
           </button>
-          <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
-            Message
-          </button>
+          ${contactButton}
           <button class="btn btn-primary apply-job-btn" type="button" data-job-id="${job.id}" ${applyDisabled}>
             ${applyLabel}${applyIcon ? " " + applyIcon : ""}
           </button>
@@ -1319,6 +1450,11 @@ function renderProfileTagOptions() {
     const tagButtons = container.querySelectorAll("[data-tag]");
     tagButtons.forEach(btn => {
         btn.addEventListener("click", () => {
+            if (!portalConfig.allowProfileEdit) {
+                handleRestrictedAction();
+                return;
+            }
+
             const tag = btn.dataset.tag || "";
             if (!tag) return;
             if (state.profile.tags.includes(tag)) {
@@ -1373,10 +1509,16 @@ function updateBodyScrollLock() {
     const isProfileOpen = els.profileModalOverlay && !els.profileModalOverlay.classList.contains("hidden");
     const isJobOpen = els.jobModalOverlay && !els.jobModalOverlay.classList.contains("hidden");
     const isResumePreviewOpen = els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden");
-    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen || isResumePreviewOpen);
+    const isGuestPromptOpen = els.guestModalOverlay && !els.guestModalOverlay.classList.contains("hidden");
+    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen || isResumePreviewOpen || isGuestPromptOpen);
 }
 
 function openProfileModal() {
+    if (!portalConfig.allowProfileEdit) {
+        handleRestrictedAction();
+        return;
+    }
+
     state.isProfileModalOpen = true;
     syncProfileModalState();
     els.profileModalOverlay.classList.remove("hidden");
@@ -1390,6 +1532,11 @@ function closeProfileModal() {
 }
 
 async function openResumePreviewModal() {
+    if (!portalConfig.allowResumePreview) {
+        handleRestrictedAction();
+        return;
+    }
+
     if (!state.hasResume || !state.resumePreviewUrl) {
         showError("No resume is available to preview yet.");
         return;
@@ -1417,12 +1564,19 @@ function closeResumePreviewModal() {
         els.resumePreviewFrame.src = "about:blank";
     }
     releaseResumeObjectUrl();
-    els.resumePreviewModalOverlay.classList.add("hidden");
+    if (els.resumePreviewModalOverlay) {
+        els.resumePreviewModalOverlay.classList.add("hidden");
+    }
     updateBodyScrollLock();
 }
 
 // Backend not connected: profile saving is not available in the sample API, so this stays local.
 async function saveProfile() {
+    if (!portalConfig.allowProfileEdit) {
+        handleRestrictedAction();
+        return;
+    }
+
     const nextName = els.profileNameInput.value.trim() || state.profile.name;
     const nextEmail = els.profileEmailInput.value.trim() || state.profile.email;
     const nextMajor = els.profileMajorInput.value.trim() || state.profile.major;
@@ -1459,6 +1613,11 @@ async function saveProfile() {
 
 // Backend API connected
 async function handleApply(jobId) {
+    if (!portalConfig.allowApply) {
+        handleRestrictedAction();
+        return;
+    }
+
     const r = await request(`/application?action=apply&jobId=${encodeURIComponent(jobId)}`, {
         method: "POST"
     });
@@ -1523,6 +1682,7 @@ function renderJobModal() {
 
     const raw = job.raw || {};
     const alreadyApplied = isJobApplied(job.id);
+    const match = getMatchData(job);
 
     els.jobModalTitle.textContent = job.course;
     els.jobModalMeta.innerHTML = `
@@ -1534,9 +1694,30 @@ function renderJobModal() {
 
     els.jobDescriptionText.textContent = job.description;
 
-    els.jobRequiredTags.innerHTML = (job.tags || [])
-        .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
-        .join("");
+    if (els.matchCard) {
+        if (portalConfig.showJobDetailMatch) {
+            els.matchCard.innerHTML = `
+    <strong>Role Match: ${match.score}%</strong>
+    <p>
+      Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
+      ${
+        match.missing.length > 0
+            ? `Missing tags: ${escapeHtml(match.missing.join(", "))}.`
+            : " Your current tags cover the listed tags."
+    }
+    </p>
+  `;
+            els.matchCard.classList.remove("hidden");
+        } else {
+            els.matchCard.innerHTML = "";
+            els.matchCard.classList.add("hidden");
+        }
+    }
+
+    const jobTags = normalizeTagList(job.tags);
+    els.jobRequiredTags.innerHTML = jobTags.length > 0
+        ? jobTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
+        : `<span class="tag">No tags listed</span>`;
 
     els.appRemarksInput.value = state.appRemarks;
 
@@ -1562,6 +1743,11 @@ function syncApplicationOptionButtons() {
 
 // Backend API connected
 async function submitApplicationFromModal() {
+    if (!portalConfig.allowApply) {
+        handleRestrictedAction();
+        return;
+    }
+
     if (!state.selectedJob) return;
 
     state.appRemarks = els.appRemarksInput.value.trim();
@@ -1609,6 +1795,11 @@ function bindModalEvents() {
 
     if (els.profileVisibleToggle) {
         els.profileVisibleToggle.addEventListener("click", () => {
+            if (!portalConfig.allowProfileEdit) {
+                handleRestrictedAction();
+                return;
+            }
+
             state.profile.isVisible = !state.profile.isVisible;
             syncProfileModalState();
         });
@@ -1687,6 +1878,18 @@ function bindModalEvents() {
         });
     }
 
+    if (els.guestModalOverlay) {
+        els.guestModalOverlay.addEventListener("click", event => {
+            if (event.target === els.guestModalOverlay) {
+                closeGuestPrompt();
+            }
+        });
+    }
+
+    if (els.guestGoLoginBtn) {
+        els.guestGoLoginBtn.addEventListener("click", goToLoginPage);
+    }
+
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             if (!els.profileModalOverlay.classList.contains("hidden")) {
@@ -1698,11 +1901,18 @@ function bindModalEvents() {
             if (els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden")) {
                 closeResumePreviewModal();
             }
+            if (els.guestModalOverlay && !els.guestModalOverlay.classList.contains("hidden")) {
+                closeGuestPrompt();
+            }
         }
     });
 }
 
 function render() {
+    if (els.navUserName) {
+        els.navUserName.textContent = state.profile.name || "";
+    }
+
     renderSidebar();
 
     if (state.currentView === "feed") {
@@ -1723,10 +1933,13 @@ function cacheElements() {
     els.avatarBtn = document.getElementById("avatarBtn");
     els.messageBtn = document.getElementById("messageBtn");
     els.logoutBtn = document.getElementById("logoutBtn");
+    els.navUserName = document.getElementById("navUserName");
 
     els.profileModalOverlay = document.getElementById("profileModalOverlay");
     els.jobModalOverlay = document.getElementById("jobModalOverlay");
     els.resumePreviewModalOverlay = document.getElementById("resumePreviewModalOverlay");
+    els.guestModalOverlay = document.getElementById("guestModalOverlay");
+    els.guestGoLoginBtn = document.getElementById("guestGoLoginBtn");
 
     els.profileNameInput = document.getElementById("profileNameInput");
     els.profileEmailInput = document.getElementById("profileEmailInput");
@@ -1738,6 +1951,7 @@ function cacheElements() {
     els.jobModalTitle = document.getElementById("jobModalTitle");
     els.jobModalMeta = document.getElementById("jobModalMeta");
     els.jobDescriptionText = document.getElementById("jobDescriptionText");
+    els.matchCard = document.getElementById("matchCard");
     els.jobRequiredTags = document.getElementById("jobRequiredTags");
     els.appRemarksInput = document.getElementById("appRemarksInput");
     els.takenCourseToggle = document.getElementById("takenCourseToggle");
