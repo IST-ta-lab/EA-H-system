@@ -784,59 +784,17 @@ async function openMessageCenterForJob(jobId) {
         return;
     }
 
-    const messageWindow = window.open("message.html", "_blank");
-    if (!messageWindow) {
-        showError("Please allow pop-ups for this site to open the message page.");
-        return;
+    const params = new URLSearchParams();
+    params.append("targetUserId", contact.userId);
+    params.append("targetUserName", contact.name || job.prof || "Course Lead");
+    if (job.id) {
+        params.append("jobId", String(job.id));
+    }
+    if (job.course) {
+        params.append("jobTitle", String(job.course));
     }
 
-    const deadline = Date.now() + 15000;
-    const timer = window.setInterval(async () => {
-        try {
-            if (messageWindow.closed) {
-                window.clearInterval(timer);
-                return;
-            }
-
-            if (!messageWindow.document || typeof messageWindow.createNewConversation !== "function") {
-                if (Date.now() > deadline) {
-                    window.clearInterval(timer);
-                    messageWindow.focus();
-                }
-                return;
-            }
-
-            const targetInput = messageWindow.document.getElementById("targetUserId");
-            if (!targetInput) {
-                return;
-            }
-
-            window.clearInterval(timer);
-
-            if (typeof messageWindow.openNewConvModal === "function") {
-                messageWindow.openNewConvModal();
-            }
-
-            targetInput.value = contact.userId;
-            await Promise.resolve(messageWindow.createNewConversation());
-
-            const jobIdInput = messageWindow.document.getElementById("jobIdInput");
-            const jobTitleInput = messageWindow.document.getElementById("jobTitleInput");
-            if (jobIdInput) {
-                jobIdInput.value = job.id || "";
-            }
-            if (jobTitleInput) {
-                jobTitleInput.value = job.course || "";
-            }
-
-            messageWindow.focus();
-        } catch (error) {
-            if (Date.now() > deadline) {
-                window.clearInterval(timer);
-                messageWindow.focus();
-            }
-        }
-    }, 250);
+    window.open(`message.html?${params.toString()}`, "_blank");
 }
 
 function renderFeedView() {
