@@ -26,6 +26,7 @@ const state = {
 
     backendUsers: [],
     backendJobsList: [],
+    backendApplications: [],
 
     stats: {
         totalUsers: 0,
@@ -243,10 +244,157 @@ async function loadAllApplications() {
         }
         return state.backendApplications;
     }
-    console.log('申请记录加载失败');
+console.log('申请记录加载失败');
     state.backendApplications = [];
     return [];
 }
+
+// 计算申请统计数据
+function computeApplicationStats() {
+    const apps = state.backendApplications || [];
+    const total = apps.length;
+    const pending = apps.filter(a => a.applyStatus === 0 || a.applyStatus === "0").length;
+    const approved = apps.filter(a => a.applyStatus === 1 || a.applyStatus === "1").length;
+    const rejected = apps.filter(a => a.applyStatus === 2 || a.applyStatus === "2").length;
+    const approvalRate = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
+    
+    // 今日申请数
+    const today = new Date().toISOString().split('T')[0];
+    const todayApps = apps.filter(a => a.applyTime && a.applyTime.startsWith(today));
+    
+    // 统计每个岗位的申请数
+    const jobApplicationCounts = {};
+    apps.forEach(a => {
+        if (a.jobId) {
+            jobApplicationCounts[a.jobId] = (jobApplicationCounts[a.jobId] || 0) + 1;
+        }
+    });
+    
+    // 获取申请最热的岗位
+    const topJobs = Object.entries(jobApplicationCounts)
+        .map(([jobId, count]) => {
+            const job = state.backendJobsList.find(j => String(j.jobId) === String(jobId));
+            return {
+                jobId,
+                jobName: job ? job.jobName : `Job #${jobId}`,
+                count
+            };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    
+    return {
+        totalApplications: total,
+        pendingCount: pending,
+        approvedCount: approved,
+        rejectedCount: rejected,
+        approvalRate: parseFloat(approvalRate),
+        todayApplications: todayApps.length,
+        topJobsByApplications: topJobs
+    };
+}
+
+// 计算MO工作量统计数据
+function computeMoWorkloadStats() {
+    return state.moWorkloads.map(mo => {
+        // 该MO发布的岗位收到的所有申请
+        const moJobs = state.backendJobsList.filter(j => String(j.publisherMoId) === String(mo.id));
+        const moJobIds = moJobs.map(j => String(j.jobId));
+        
+        const moApps = state.backendApplications.filter(a => 
+            moJobIds.includes(String(a.jobId))
+        );
+        
+        const totalApps = moApps.length;
+        const pendingApps = moApps.filter(a => a.applyStatus === 0 || a.applyStatus === "0").length;
+        const approvedApps = moApps.filter(a => a.applyStatus === 1 || a.applyStatus === "1").length;
+        const rejectedApps = moApps.filter(a => a.applyStatus === 2 || a.applyStatus === "2").length;
+        const approvalRate = totalApps > 0 ? ((approvedApps / totalApps) * 100).toFixed(1) : 0;
+        
+        // 工作量等级
+        let workloadLevel = "light";
+        if (pendingApps >= 5 || totalApps >= 20) {
+            workloadLevel = "busy";
+        } else if (pendingApps >= 2 || totalApps >= 10) {
+            workloadLevel = "normal";
+        }
+        
+        return {
+            moId: mo.id,
+            moName: mo.name,
+            totalPublishedJobs: mo.publishedPosts,
+            totalApplications: totalApps,
+            pendingApplications: pendingApps,
+            approvedApplications: approvedApps,
+            rejectedApplications: rejectedApps,
+            approvalRate: parseFloat(approvalRate),
+            workloadLevel
+        };
+    });
+}
+
+// 模拟日志数据（后端暂无接口）
+function generateMockLogs() {
+    const actionTypes = ['user_create', 'user_delete', 'job_create', 'job_delete', 'application_audit', 'role_change'];
+    const operators = state.backendUsers.filter(u => u.userType === 3).map(u => u.realName || u.username);
+    const mockLogs = [];
+    
+    if (operators.length === 0) {
+        mockLogs.push({
+            logId: 'log001',
+            operatorName: 'Admin',
+            actionType: 'user_create',
+            targetType: 'USER',
+            targetId: 'ta001',
+            detail: 'Created new user: Test TA',
+            createTime: new Date().toLocaleString('zh-CN')
+        });
+        return mockLogs;
+    }
+    
+    for (let i = 0; i < 10; i++) {
+        const actionType = actionTypes[Math.floor(Math.random() * actionTypes.length)];
+        const operator = operators[Math.floor(Math.random() * operators.length)];
+        const time = new Date(Date.now() - i * 3600000).toLocaleString('zh-CN');
+        
+        let detail = '';
+        switch (actionType) {
+            case 'user_create':
+                detail = `Created new user: ${['TA', 'MO'][Math.floor(Math.random() * 2)]}`;
+                break;
+            case 'user_delete':
+                detail = 'Deleted user account';
+                break;
+            case 'job_create':
+                detail = 'Published new job posting';
+                break;
+            case 'job_delete':
+                detail = 'Deleted job posting';
+                break;
+            case 'application_audit':
+                detail = Math.random() > 0.5 ? 'Approved application' : 'Rejected application';
+                break;
+            case 'role_change':
+                detail = 'Approved role change request';
+                break;
+        }
+        
+        mockLogs.push({
+            logId: `log${String(i + 1).padStart(3, '0')}`,
+            operatorName: operator,
+            actionType,
+            targetType: actionType.includes('user') ? 'USER' : actionType.includes('job') ? 'JOB' : 'APPLICATION',
+            targetId: `${actionType.includes('user') ? 'user' : actionType.includes('job') ? 'job' : 'app'}${Math.floor(Math.random() * 100)}`,
+            detail,
+            createTime: time
+        });
+    }
+    
+    return mockLogs;
+}
+
+// 加载日志数据
+// async function loadLogs()
 
 // 已实现后端接口连接 - 加载开放岗位（仅用于后端统计，不直接用于MO视图）
 async function loadOpenJobs() {
@@ -280,6 +428,12 @@ async function loadAllUsers() {
             .map(mo => {
                 // 统计该MO发布的岗位数量
                 const moJobs = state.backendJobsList.filter(j => String(j.publisherMoId) === String(mo.userId));
+                const moJobIds = moJobs.map(j => String(j.jobId));
+                
+                // 统计该MO收到的申请数
+                const moApps = state.backendApplications ? state.backendApplications.filter(a => moJobIds.includes(String(a.jobId))) : [];
+                const pendingApps = moApps.filter(a => a.applyStatus === 0 || a.applyStatus === "0").length;
+                
                 return {
                     id: String(mo.userId), // 统一转换为字符串
                     name: mo.realName || mo.username || "Unnamed MO",
@@ -289,6 +443,8 @@ async function loadAllUsers() {
                     publishedPosts: moJobs.length,
                     openPosts: moJobs.filter(j => j.jobStatus === 0).length,
                     closedPosts: moJobs.filter(j => j.jobStatus !== 0).length,
+                    totalApplications: moApps.length,
+                    pendingApplications: pendingApps,
                     status: "active",
                     summary: moJobs.length > 0
                         ? `This course organizer has published ${moJobs.length} job(s), with ${moJobs.filter(j => j.jobStatus === 0).length} currently recruiting.`
@@ -578,13 +734,13 @@ function getFilteredLogs() {
     return state.logs.filter(item => {
         const matchSearch =
             !state.filters.logSearch ||
-            item.title.toLowerCase().includes(state.filters.logSearch.toLowerCase()) ||
-            item.actor.toLowerCase().includes(state.filters.logSearch.toLowerCase()) ||
-            item.detail.toLowerCase().includes(state.filters.logSearch.toLowerCase());
+            item.operatorName.toLowerCase().includes(state.filters.logSearch.toLowerCase()) ||
+            item.detail.toLowerCase().includes(state.filters.logSearch.toLowerCase()) ||
+            item.targetId.toLowerCase().includes(state.filters.logSearch.toLowerCase());
 
         const matchType =
             state.filters.logType === "all" ||
-            item.type === state.filters.logType;
+            item.actionType.includes(state.filters.logType);
 
         return matchSearch && matchType;
     });
@@ -831,9 +987,11 @@ function renderMOView() {
                 </div>
 
                 <div class="workload-sub" style="margin-bottom:16px;">
-                  <span class="badge badge-soft">Total Posts: ${escapeHtml(item.publishedPosts)}</span>
+                  <span class="badge badge-soft">Posts: ${escapeHtml(item.publishedPosts)}</span>
                   <span class="badge badge-success">Open: ${escapeHtml(item.openPosts)}</span>
                   <span class="badge badge-soft">Closed: ${escapeHtml(item.closedPosts)}</span>
+                  <span class="badge badge-primary">Apps: ${escapeHtml(item.totalApplications || 0)}</span>
+                  <span class="badge badge-warning">Pending: ${escapeHtml(item.pendingApplications || 0)}</span>
                 </div>
 
                 ${
@@ -896,7 +1054,7 @@ function renderLogsView() {
     <section class="section-header">
       <div class="section-title-block">
         <h2>System Logs</h2>
-        <p>系统日志数据（后端暂无此接口，当前显示为空）</p>
+        <p>Operation history and audit trail</p>
       </div>
 
       <div class="toolbar-row" style="margin:0;">
@@ -908,10 +1066,9 @@ function renderLogsView() {
 
         <div class="filter-chips">
           <button class="filter-chip ${state.filters.logType === "all" ? "active" : ""}" data-log-type="all" type="button">All</button>
-          <button class="filter-chip ${state.filters.logType === "post_review" ? "active" : ""}" data-log-type="post_review" type="button">Post Review</button>
-          <button class="filter-chip ${state.filters.logType === "role_change" ? "active" : ""}" data-log-type="role_change" type="button">Role Change</button>
-          <button class="filter-chip ${state.filters.logType === "audit" ? "active" : ""}" data-log-type="audit" type="button">Audit</button>
-          <button class="filter-chip ${state.filters.logType === "system" ? "active" : ""}" data-log-type="system" type="button">System</button>
+          <button class="filter-chip ${state.filters.logType === "user" ? "active" : ""}" data-log-type="user" type="button">User</button>
+          <button class="filter-chip ${state.filters.logType === "job" ? "active" : ""}" data-log-type="job" type="button">Job</button>
+          <button class="filter-chip ${state.filters.logType === "application" ? "active" : ""}" data-log-type="application" type="button">Application</button>
         </div>
       </div>
     </section>
@@ -922,11 +1079,11 @@ function renderLogsView() {
             ? items.map(item => `
               <article class="log-item">
                 <div class="log-item-header">
-                  <h3 class="log-title">${escapeHtml(item.title)}</h3>
-                  <span class="badge badge-soft">${escapeHtml(item.type)}</span>
+                  <h3 class="log-title">${escapeHtml(item.detail)}</h3>
+                  <span class="badge badge-soft">${escapeHtml(item.actionType)}</span>
                 </div>
-                <div class="log-meta">${escapeHtml(item.actor)} · ${escapeHtml(item.time)}</div>
-                <p class="log-body">${escapeHtml(item.detail)}</p>
+                <div class="log-meta">${escapeHtml(item.operatorName)} · ${escapeHtml(item.createTime)}</div>
+                <p class="log-body">Target: ${escapeHtml(item.targetType)} #${escapeHtml(item.targetId)}</p>
               </article>
             `).join("")
             : `
@@ -1267,57 +1424,75 @@ function openTADetailModal(id) {
 
     els.taDetailModalBody.innerHTML = `
     <div id="taDetailContent">
-      <div class="user-profile-block">
-        <div class="user-avatar-xl">${escapeHtml(getInitials(ta.name))}</div>
+      <div class="user-profile-block" style="margin-bottom:20px;">
+        <div class="user-avatar-xl" style="width:72px;height:72px;font-size:24px;">${escapeHtml(getInitials(ta.name))}</div>
         <div class="user-identity">
-          <h3>${escapeHtml(ta.name)}</h3>
-          <p>@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)}</p>
+          <h3 style="margin:0 0 6px;font-size:22px;">${escapeHtml(ta.name)}</h3>
+          <p style="margin:0;font-size:14px;color:var(--text-soft);">@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)}</p>
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px;background:var(--bg-soft);border-radius:14px;">
-        <span class="badge ${statusInfo.class}" style="font-size:14px;font-weight:600;padding:8px 16px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-2));border-radius:14px;text-align:center;color:white;">
+          <div style="font-size:24px;font-weight:700;">${escapeHtml(ta.taskCount)}</div>
+          <div style="font-size:12px;opacity:0.9;">Applied Jobs</div>
+        </div>
+        <div style="padding:14px;background:var(--bg-soft);border-radius:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:var(--text);">${escapeHtml(ta.currentHours)}h</div>
+          <div style="font-size:12px;color:var(--text-soft);">Current Load</div>
+        </div>
+        <div style="padding:14px;background:var(--bg-soft);border-radius:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:var(--text);">${escapeHtml(ta.maxHours)}h</div>
+          <div style="font-size:12px;color:var(--text-soft);">Max Hours</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg-soft);border-radius:14px;">
+        <span class="badge ${statusInfo.class}" style="font-size:13px;font-weight:600;padding:10px 18px;">
           ${statusInfo.text}
         </span>
+        <span style="font-size:13px;color:var(--text-soft);">Workload Status</span>
       </div>
 
-      <!-- TA详情页的工作负荷进度条 - 红黄绿三色 -->
-      <div class="workload-progress-container" style="margin-bottom:20px;">
+      <div class="workload-progress-container" style="margin-bottom:24px;">
         <div class="workload-progress-header">
-          <span class="workload-progress-label">Weekly Workload</span>
-          <span class="workload-progress-value ${ta.workloadStatus}">${ta.hoursDisplay}</span>
+          <span class="workload-progress-label">Weekly Workload Progress</span>
+          <span class="workload-progress-value ${ta.workloadStatus}" style="font-weight:600;">${ta.hoursDisplay}</span>
         </div>
-        <div class="workload-progress-bar" style="height:14px;">
+        <div class="workload-progress-bar" style="height:12px;">
           <div class="workload-progress-fill ${ta.workloadStatus}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
         </div>
       </div>
 
-      <div class="detail-grid" style="margin-bottom:18px;">
+      <div class="detail-grid" style="margin-bottom:20px;">
         <div class="detail-row">
           <span>User ID</span>
-          <span>${escapeHtml(ta.id)}</span>
+          <span style="font-family:monospace;">${escapeHtml(ta.id)}</span>
         </div>
         <div class="detail-row">
           <span>Email</span>
           <span>${escapeHtml(ta.email || "-")}</span>
         </div>
         <div class="detail-row">
-          <span>Applied Jobs</span>
-          <span>${escapeHtml(ta.taskCount)}</span>
+          <span>Username</span>
+          <span>@${escapeHtml(ta.username)}</span>
+        </div>
+        <div class="detail-row">
+          <span>Course/Module</span>
+          <span>${escapeHtml(ta.course)}</span>
         </div>
       </div>
 
       ${ta.skills && ta.skills.length > 0 ? `
-      <div style="margin-bottom:18px;">
-        <h3 style="margin:0 0 12px;font-size:16px;">Skills</h3>
+      <div style="margin-bottom:20px;">
+        <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Skills & Tags</h3>
         <div class="tag-list">
           ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
         </div>
       </div>
       ` : ''}
 
-      <!-- View PDF Button -->
-      <div style="margin-bottom:18px;">
+      <div style="display:flex;gap:10px;margin-bottom:20px;">
         <button class="btn btn-sm btn-soft" type="button" id="viewPdfBtn" data-uid="${escapeHtml(ta.id)}">
           ${Icons.eye} View Profile PDF
         </button>
@@ -1325,9 +1500,8 @@ function openTADetailModal(id) {
 
       ${ta.appliedJobs && ta.appliedJobs.length > 0 ? `
       <div>
-        <h3 style="margin:0 0 12px;font-size:16px;">Applied Jobs</h3>
-        <p style="margin:0 0 16px;font-size:13px;color:var(--text-soft);">Click on a job to view full details</p>
-        <div style="display:flex;flex-direction:column;gap:10px;">
+        <h3 style="margin:0 0 14px;font-size:15px;font-weight:600;color:var(--text);">Applied Jobs History</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
           ${ta.appliedJobs.map((job, index) => `
             <button class="job-detail-btn" type="button" data-job-index="${index}">
               <div style="display:flex;align-items:center;gap:12px;">
@@ -1336,13 +1510,16 @@ function openTADetailModal(id) {
                     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/>
                   </svg>
                 </div>
-                <div>
+                <div style="flex:1;">
                   <div style="font-size:14px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</div>
                   <div style="font-size:12px;color:var(--text-soft);">${escapeHtml(job.belongModule)}</div>
                 </div>
               </div>
-              <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(job.workHoursWeekly)}h/week</span>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="badge ${job.applicationStatus === 'approved' || job.applicationStatus === '1' ? 'badge-success' : job.applicationStatus === 'rejected' || job.applicationStatus === '2' ? 'badge-danger' : 'badge-warning'}" style="font-size:11px;">
+                  ${job.applicationStatus === 'approved' || job.applicationStatus === '1' ? 'Approved' : job.applicationStatus === 'rejected' || job.applicationStatus === '2' ? 'Rejected' : 'Pending'}
+                </span>
+                <span style="font-size:13px;font-weight:500;color:var(--text);">${escapeHtml(job.workHoursWeekly)}h/w</span>
                 <svg viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--text-soft);" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="m9 18 6-6-6-6"/>
                 </svg>
@@ -1352,7 +1529,7 @@ function openTADetailModal(id) {
         </div>
       </div>
       ` : `
-      <div style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
+      <div style="padding:24px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
         <p style="margin:0;">This TA has not applied for any jobs yet.</p>
       </div>
       `}
@@ -1518,40 +1695,67 @@ function closeTADetailModal() {
 }
 
 function openJobDetailModal(job) {
+    const statusMap = {
+        0: { text: "Open", class: "badge-success" },
+        1: { text: "Closed", class: "badge-warning" },
+        2: { text: "Filled", class: "badge-danger" },
+        3: { text: "Cancelled", class: "badge-soft" }
+    };
+    const jobStatus = statusMap[job.jobStatus] || statusMap[0];
+    const typeMap = { 1: "Course TA", 2: "Exam TA", 3: "Event TA" };
+    const jobType = typeMap[job.jobType] || "TA";
+
     els.jobDetailModalBody.innerHTML = `
-    <div style="padding:16px;background:var(--bg-soft);border-radius:12px;margin-bottom:20px;">
+    <div style="padding:20px;background:linear-gradient(135deg,var(--primary),var(--primary-2));border-radius:16px;margin-bottom:20px;color:white;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <h3 style="margin:0 0 8px;font-size:18px;font-weight:600;color:var(--text);">${escapeHtml(job.jobName)}</h3>
-          <span style="font-size:13px;color:var(--text-soft);">Job ID: ${escapeHtml(job.jobId)}</span>
+        <div style="flex:1;">
+          <h3 style="margin:0 0 8px;font-size:20px;font-weight:600;color:white;">${escapeHtml(job.jobName)}</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="badge ${jobStatus.class}" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">${jobStatus.text}</span>
+            <span style="font-size:12px;opacity:0.9;">Job ID: ${escapeHtml(job.jobId)}</span>
+          </div>
         </div>
-        <span class="badge badge-primary" style="font-size:14px;font-weight:600;padding:8px 14px;">
-          ${escapeHtml(job.workHoursWeekly)}h/week
-        </span>
+        <div style="text-align:right;">
+          <div style="font-size:28px;font-weight:700;">${escapeHtml(job.workHoursWeekly)}</div>
+          <div style="font-size:12px;opacity:0.8;">hours/week</div>
+        </div>
       </div>
     </div>
 
-    <div class="detail-grid" style="margin-bottom:20px;">
-      <div class="detail-row">
-        <span>Max Capacity</span>
-        <span>${escapeHtml(job.recruitNum || job.maxCapacity || "N/A")}</span>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
+      <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Course Organizer</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(job.publisherName || "N/A")}</div>
       </div>
-      <div class="detail-row">
-        <span>Course Organizer</span>
-        <span>${escapeHtml(job.publisherName)}</span>
+      <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Job Type</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(jobType)}</div>
       </div>
-      <div class="detail-row">
-        <span>Weekly Hours</span>
-        <span>${escapeHtml(job.workHoursWeekly)} hours</span>
+      <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Module/Course</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(job.belongModule || "N/A")}</div>
+      </div>
+      <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Recruitment</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(job.recruitNum || 0)} positions</div>
       </div>
     </div>
 
     <div style="margin-bottom:20px;">
-      <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;">Description</h3>
-      <div style="padding:14px;background:var(--bg-soft);border-radius:10px;font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap;">
-        ${escapeHtml(job.jobDesc || "No description available.")}
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Job Description</h3>
+      <div style="padding:16px;background:var(--bg-soft);border-radius:12px;font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:80px;">
+        ${escapeHtml(job.jobDesc) || "No description provided."}
       </div>
     </div>
+
+    ${job.tags && job.tags.length > 0 ? `
+    <div style="margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Tags</h3>
+      <div class="tag-list">
+        ${job.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+      </div>
+    </div>
+    ` : ''}
   `;
 
     const header = els.jobDetailModalOverlay.querySelector(".modal-header h2");
@@ -1565,6 +1769,8 @@ function closeJobDetailModal() {
 }
 
 function openStatsModal() {
+    const appStats = computeApplicationStats();
+    
     els.statsModalBody.innerHTML = `
     <div class="metrics-grid" style="margin-bottom:20px;">
       <div class="metric-card">
@@ -1582,6 +1788,32 @@ function openStatsModal() {
       <div class="metric-card">
         <strong>${escapeHtml(state.stats.totalPosts)}</strong>
         <span>Total Posts</span>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:24px;">
+      <div class="section-title-block">
+        <h3>Application Statistics</h3>
+        <p>Real-time application data from backend</p>
+      </div>
+    </div>
+
+    <div class="metrics-grid" style="margin-bottom:20px;">
+      <div class="metric-card">
+        <strong>${escapeHtml(appStats.totalApplications)}</strong>
+        <span>Total Applications</span>
+      </div>
+      <div class="metric-card">
+        <strong>${escapeHtml(appStats.pendingCount)}</strong>
+        <span>Pending</span>
+      </div>
+      <div class="metric-card">
+        <strong>${escapeHtml(appStats.approvedCount)}</strong>
+        <span>Approved</span>
+      </div>
+      <div class="metric-card">
+        <strong>${escapeHtml(appStats.approvalRate)}%</strong>
+        <span>Approval Rate</span>
       </div>
     </div>
 
@@ -1604,27 +1836,58 @@ function openStatsModal() {
               <td>Overall user registration is growing steadily</td>
             </tr>
             <tr>
-              <td>Post Review Queue</td>
-              <td>${escapeHtml(state.stats.pendingPostReviews)}</td>
+              <td>Application Queue</td>
+              <td>${escapeHtml(appStats.pendingCount)}</td>
               <td><span class="badge badge-warning">Attention</span></td>
-              <td>Some posts are awaiting admin processing</td>
+              <td>${escapeHtml(appStats.pendingCount)} applications awaiting processing</td>
             </tr>
             <tr>
               <td>Role Change Requests</td>
-              <td>${escapeHtml(state.stats.pendingRoleRequests)}</td>
+              <td>${escapeHtml(state.roleRequests.filter(r => r.status === "pending").length)}</td>
               <td><span class="badge badge-warning">Pending</span></td>
               <td>Has pending role request</td>
             </tr>
             <tr>
               <td>System Activity</td>
-              <td>${escapeHtml(state.stats.activeLogsToday)}</td>
+              <td>${escapeHtml(appStats.todayApplications)}</td>
               <td><span class="badge badge-success">Healthy</span></td>
-              <td>System event logs are normal today</td>
+              <td>${escapeHtml(appStats.todayApplications)} applications today</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    ${appStats.topJobsByApplications.length > 0 ? `
+    <div class="section-header" style="margin-top:24px;">
+      <div class="section-title-block">
+        <h3>Top Jobs by Applications</h3>
+        <p>Most popular jobs among TAs</p>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Job Name</th>
+              <th>Application Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appStats.topJobsByApplications.map((job, index) => `
+              <tr>
+                <td><span class="badge ${index === 0 ? 'badge-warning' : 'badge-soft'}">#${index + 1}</span></td>
+                <td>${escapeHtml(job.jobName)}</td>
+                <td><strong>${escapeHtml(job.count)}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    ` : ''}
   `;
 
     els.statsModalOverlay.classList.remove("hidden");
@@ -1961,7 +2224,6 @@ function closeAllJobsModal() {
 async function openUserDetailModal(userId) {
     let user = state.backendUsers.find(item => String(item.userId) === String(userId));
     if (!user) {
-        // 如果本地找不到，从后端获取
         const userData = await loadUserDetail(userId);
         if (!userData) return;
         user = userData;
@@ -1969,34 +2231,98 @@ async function openUserDetailModal(userId) {
 
     state.selectedUser = user;
     const roleText = user.userType === 1 ? "TA" : user.userType === 2 ? "MO" : user.userType === 3 ? "Admin" : "Unknown";
+    const roleClass = user.userType === 1 ? "badge-primary" : user.userType === 2 ? "badge-warning" : "badge-success";
+
+    const moData = state.moWorkloads.find(m => String(m.id) === String(userId));
+    const taData = state.taWorkloads.find(t => String(t.id) === String(userId));
 
     els.userDetailModalBody.innerHTML = `
-    <div class="user-profile-block">
-      <div class="user-avatar-xl">${escapeHtml(getInitials(user.realName || user.username))}</div>
+    <div class="user-profile-block" style="margin-bottom:20px;">
+      <div class="user-avatar-xl" style="width:72px;height:72px;font-size:24px;">${escapeHtml(getInitials(user.realName || user.username))}</div>
       <div class="user-identity">
-        <h3>${escapeHtml(user.realName || "-")}</h3>
-        <p>@${escapeHtml(user.username)} · ${escapeHtml(roleText)}</p>
+        <h3 style="margin:0 0 6px;font-size:22px;">${escapeHtml(user.realName || "-")}</h3>
+        <p style="margin:0;font-size:14px;color:var(--text-soft);">@${escapeHtml(user.username)}</p>
       </div>
     </div>
 
-    <div class="detail-grid">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <span class="badge ${roleClass}" style="font-size:13px;font-weight:600;padding:8px 16px;">${escapeHtml(roleText)}</span>
+      <span style="font-size:13px;color:var(--text-soft);">User Role</span>
+    </div>
+
+    ${user.userType === 2 && moData ? `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+      <div style="padding:14px;background:var(--bg-soft);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--text);">${escapeHtml(moData.publishedPosts || 0)}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Total Posts</div>
+      </div>
+      <div style="padding:14px;background:rgba(16,185,129,0.1);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--success);">${escapeHtml(moData.openPosts || 0)}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Open</div>
+      </div>
+      <div style="padding:14px;background:rgba(59,130,246,0.1);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--primary);">${escapeHtml(moData.totalApplications || 0)}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Applications</div>
+      </div>
+      <div style="padding:14px;background:rgba(245,158,11,0.1);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--warning);">${escapeHtml(moData.pendingApplications || 0)}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Pending</div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${user.userType === 1 && taData ? `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+      <div style="padding:14px;background:var(--bg-soft);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--text);">${escapeHtml(taData.taskCount || 0)}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Applied Jobs</div>
+      </div>
+      <div style="padding:14px;background:rgba(59,130,246,0.1);border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--primary);">${escapeHtml(taData.currentHours || 0)}h</div>
+        <div style="font-size:11px;color:var(--text-soft);">Current Load</div>
+      </div>
+      <div style="padding:14px;background:${taData.workloadStatus === 'overloaded' ? 'rgba(239,68,68,0.1)' : taData.workloadStatus === 'near_limit' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)'};border-radius:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:${taData.workloadStatus === 'overloaded' ? 'var(--danger)' : taData.workloadStatus === 'near_limit' ? 'var(--warning)' : 'var(--success)'};">${escapeHtml(taData.workloadStatus === 'overloaded' ? 'High' : taData.workloadStatus === 'near_limit' ? 'Medium' : 'Normal')}</div>
+        <div style="font-size:11px;color:var(--text-soft);">Workload</div>
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="detail-grid" style="margin-bottom:20px;">
       <div class="detail-row">
         <span>User ID</span>
-        <span>${escapeHtml(user.userId)}</span>
+        <span style="font-family:monospace;font-size:13px;">${escapeHtml(user.userId)}</span>
       </div>
       <div class="detail-row">
         <span>Username</span>
-        <span>${escapeHtml(user.username)}</span>
+        <span>@${escapeHtml(user.username)}</span>
       </div>
       <div class="detail-row">
         <span>Email</span>
         <span>${escapeHtml(user.email || "-")}</span>
       </div>
       <div class="detail-row">
-        <span>Role</span>
-        <span>${escapeHtml(roleText)}</span>
+        <span>Phone</span>
+        <span>${escapeHtml(user.phone || "-")}</span>
+      </div>
+      <div class="detail-row">
+        <span>Course/Module</span>
+        <span>${escapeHtml(user.belongModule || "-")}</span>
+      </div>
+      <div class="detail-row">
+        <span>Account Status</span>
+        <span><span class="badge ${user.status === 0 ? 'badge-success' : 'badge-danger'}">${user.status === 0 ? 'Active' : 'Disabled'}</span></span>
       </div>
     </div>
+
+    ${user.userType === 1 && taData && taData.skills && taData.skills.length > 0 ? `
+    <div style="margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Skills</h3>
+      <div class="tag-list">
+        ${taData.skills.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join("")}
+      </div>
+    </div>
+    ` : ''}
   `;
 
     els.userDetailModalOverlay.classList.remove("hidden");
@@ -2013,38 +2339,65 @@ async function openPostPreview(postId) {
 
     if (r.ok && r.data && r.data.code === 200) {
         const detail = r.data.data || {};
+        const statusMap = {
+            0: { text: "Open", class: "badge-success" },
+            1: { text: "Closed", class: "badge-warning" },
+            2: { text: "Filled", class: "badge-danger" },
+            3: { text: "Cancelled", class: "badge-soft" }
+        };
+        const jobStatus = statusMap[detail.jobStatus] || statusMap[0];
+        const typeMap = { 1: "Course TA", 2: "Exam TA", 3: "Event TA" };
+        const jobType = typeMap[detail.jobType] || "TA";
 
         els.taDetailModalBody.innerHTML = `
-      <div class="detail-grid" style="margin-bottom:18px;">
-        <div class="detail-row">
-          <span>Post Title</span>
-          <span>${escapeHtml(detail.jobName || "Unnamed Job")}</span>
+      <div style="padding:20px;background:linear-gradient(135deg,var(--primary),var(--primary-2));border-radius:16px;margin-bottom:20px;color:white;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="flex:1;">
+            <h3 style="margin:0 0 8px;font-size:20px;font-weight:600;color:white;">${escapeHtml(detail.jobName || "Unnamed Job")}</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="badge ${jobStatus.class}" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">${jobStatus.text}</span>
+              <span style="font-size:12px;opacity:0.9;">Job ID: ${escapeHtml(detail.jobId)}</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:28px;font-weight:700;">${escapeHtml(detail.workHoursWeekly || 0)}</div>
+            <div style="font-size:12px;opacity:0.8;">hours/week</div>
+          </div>
         </div>
-        <div class="detail-row">
-          <span>Publisher</span>
-          <span>${escapeHtml(detail.publisherName || detail.moName || "Course Organizer")}</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Course Organizer</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(detail.publisherName || detail.moName || "N/A")}</div>
         </div>
-        <div class="detail-row">
-          <span>Type</span>
-          <span>${detail.jobType === 1 ? "TA" : "Assistant"}</span>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Job Type</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(jobType)}</div>
         </div>
-        <div class="detail-row">
-          <span>Module</span>
-          <span>${escapeHtml(detail.belongModule || "Uncategorized")}</span>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Module/Course</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(detail.belongModule || "N/A")}</div>
         </div>
-        <div class="detail-row">
-          <span>Weekly Hours</span>
-          <span>${escapeHtml(detail.workHoursWeekly || 0)}</span>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Deadline</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(detail.applyDeadline || "N/A")}</div>
         </div>
-        <div class="detail-row">
-          <span>Deadline</span>
-          <span>${escapeHtml(detail.applyDeadline || "")}</span>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Recruitment</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(detail.recruitNum || 0)} positions</div>
+        </div>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;">
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:4px;">Hired</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">${escapeHtml(detail.hiredNum || 0)} selected</div>
         </div>
       </div>
 
       <div>
-        <h3 style="margin:0 0 12px;">Description</h3>
-        <p style="margin:0;color:var(--text-soft);line-height:1.85;">${escapeHtml(detail.jobDesc || "No job description available")}</p>
+        <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Description</h3>
+        <div style="padding:16px;background:var(--bg-soft);border-radius:12px;font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:80px;">
+          ${escapeHtml(detail.jobDesc || "No description provided.")}
+        </div>
       </div>
     `;
 
@@ -2420,5 +2773,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadAllJobs(); // 再加载岗位列表
     await loadAllUsers(); // 用户列表加载时会使用申请记录来计算TA工作负荷
     await loadOpenJobs(); // 开放岗位列表
+    state.logs = generateMockLogs(); // 生成模拟日志数据
     render();
 });
