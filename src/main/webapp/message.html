@@ -786,20 +786,21 @@
                 let html = '';
                 uids.forEach(uid => {
                     const name = conversations[uid] || '未知用户';
+                    // 👇 新增：获取未读状态（后端会返回）
+                    const hasUnread = result.data[uid].unread || false;
                     html += `
-                        <div class="conv-item" data-uid="${uid}" onclick="selectConversation('${uid}', '${name}')">
-                            <div class="conv-info">
-                                <div class="conv-name">${name}</div>
-                            </div>
-                            <div class="conv-unread-dot" id="unread-${uid}"></div>
+                    <div class="conv-item" data-uid="${uid}" onclick="selectConversation('${uid}', '${name}')">
+                        <div class="conv-info">
+                            <div class="conv-name">${name}</div>
                         </div>
-                    `;
+                        <div class="conv-unread-dot ${hasUnread ? 'show' : ''}" id="unread-${uid}"></div>
+                    </div>
+                `;
                 });
                 convItems.innerHTML = html;
             }
         } catch (e) { }
     }
-
     // ==================== 3. 新建会话 ====================
     function openNewConvModal() {
         document.getElementById('newConvModal').classList.add('show');
