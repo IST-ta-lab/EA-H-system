@@ -783,6 +783,32 @@
           credentials: 'include'
         });
 
+        const contentType = (res.headers.get('content-type') || '').toLowerCase();
+
+        // Error payload may come back as JSON with HTTP 200; treat it as failure.
+        if (contentType.includes('application/json') || contentType.startsWith('text/')) {
+          const rawText = await res.text();
+          let parsed = null;
+          try {
+            parsed = JSON.parse(rawText);
+          } catch (e) {
+            parsed = null;
+          }
+
+          const businessCode = parsed && parsed.code !== undefined && parsed.code !== null
+            ? Number(parsed.code)
+            : NaN;
+          const mappedStatus = Number.isFinite(businessCode) && businessCode >= 400
+            ? businessCode
+            : (res.ok ? 500 : res.status);
+
+          return {
+            ok: false,
+            status: mappedStatus,
+            message: parsed && parsed.msg ? String(parsed.msg) : ''
+          };
+        }
+
         if (res.ok) {
           const blob = await res.blob();
           return { ok: true, blob };
