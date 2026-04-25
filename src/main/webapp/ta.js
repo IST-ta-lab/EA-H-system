@@ -302,60 +302,100 @@ function mapJobFromBackend(job) {
 // Backend API connected
 function mapApplicationFromBackend(app) {
     const statusCode = typeof app.applyStatus === "number" ? app.applyStatus : Number(app.status);
+    const applicationStatus = getApplicationStatusMeta(statusCode);
+    const jobTypeMeta = getJobTypeMeta(app.jobType);
     return {
         id: app.applicationId,
         jobId: app.jobId,
-        status: formatApplyStatus(statusCode),
+        status: applicationStatus.label,
         statusCode,
         raw: app,
         job: {
             course: app.jobName ? app.jobName : `RoleID: ${app.jobId}`,
             module: app.belongModule || "Uncategorized",
-            typeLabel: formatJobType(app.jobType),
+            typeLabel: jobTypeMeta.label,
             description: app.jobDesc || "No description available",
             hours: typeof app.workHoursWeekly === "number" ? app.workHoursWeekly : null
         }
     };
 }
 
-function formatApplyStatus(statusCode) {
-    switch (Number(statusCode)) {
-        case 0:
-            return "Pending";
-        case 1:
-            return "Approved";
-        case 2:
-            return "Rejected";
-        default:
-            return "Unknown";
+function getStatusMeta(category, value) {
+    const normalizedValue = Number(value);
+
+    if (category === "application") {
+        switch (normalizedValue) {
+            case 0:
+                return { label: "Pending", className: "badge-warning", canCancel: true };
+            case 1:
+                return { label: "Approved", className: "badge-success", canCancel: false };
+            case 2:
+                return { label: "Rejected", className: "badge-danger", canCancel: false };
+            default:
+                return { label: "Unknown", className: "badge-soft", canCancel: false };
+        }
     }
+
+    if (category === "jobType") {
+        switch (normalizedValue) {
+            case 1:
+                return { label: "Course TA", className: "badge-primary" };
+            case 2:
+                return { label: "Exam Proctor TA", className: "badge-primary" };
+            case 3:
+                return { label: "Activity TA", className: "badge-primary" };
+            default:
+                return { label: "Role", className: "badge-soft" };
+        }
+    }
+
+    if (category === "matchScore") {
+        if (!Number.isFinite(normalizedValue)) {
+            return { label: "Role Match: --", className: "badge-soft" };
+        }
+
+        return {
+            label: `Role Match: ${normalizedValue}%`,
+            className: normalizedValue >= 80 ? "badge-success" : "badge-primary"
+        };
+    }
+
+    if (category === "recommendationScore") {
+        if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
+            return null;
+        }
+
+        return {
+            label: `Recommended ${(normalizedValue * 100).toFixed(1)}%`,
+            className: "badge-success"
+        };
+    }
+
+    return { label: "Unknown", className: "badge-soft" };
+}
+
+function formatApplyStatus(statusCode) {
+    return getStatusMeta("application", statusCode).label;
 }
 
 function getApplicationStatusMeta(statusCode) {
-    const code = Number(statusCode);
-    if (code === 1) {
-        return { label: "Approved", className: "badge-success", canCancel: false };
-    }
-    if (code === 2) {
-        return { label: "Rejected", className: "badge-danger", canCancel: false };
-    }
-    if (code === 0) {
-        return { label: "Pending", className: "badge-warning", canCancel: true };
-    }
-    return { label: "Unknown", className: "badge-soft", canCancel: false };
+    return getStatusMeta("application", statusCode);
 }
 
 function formatJobType(jobType) {
-    switch (Number(jobType)) {
-        case 1:
-            return "Course TA";
-        case 2:
-            return "Exam Proctor TA";
-        case 3:
-            return "Activity TA";
-        default:
-            return "Role";
-    }
+    return getStatusMeta("jobType", jobType).label;
+}
+
+function getJobTypeMeta(jobType) {
+    return getStatusMeta("jobType", jobType);
+}
+
+function getMatchScoreMeta(score) {
+    return getStatusMeta("matchScore", score);
+}
+
+function getRecommendationScoreMeta(score) {
+    return getStatusMeta("recommendationScore", score);
 }
 
 function getFilteredJobs() {
@@ -890,10 +930,12 @@ function renderJobCard(job) {
     const applyDisabled = applied ? "disabled" : "";
     const match = getMatchData(job);
     const recommendationScore = portalConfig.showRecommendations ? getJobRecommendationScore(job) : 0;
-    const recommendationBadge = recommendationScore > 0
-        ? `<span class="badge badge-success">Recommended ${(recommendationScore * 100).toFixed(1)}%</span>`
+    const recommendationMeta = getRecommendationScoreMeta(recommendationScore);
+    const matchMeta = getMatchScoreMeta(match.score);
+    const recommendationBadge = recommendationMeta
+        ? `<span class="badge ${recommendationMeta.className}">${escapeHtml(recommendationMeta.label)}</span>`
         : "";
-    const jobStatusBadge = `<span class="badge badge-primary">Role Match: ${match.score}%</span>`;
+    const jobStatusBadge = `<span class="badge ${matchMeta.className}">${escapeHtml(matchMeta.label)}</span>`;
     const contactButton = portalConfig.showContactButton
         ? `
           <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
@@ -1641,12 +1683,14 @@ function renderJobModal() {
     const raw = job.raw || {};
     const alreadyApplied = isJobApplied(job.id);
     const match = getMatchData(job);
+    const jobTypeMeta = getJobTypeMeta(raw.jobType);
+    const matchMeta = getMatchScoreMeta(match.score);
 
     els.jobModalTitle.textContent = job.course;
     els.jobModalMeta.innerHTML = `
     <span class="badge badge-soft">${Icons.user} ${escapeHtml(job.prof)}</span>
     <span class="badge badge-soft">${Icons.clock} ${escapeHtml(job.hours)} hrs/week</span>
-    <span class="badge badge-primary">${raw.jobType === 1 ? "TARole" : "AssistantRole"}</span>
+    <span class="badge ${jobTypeMeta.className}">${escapeHtml(jobTypeMeta.label)}</span>
     <span class="badge badge-soft">${escapeHtml(raw.belongModule || "Uncategorized")}</span>
   `;
 
@@ -1655,7 +1699,7 @@ function renderJobModal() {
     if (els.matchCard) {
         if (portalConfig.showJobDetailMatch) {
             els.matchCard.innerHTML = `
-    <strong>Role Match: ${match.score}%</strong>
+    <strong>${escapeHtml(matchMeta.label)}</strong>
     <p>
       Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
       ${
