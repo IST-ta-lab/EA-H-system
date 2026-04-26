@@ -53,11 +53,11 @@
 </div>
 
 <!-- Edit profile modal -->
-<div class="modal-overlay hidden" id="profileModalOverlay">
+<div class="modal-overlay hidden" id="profileModalOverlay" data-modal="profile">
     <div class="modal-card modal-large scale-enter" id="profileModalCard">
         <div class="modal-header">
             <h2>Edit Profile</h2>
-            <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="Close">
+            <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="Close" data-modal-close="profile">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -100,21 +100,21 @@
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">Cancel</button>
+            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button" data-modal-close="profile">Cancel</button>
             <button class="btn btn-primary" id="saveProfileBtn" type="button">Save Changes</button>
         </div>
     </div>
 </div>
 
 <!-- Role details / Application modal -->
-<div class="modal-overlay hidden" id="jobModalOverlay">
+<div class="modal-overlay hidden" id="jobModalOverlay" data-modal="job">
     <div class="modal-card modal-xl scale-enter" id="jobModalCard">
         <div class="modal-header job-header">
             <div>
                 <h2 id="jobModalTitle"></h2>
                 <div class="job-meta-row" id="jobModalMeta"></div>
             </div>
-            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="Close">
+            <button class="icon-btn" id="closeJobModalBtn" type="button" aria-label="Close" data-modal-close="job">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -157,14 +157,14 @@
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">Cancel</button>
+            <button class="btn btn-ghost" id="cancelJobModalBtn" type="button" data-modal-close="job">Cancel</button>
             <button class="btn btn-primary" id="submitApplicationBtn" type="button">Submit Application</button>
         </div>
     </div>
 </div>
 
 <!-- Resume preview modal -->
-<div class="modal-overlay hidden" id="resumePreviewModalOverlay">
+<div class="modal-overlay hidden" id="resumePreviewModalOverlay" data-modal="resumePreview">
     <div class="modal-card modal-xl scale-enter" id="resumePreviewModalCard">
         <div class="modal-header">
             <div>
@@ -173,7 +173,7 @@
                     <span class="badge badge-soft" id="resumePreviewFileName">profile.pdf</span>
                 </div>
             </div>
-            <button class="icon-btn" id="closeResumePreviewModalBtn" type="button" aria-label="Close">
+            <button class="icon-btn" id="closeResumePreviewModalBtn" type="button" aria-label="Close" data-modal-close="resumePreview">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -188,7 +188,7 @@
 
         <div class="modal-footer">
             <button class="btn btn-ghost" id="replaceResumeBtnFromModal" type="button">Replace File</button>
-            <button class="btn btn-primary" id="closeResumePreviewFooterBtn" type="button">Close</button>
+            <button class="btn btn-primary" id="closeResumePreviewFooterBtn" type="button" data-modal-close="resumePreview">Close</button>
         </div>
     </div>
 </div>

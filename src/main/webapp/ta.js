@@ -85,6 +85,8 @@ const state = {
 };
 
 const els = {};
+const modalRegistry = {};
+let modalStack = [];
 
 const Icons = {
     search: `
@@ -171,7 +173,7 @@ const Icons = {
 function showGuestPrompt() {
     if (!portalConfig.showGuestPrompt) return false;
 
-    const overlay = document.getElementById("guestModalOverlay");
+    const overlay = els.guestModalOverlay || document.getElementById("guestModalOverlay");
     const description = overlay && overlay.querySelector(".guest-modal-desc");
     if (!overlay) return false;
 
@@ -179,17 +181,12 @@ function showGuestPrompt() {
         description.textContent = portalConfig.guestPromptMessage;
     }
 
-    overlay.classList.remove("hidden");
-    document.body.classList.add("modal-open");
+    openModal("guestPrompt");
     return true;
 }
 
 function closeGuestPrompt() {
-    const overlay = document.getElementById("guestModalOverlay");
-    if (!overlay) return;
-
-    overlay.classList.add("hidden");
-    updateBodyScrollLock();
+    closeModal("guestPrompt");
 }
 
 function goToLoginPage() {
@@ -1506,11 +1503,76 @@ function bindJobListEvents() {
 }
 
 function updateBodyScrollLock() {
-    const isProfileOpen = els.profileModalOverlay && !els.profileModalOverlay.classList.contains("hidden");
-    const isJobOpen = els.jobModalOverlay && !els.jobModalOverlay.classList.contains("hidden");
-    const isResumePreviewOpen = els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden");
-    const isGuestPromptOpen = els.guestModalOverlay && !els.guestModalOverlay.classList.contains("hidden");
-    document.body.classList.toggle("modal-open", isProfileOpen || isJobOpen || isResumePreviewOpen || isGuestPromptOpen);
+    const hasOpenModal = Object.values(modalRegistry).some(modal => isModalVisible(modal && modal.overlay));
+    document.body.classList.toggle("modal-open", hasOpenModal);
+}
+
+function isModalVisible(overlay) {
+    return !!(overlay && !overlay.classList.contains("hidden"));
+}
+
+function registerModal(name, overlay, options = {}) {
+    if (!name || !overlay) return;
+
+    modalRegistry[name] = {
+        overlay,
+        onOpen: options.onOpen,
+        onClose: options.onClose
+    };
+
+    overlay.addEventListener("click", event => {
+        if (event.target === overlay) {
+            closeModal(name);
+        }
+    });
+}
+
+function openModal(name) {
+    const modal = modalRegistry[name];
+    if (!modal || !modal.overlay) return false;
+
+    if (typeof modal.onOpen === "function") {
+        modal.onOpen();
+    }
+
+    modal.overlay.classList.remove("hidden");
+    modalStack = modalStack.filter(item => item !== name);
+    modalStack.push(name);
+    updateBodyScrollLock();
+    return true;
+}
+
+function closeModal(name) {
+    const modal = modalRegistry[name];
+    if (!modal || !modal.overlay) return false;
+
+    if (!isModalVisible(modal.overlay)) {
+        modalStack = modalStack.filter(item => item !== name);
+        updateBodyScrollLock();
+        return false;
+    }
+
+    if (typeof modal.onClose === "function") {
+        modal.onClose();
+    }
+
+    modal.overlay.classList.add("hidden");
+    modalStack = modalStack.filter(item => item !== name);
+    updateBodyScrollLock();
+    return true;
+}
+
+function closeTopmostModal() {
+    while (modalStack.length > 0) {
+        const name = modalStack[modalStack.length - 1];
+        if (closeModal(name)) {
+            return true;
+        }
+
+        modalStack.pop();
+    }
+
+    return false;
 }
 
 function openProfileModal() {
@@ -1519,16 +1581,11 @@ function openProfileModal() {
         return;
     }
 
-    state.isProfileModalOpen = true;
-    syncProfileModalState();
-    els.profileModalOverlay.classList.remove("hidden");
-    updateBodyScrollLock();
+    openModal("profile");
 }
 
 function closeProfileModal() {
-    state.isProfileModalOpen = false;
-    els.profileModalOverlay.classList.add("hidden");
-    updateBodyScrollLock();
+    closeModal("profile");
 }
 
 async function openResumePreviewModal() {
@@ -1555,19 +1612,11 @@ async function openResumePreviewModal() {
         els.resumePreviewFrame.src = previewResult.url;
     }
 
-    els.resumePreviewModalOverlay.classList.remove("hidden");
-    updateBodyScrollLock();
+    openModal("resumePreview");
 }
 
 function closeResumePreviewModal() {
-    if (els.resumePreviewFrame) {
-        els.resumePreviewFrame.src = "about:blank";
-    }
-    releaseResumeObjectUrl();
-    if (els.resumePreviewModalOverlay) {
-        els.resumePreviewModalOverlay.classList.add("hidden");
-    }
-    updateBodyScrollLock();
+    closeModal("resumePreview");
 }
 
 // Backend not connected: profile saving is not available in the sample API, so this stays local.
@@ -1662,8 +1711,7 @@ async function openJobModal(jobId) {
         };
 
         renderJobModal();
-        els.jobModalOverlay.classList.remove("hidden");
-        updateBodyScrollLock();
+        openModal("job");
         return;
     }
 
@@ -1671,9 +1719,7 @@ async function openJobModal(jobId) {
 }
 
 function closeJobModal() {
-    state.selectedJob = null;
-    els.jobModalOverlay.classList.add("hidden");
-    updateBodyScrollLock();
+    closeModal("job");
 }
 
 function renderJobModal() {
@@ -1772,24 +1818,42 @@ async function submitApplicationFromModal() {
 }
 
 function bindModalEvents() {
-    const closeProfileModalBtn = document.getElementById("closeProfileModalBtn");
-    const cancelProfileModalBtn = document.getElementById("cancelProfileModalBtn");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
-
-    const closeJobModalBtn = document.getElementById("closeJobModalBtn");
-    const cancelJobModalBtn = document.getElementById("cancelJobModalBtn");
     const submitApplicationBtn = document.getElementById("submitApplicationBtn");
-    const closeResumePreviewModalBtn = document.getElementById("closeResumePreviewModalBtn");
-    const closeResumePreviewFooterBtn = document.getElementById("closeResumePreviewFooterBtn");
     const replaceResumeBtnFromModal = document.getElementById("replaceResumeBtnFromModal");
 
-    if (closeProfileModalBtn) {
-        closeProfileModalBtn.addEventListener("click", closeProfileModal);
-    }
+    registerModal("profile", els.profileModalOverlay, {
+        onOpen: () => {
+            state.isProfileModalOpen = true;
+            syncProfileModalState();
+        },
+        onClose: () => {
+            state.isProfileModalOpen = false;
+        }
+    });
 
-    if (cancelProfileModalBtn) {
-        cancelProfileModalBtn.addEventListener("click", closeProfileModal);
-    }
+    registerModal("job", els.jobModalOverlay, {
+        onClose: () => {
+            state.selectedJob = null;
+        }
+    });
+
+    registerModal("resumePreview", els.resumePreviewModalOverlay, {
+        onClose: () => {
+            if (els.resumePreviewFrame) {
+                els.resumePreviewFrame.src = "about:blank";
+            }
+            releaseResumeObjectUrl();
+        }
+    });
+
+    registerModal("guestPrompt", els.guestModalOverlay || document.getElementById("guestModalOverlay"));
+
+    document.querySelectorAll("[data-modal-close]").forEach(button => {
+        button.addEventListener("click", () => {
+            closeModal(button.dataset.modalClose);
+        });
+    });
 
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener("click", saveProfile);
@@ -1807,26 +1871,10 @@ function bindModalEvents() {
         });
     }
 
-    if (closeJobModalBtn) {
-        closeJobModalBtn.addEventListener("click", closeJobModal);
-    }
-
-    if (cancelJobModalBtn) {
-        cancelJobModalBtn.addEventListener("click", closeJobModal);
-    }
-
     if (submitApplicationBtn) {
         submitApplicationBtn.addEventListener("click", async () => {
             await submitApplicationFromModal();
         });
-    }
-
-    if (closeResumePreviewModalBtn) {
-        closeResumePreviewModalBtn.addEventListener("click", closeResumePreviewModal);
-    }
-
-    if (closeResumePreviewFooterBtn) {
-        closeResumePreviewFooterBtn.addEventListener("click", closeResumePreviewModal);
     }
 
     if (replaceResumeBtnFromModal) {
@@ -1856,56 +1904,13 @@ function bindModalEvents() {
         });
     }
 
-    if (els.profileModalOverlay) {
-        els.profileModalOverlay.addEventListener("click", event => {
-            if (event.target === els.profileModalOverlay) {
-                closeProfileModal();
-            }
-        });
-    }
-
-    if (els.jobModalOverlay) {
-        els.jobModalOverlay.addEventListener("click", event => {
-            if (event.target === els.jobModalOverlay) {
-                closeJobModal();
-            }
-        });
-    }
-
-    if (els.resumePreviewModalOverlay) {
-        els.resumePreviewModalOverlay.addEventListener("click", event => {
-            if (event.target === els.resumePreviewModalOverlay) {
-                closeResumePreviewModal();
-            }
-        });
-    }
-
-    if (els.guestModalOverlay) {
-        els.guestModalOverlay.addEventListener("click", event => {
-            if (event.target === els.guestModalOverlay) {
-                closeGuestPrompt();
-            }
-        });
-    }
-
     if (els.guestGoLoginBtn) {
         els.guestGoLoginBtn.addEventListener("click", goToLoginPage);
     }
 
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
-            if (!els.profileModalOverlay.classList.contains("hidden")) {
-                closeProfileModal();
-            }
-            if (!els.jobModalOverlay.classList.contains("hidden")) {
-                closeJobModal();
-            }
-            if (els.resumePreviewModalOverlay && !els.resumePreviewModalOverlay.classList.contains("hidden")) {
-                closeResumePreviewModal();
-            }
-            if (els.guestModalOverlay && !els.guestModalOverlay.classList.contains("hidden")) {
-                closeGuestPrompt();
-            }
+            closeTopmostModal();
         }
     });
 }
