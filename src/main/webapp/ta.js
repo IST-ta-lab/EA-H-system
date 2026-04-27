@@ -506,6 +506,47 @@ function getJobContactInfo(job) {
     };
 }
 
+function getJobDisplayData(job) {
+    if (!job) return null;
+
+    const raw = job.raw || {};
+    const tags = normalizeTagList(job.tags);
+    const contact = getJobContactInfo(job);
+    const match = getMatchData(job) || { score: NaN, matched: [], missing: [] };
+    const recommendationScore = portalConfig.showRecommendations ? getJobRecommendationScore(job) : 0;
+
+    return {
+        id: job.id,
+        title: job.course || "Untitled Role",
+        description: job.description || "No description available",
+        tags,
+        contact,
+        hours: job.hours || 0,
+        module: raw.belongModule || "Uncategorized",
+        jobTypeMeta: getJobTypeMeta(raw.jobType),
+        match,
+        matchMeta: getMatchScoreMeta(match.score),
+        recommendationMeta: getRecommendationScoreMeta(recommendationScore)
+    };
+}
+
+function renderJobTags(tags, emptyLabel = "No tags listed") {
+    return tags.length > 0
+        ? tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
+        : `<span class="tag">${escapeHtml(emptyLabel)}</span>`;
+}
+
+function renderJobMatchSummary(match) {
+    return `
+    Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
+    ${
+        match.missing.length > 0
+            ? `Missing tags: ${escapeHtml(match.missing.join(", "))}.`
+            : " Your current tags cover the listed tags."
+    }
+  `;
+}
+
 function setView(viewName) {
     if (viewName === "profile" && !portalConfig.allowProfileView) {
         handleRestrictedAction();
@@ -925,14 +966,11 @@ function renderJobCard(job) {
     const applyLabel = applied ? "Applied" : "Apply";
     const applyIcon = applied ? "" : Icons.chevronRight;
     const applyDisabled = applied ? "disabled" : "";
-    const match = getMatchData(job);
-    const recommendationScore = portalConfig.showRecommendations ? getJobRecommendationScore(job) : 0;
-    const recommendationMeta = getRecommendationScoreMeta(recommendationScore);
-    const matchMeta = getMatchScoreMeta(match.score);
-    const recommendationBadge = recommendationMeta
-        ? `<span class="badge ${recommendationMeta.className}">${escapeHtml(recommendationMeta.label)}</span>`
+    const display = getJobDisplayData(job);
+    const recommendationBadge = display.recommendationMeta
+        ? `<span class="badge ${display.recommendationMeta.className}">${escapeHtml(display.recommendationMeta.label)}</span>`
         : "";
-    const jobStatusBadge = `<span class="badge ${matchMeta.className}">${escapeHtml(matchMeta.label)}</span>`;
+    const jobStatusBadge = `<span class="badge ${display.matchMeta.className}">${escapeHtml(display.matchMeta.label)}</span>`;
     const contactButton = portalConfig.showContactButton
         ? `
           <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
@@ -944,26 +982,26 @@ function renderJobCard(job) {
     <article class="job-card" data-job-id="${job.id}">
       <div class="job-top">
         <div class="job-title-wrap">
-          <h3>${escapeHtml(job.course)}</h3>
+          <h3>${escapeHtml(display.title)}</h3>
           <div class="job-sub">
-            <span class="badge badge-soft">${Icons.user} ${escapeHtml(job.prof)}</span>
-            <span class="badge badge-soft">${Icons.clock} ${escapeHtml(job.hours)} hrs/wk</span>
+            <span class="badge badge-soft">${Icons.user} ${escapeHtml(display.contact.name)}</span>
+            <span class="badge badge-soft">${Icons.clock} ${escapeHtml(display.hours)} hrs/wk</span>
             ${recommendationBadge}
           </div>
         </div>
         ${jobStatusBadge}
       </div>
 
-      <p class="job-desc">${escapeHtml(job.description)}</p>
+      <p class="job-desc">${escapeHtml(display.description)}</p>
 
       <div class="tag-list">
-        ${(job.tags || []).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+        ${renderJobTags(display.tags)}
       </div>
 
       <div class="job-footer">
         <div class="job-stats">
           <span>RoleID: ${job.id}</span>
-          <span>${(job.tags || []).length} required tags</span>
+          <span>${display.tags.length} required tags</span>
         </div>
         <div class="job-actions">
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
@@ -1726,34 +1764,25 @@ function renderJobModal() {
     const job = state.selectedJob;
     if (!job) return;
 
-    const raw = job.raw || {};
     const alreadyApplied = isJobApplied(job.id);
-    const match = getMatchData(job);
-    const jobTypeMeta = getJobTypeMeta(raw.jobType);
-    const matchMeta = getMatchScoreMeta(match.score);
+    const display = getJobDisplayData(job);
 
-    els.jobModalTitle.textContent = job.course;
+    els.jobModalTitle.textContent = display.title;
     els.jobModalMeta.innerHTML = `
-    <span class="badge badge-soft">${Icons.user} ${escapeHtml(job.prof)}</span>
-    <span class="badge badge-soft">${Icons.clock} ${escapeHtml(job.hours)} hrs/week</span>
-    <span class="badge ${jobTypeMeta.className}">${escapeHtml(jobTypeMeta.label)}</span>
-    <span class="badge badge-soft">${escapeHtml(raw.belongModule || "Uncategorized")}</span>
+    <span class="badge badge-soft">${Icons.user} ${escapeHtml(display.contact.name)}</span>
+    <span class="badge badge-soft">${Icons.clock} ${escapeHtml(display.hours)} hrs/week</span>
+    <span class="badge ${display.jobTypeMeta.className}">${escapeHtml(display.jobTypeMeta.label)}</span>
+    <span class="badge ${display.matchMeta.className}">${escapeHtml(display.matchMeta.label)}</span>
+    <span class="badge badge-soft">${escapeHtml(display.module)}</span>
   `;
 
-    els.jobDescriptionText.textContent = job.description;
+    els.jobDescriptionText.textContent = display.description;
 
     if (els.matchCard) {
         if (portalConfig.showJobDetailMatch) {
             els.matchCard.innerHTML = `
-    <strong>${escapeHtml(matchMeta.label)}</strong>
-    <p>
-      Matched tags: ${match.matched.length > 0 ? escapeHtml(match.matched.join(", ")) : "None"}.
-      ${
-        match.missing.length > 0
-            ? `Missing tags: ${escapeHtml(match.missing.join(", "))}.`
-            : " Your current tags cover the listed tags."
-    }
-    </p>
+    <strong>${escapeHtml(display.matchMeta.label)}</strong>
+    <p>${renderJobMatchSummary(display.match)}</p>
   `;
             els.matchCard.classList.remove("hidden");
         } else {
@@ -1762,10 +1791,7 @@ function renderJobModal() {
         }
     }
 
-    const jobTags = normalizeTagList(job.tags);
-    els.jobRequiredTags.innerHTML = jobTags.length > 0
-        ? jobTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
-        : `<span class="tag">No tags listed</span>`;
+    els.jobRequiredTags.innerHTML = renderJobTags(display.tags);
 
     els.appRemarksInput.value = state.appRemarks;
 
