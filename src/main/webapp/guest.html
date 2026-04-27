@@ -28,13 +28,13 @@
             </div>
 
             <div class="nav-right">
-                <button class="icon-btn" id="messageBtn" type="button" aria-label="Open messages">
+                <button class="icon-btn" id="messageBtn" type="button" aria-label="Register to contact course leads">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 8h12M6 12h8m-8 6 3.6-2.7c.35-.26.77-.4 1.2-.4H18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
-                <button class="btn btn-ghost" id="logoutBtn" type="button">Logout</button>
-                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Open profile">
+                <button class="btn btn-ghost" id="logoutBtn" type="button">Browse as Guest</button>
+                <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Browse guest profile preview">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
@@ -136,7 +136,7 @@
             <hr class="divider" />
 
             <section class="job-section">
-                <h3>Submit Application</h3>
+                <h3>Apply After Login</h3>
 
                 <div class="option-list">
                     <button class="check-row" id="takenCourseToggle" type="button">
@@ -159,7 +159,7 @@
 
         <div class="modal-footer">
             <button class="btn btn-ghost" id="cancelJobModalBtn" type="button">Cancel</button>
-            <button class="btn btn-primary" id="submitApplicationBtn" type="button">Submit Application</button>
+            <button class="btn btn-primary" id="submitApplicationBtn" type="button">Login to Apply</button>
         </div>
     </div>
 </div>
@@ -198,13 +198,13 @@
 <div class="modal-overlay hidden" id="guestModalOverlay">
     <div class="modal-card scale-enter guest-modal-card">
         <div class="modal-header">
-            <h2>Tip</h2>
+            <h2>Guest Access</h2>
         </div>
         <div class="modal-body">
             <p class="guest-modal-desc">You are not registered. Please login/register first.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-primary" id="guestGoLoginBtn" type="button">Go to Register/Login Page</button>
+            <button class="btn btn-primary" id="guestGoLoginBtn" type="button">Register / Login</button>
         </div>
     </div>
 </div>
