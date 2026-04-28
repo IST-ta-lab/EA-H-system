@@ -30,6 +30,21 @@ const DEFAULT_PORTAL_CONFIG = {
     showGuestPrompt: false,
     guestPromptMessage: "You are not registered. Please login/register first.",
     loginPage: "index.html",
+    uiText: {
+        navMessageAriaLabel: "Open messages",
+        navLogoutLabel: "Logout",
+        navAvatarAriaLabel: "Open profile",
+        pageTitle: "Discover Roles.",
+        pageDescription: "Explore and apply for teaching assistant positions. Enhance your academic journey by mentoring others.",
+        pageRecommendedDescription: "Recommended roles are shown first based on your TA profile, with {count} matched position{suffix} available now.",
+        profileButtonLabel: "View Profile",
+        searchPlaceholder: "Search by course or professor...",
+        contactButtonLabel: "Message",
+        openDetailsButtonLabel: "View Details",
+        applyButtonLabel: "Apply",
+        appliedButtonLabel: "Applied",
+        submitApplicationLabel: "Submit Application"
+    },
     profileDefaults: {
         name: "Guest User",
         major: "Not provided",
@@ -46,6 +61,10 @@ const runtimeConfig = window.TA_PORTAL_CONFIG || {};
 const portalConfig = {
     ...DEFAULT_PORTAL_CONFIG,
     ...runtimeConfig,
+    uiText: {
+        ...DEFAULT_PORTAL_CONFIG.uiText,
+        ...(runtimeConfig.uiText || {})
+    },
     profileDefaults: {
         ...DEFAULT_PORTAL_CONFIG.profileDefaults,
         ...(runtimeConfig.profileDefaults || {})
@@ -880,19 +899,22 @@ function renderFeedView() {
     const recommendedCount = portalConfig.showRecommendations
         ? filteredJobs.filter(job => getJobRecommendationScore(job) > 0).length
         : 0;
+    const pageDescription = recommendedCount > 0
+        ? portalConfig.uiText.pageRecommendedDescription
+            .replace("{count}", String(recommendedCount))
+            .replace("{suffix}", recommendedCount === 1 ? "" : "s")
+        : portalConfig.uiText.pageDescription;
 
     els.feedView.innerHTML = `
     <div class="page-title-row">
       <div class="page-title">
-        <h1>Discover Roles.</h1>
+        <h1>${escapeHtml(portalConfig.uiText.pageTitle)}</h1>
         <p>
-          ${recommendedCount > 0
-            ? `Recommended roles are shown first based on your TA profile, with ${recommendedCount} matched position${recommendedCount === 1 ? "" : "s"} available now.`
-            : `Explore and apply for teaching assistant positions. Enhance your academic journey by mentoring others.`}
+          ${escapeHtml(pageDescription)}
         </p>
       </div>
       <div class="inline-actions">
-        <button class="btn btn-ghost" id="goProfileBtn" type="button">View Profile</button>
+        <button class="btn btn-ghost" id="goProfileBtn" type="button">${escapeHtml(portalConfig.uiText.profileButtonLabel)}</button>
       </div>
     </div>
 
@@ -901,7 +923,7 @@ function renderFeedView() {
       <input
         id="jobSearchInput"
         type="text"
-        placeholder="Search by course or professor..."
+        placeholder="${escapeHtml(portalConfig.uiText.searchPlaceholder)}"
         value="${escapeHtml(state.searchQuery)}"
       />
     </div>
@@ -963,7 +985,7 @@ function renderJobList() {
 
 function renderJobCard(job) {
     const applied = isJobApplied(job.id);
-    const applyLabel = applied ? "Applied" : "Apply";
+    const applyLabel = applied ? portalConfig.uiText.appliedButtonLabel : portalConfig.uiText.applyButtonLabel;
     const applyIcon = applied ? "" : Icons.chevronRight;
     const applyDisabled = applied ? "disabled" : "";
     const display = getJobDisplayData(job);
@@ -974,7 +996,7 @@ function renderJobCard(job) {
     const contactButton = portalConfig.showContactButton
         ? `
           <button class="btn btn-soft contact-job-btn" type="button" data-job-id="${job.id}">
-            Message
+            ${escapeHtml(portalConfig.uiText.contactButtonLabel)}
           </button>
         `
         : "";
@@ -1005,7 +1027,7 @@ function renderJobCard(job) {
         </div>
         <div class="job-actions">
           <button class="btn btn-ghost open-job-btn" type="button" data-job-id="${job.id}">
-            View Details
+            ${escapeHtml(portalConfig.uiText.openDetailsButtonLabel)}
           </button>
           ${contactButton}
           <button class="btn btn-primary apply-job-btn" type="button" data-job-id="${job.id}" ${applyDisabled}>
@@ -1800,7 +1822,7 @@ function renderJobModal() {
     const submitBtn = document.getElementById("submitApplicationBtn");
     if (submitBtn) {
         submitBtn.disabled = alreadyApplied;
-        submitBtn.textContent = alreadyApplied ? "Applied" : "Submit Application";
+        submitBtn.textContent = alreadyApplied ? portalConfig.uiText.appliedButtonLabel : portalConfig.uiText.submitApplicationLabel;
     }
 }
 
@@ -1942,6 +1964,16 @@ function bindModalEvents() {
 }
 
 function render() {
+    if (els.messageBtn) {
+        els.messageBtn.setAttribute("aria-label", portalConfig.uiText.navMessageAriaLabel);
+    }
+    if (els.logoutBtn) {
+        els.logoutBtn.textContent = portalConfig.uiText.navLogoutLabel;
+    }
+    if (els.avatarBtn) {
+        els.avatarBtn.setAttribute("aria-label", portalConfig.uiText.navAvatarAriaLabel);
+    }
+
     if (els.navUserName) {
         els.navUserName.textContent = state.profile.name || "";
     }
