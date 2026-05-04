@@ -4,3 +4,9 @@
 
 # 方式2: 配置文件 (复制此文件为 config.properties 并填入token)
 # EMBEDDING_API_TOKEN=your_token_here
+
+# ===== AI 建议生成 API (OpenAI 兼容格式) =====
+# 支持任意兼容 OpenAI Chat Completions 的 API 提供商（如 OpenAI、DeepSeek、通义千问等）
+# AI_API_URL=https://api.openai.com/v1/chat/completions
+# AI_API_TOKEN=your_token_here
+# AI_API_MODEL=gpt-3.5-turbo

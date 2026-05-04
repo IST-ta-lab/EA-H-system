@@ -40,3 +40,6 @@ build/
 
 ### Sensitive Config ###
 src/main/webapp/WEB-INF/data/config.properties
+
+# Claude Code config
+CLAUDE.md

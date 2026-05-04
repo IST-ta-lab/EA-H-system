@@ -243,6 +243,27 @@
 
 ---
 
+## 9. Suggestion Servlet `/suggestion`
+
+| Method | Action | Parameters |
+|--------|--------|------------|
+| GET | `generateForTA` | `taId` (optional, defaults to current user) |
+
+**Note**: `taId` is optional — when omitted, generates suggestions for the currently logged-in TA. Non-TA users cannot query suggestions for other TAs.
+
+**Response Example**:
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": "同学你好，根据你的专业背景和技能标签..."
+}
+```
+
+**Configuration**: Requires `AI_API_TOKEN` in config.properties or environment variable. Optionally configure `AI_API_URL` (defaults to OpenAI) and `AI_API_MODEL` (defaults to `gpt-3.5-turbo`). Supports any OpenAI-compatible API provider.
+
+---
+
 ## Role Permission Matrix
 
 | Feature | TA | MO | Admin |
@@ -255,6 +276,7 @@
 | Audit Application | No | Yes | No |
 | User Management | No | No | Yes |
 | Job Management | No | No | Yes |
+| AI Suggestion | Yes | No | No |
 
 ---
 
@@ -281,4 +303,9 @@ POST /tapj/application?action=audit&applicationId=app001&auditStatus=1&remark=Go
 ### Send Message
 ```
 POST /tapj/message?action=send&receiverId=mo001&content=Hello&jobId=job123&jobTitle=TA Position
+```
+
+### Generate AI Suggestion
+```
+GET /tapj/suggestion?action=generateForTA
 ```
