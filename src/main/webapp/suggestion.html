@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 求职建议 - TA Hiring System</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
 
         :root {
             --primary: #667eea;
@@ -23,174 +18,126 @@
             --text: #333;
             --light-text: #888;
             --border: #e4e7ed;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 12px 40px rgba(102, 126, 234, 0.18);
         }
 
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-        }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: var(--text); }
 
         .top-bar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 16px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(255, 255, 255, 0.95); padding: 14px 30px;
+            display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            position: sticky;
-            top: 0;
-            z-index: 999;
+            position: sticky; top: 0; z-index: 999; backdrop-filter: blur(8px);
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .logo { display: flex; align-items: center; gap: 12px; }
         .logo-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 40px; height: 40px; border-radius: 10px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
         }
 
+        .top-actions { display: flex; gap: 10px; align-items: center; }
         .back-btn {
-            padding: 10px 20px;
-            border: 2px solid var(--primary);
-            background: white;
-            color: var(--primary);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            text-decoration: none;
+            padding: 9px 18px; border: 2px solid var(--primary);
+            background: white; color: var(--primary);
+            border-radius: 8px; cursor: pointer;
+            font-weight: 600; text-decoration: none; font-size: 13px;
             transition: 0.2s;
         }
+        .back-btn:hover { background: var(--primary); color: white; }
 
-        .back-btn:hover {
-            background: var(--primary);
-            color: white;
+        .container { max-width: 960px; margin: 24px auto; padding: 0 20px; }
+
+        /* ===== 用户卡片 ===== */
+        .user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-radius: 16px; padding: 22px 26px;
+            margin-bottom: 20px; box-shadow: var(--shadow-lg);
+            display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+        }
+        .user-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700; flex-shrink: 0;
+        }
+        .user-info { flex: 1; min-width: 0; }
+        .user-greeting { font-size: 14px; opacity: 0.85; }
+        .user-name { font-size: 22px; font-weight: 700; margin: 2px 0 4px; }
+        .user-meta {
+            font-size: 13px; opacity: 0.9;
+            display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px;
+        }
+        .user-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+        .user-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .user-tags .chip {
+            background: rgba(255, 255, 255, 0.22); color: white;
+            padding: 3px 10px; border-radius: 12px; font-size: 12px;
         }
 
-        .container {
-            max-width: 960px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
+        /* ===== 通用卡片 ===== */
         .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            padding: 32px;
-            margin-bottom: 20px;
+            background: white; border-radius: 16px;
+            box-shadow: var(--shadow); padding: 28px;
+            margin-bottom: 18px;
         }
 
         .card-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 20px;
+            display: flex; align-items: flex-start; gap: 14px;
+            margin-bottom: 18px;
         }
-
         .card-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
+            width: 48px; height: 48px; border-radius: 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white; flex-shrink: 0;
         }
+        .card-title { font-size: 19px; font-weight: 700; }
+        .card-subtitle { color: var(--light-text); font-size: 13px; margin-top: 3px; }
 
-        .card-title {
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .card-subtitle {
-            color: var(--light-text);
-            font-size: 13px;
-            margin-top: 2px;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-top: 20px;
+        /* ===== 控制区 ===== */
+        .control-row {
+            display: flex; gap: 12px; align-items: center;
             flex-wrap: wrap;
         }
-
-        .input-row label {
-            font-size: 14px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        input[type="text"] {
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            flex: 1;
-            min-width: 260px;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
-        }
-
         .btn {
-            padding: 12px 28px;
+            padding: 12px 26px; color: white; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
-
         .btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+        }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .btn-ghost {
+            padding: 8px 14px; background: white; color: var(--primary);
+            border: 1px solid var(--primary); border-radius: 8px;
+            font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-ghost:hover { background: rgba(102, 126, 234, 0.08); }
+        .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .shortcut-hint {
+            font-size: 12px; color: var(--light-text);
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        kbd {
+            background: #eef1f6; color: #555; padding: 2px 7px;
+            border-radius: 4px; font-size: 11px; font-family: monospace;
+            border: 1px solid #d7dce4; box-shadow: 0 1px 0 #c9cfd8;
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: var(--light-text);
-            margin-top: 10px;
-        }
-
-        /* 结果区 */
-        .result-card {
-            display: none;
-        }
-
-        .result-card.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
+        /* ===== 结果 ===== */
+        .result-card { display: none; }
+        .result-card.show { display: block; animation: fadeIn 0.3s ease; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
@@ -198,159 +145,166 @@
         }
 
         .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 14px; border-bottom: 1px solid var(--border);
+            margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
         }
-
         .result-title {
-            font-size: 18px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 17px; font-weight: 700;
+            display: flex; align-items: center; gap: 10px;
         }
-
         .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #e6f7ef;
-            color: var(--success);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #e6f7ef; color: var(--success);
+            padding: 3px 11px; border-radius: 20px; font-size: 12px; font-weight: 600;
         }
+        .badge.gray { background: #eef1f6; color: #666; }
+        .result-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        .actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-ghost {
-            padding: 8px 16px;
-            background: white;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-ghost:hover {
-            background: rgba(102, 126, 234, 0.08);
+        .result-meta {
+            font-size: 12px; color: var(--light-text);
+            margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap;
         }
 
         .result-body {
-            line-height: 1.8;
-            color: #333;
-            font-size: 15px;
-            white-space: pre-wrap;
+            line-height: 1.85; color: #2b2b35; font-size: 15px;
             word-wrap: break-word;
         }
-
-        .result-body h2,
-        .result-body h3 {
-            margin: 20px 0 12px;
-            color: var(--primary-2);
-            font-weight: 700;
+        .result-body h2, .result-body h3 {
+            margin: 22px 0 12px; color: var(--primary-2); font-weight: 700;
         }
-
         .result-body h2 { font-size: 18px; }
         .result-body h3 { font-size: 16px; }
-
+        .result-body p { margin: 10px 0; }
         .result-body strong { color: #1a1a2e; }
-
-        .result-body ul,
-        .result-body ol {
-            padding-left: 24px;
-            margin: 10px 0;
+        .result-body ul, .result-body ol { padding-left: 24px; margin: 10px 0; }
+        .result-body li { margin-bottom: 6px; }
+        .result-body code {
+            background: #f1f3f6; padding: 1px 6px;
+            border-radius: 4px; font-size: 13px;
         }
 
-        .result-body li {
-            margin-bottom: 6px;
-        }
-
-        /* Loading */
-        .loading {
-            display: none;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
+        /* ===== Loading ===== */
+        .loading { display: none; padding: 50px 20px; text-align: center; }
         .loading.show { display: block; }
-
         .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid #eef;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            animation: spin 0.9s linear infinite;
+            width: 52px; height: 52px; border: 4px solid #eef;
+            border-top-color: var(--primary); border-radius: 50%;
+            margin: 0 auto 18px; animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #555; font-size: 15px; font-weight: 500; }
+        .loading-sub { color: #aaa; font-size: 12px; margin-top: 6px; }
+        .loading-timer {
+            display: inline-block; margin-top: 8px;
+            font-size: 13px; color: var(--primary); font-weight: 600;
+            font-feature-settings: "tnum";
+        }
+        .loading-progress {
+            max-width: 280px; height: 4px; background: #eef1f6;
+            border-radius: 3px; margin: 14px auto 0; overflow: hidden;
+        }
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            animation: shimmer 1.8s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); width: 40%; }
+            50% { transform: translateX(150%); width: 40%; }
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        /* ===== Error / Info ===== */
+        .alert {
+            display: flex; gap: 12px; align-items: flex-start;
+            padding: 14px 16px; border-radius: 10px; font-size: 14px;
+            margin-top: 14px;
         }
-
-        .loading-text {
-            color: var(--light-text);
-            font-size: 14px;
+        .alert.hidden { display: none; }
+        .alert-icon {
+            width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 13px; flex-shrink: 0; margin-top: 1px;
         }
+        .alert-body { flex: 1; line-height: 1.55; }
+        .alert-title { font-weight: 600; margin-bottom: 2px; }
+        .alert-actions { margin-top: 10px; display: flex; gap: 8px; }
 
-        .loading-sub {
-            color: #bbb;
-            font-size: 12px;
-            margin-top: 6px;
+        .alert-error { background: #fdecea; border: 1px solid #f5c2c7; color: #842029; }
+        .alert-error .alert-icon { background: var(--danger); }
+        .alert-warn { background: #fff8e1; border: 1px solid #ffe69c; color: #7a5c00; }
+        .alert-warn .alert-icon { background: var(--warning); }
+        .alert-info { background: #e7f3ff; border: 1px solid #b6dbff; color: #0b5394; }
+        .alert-info .alert-icon { background: var(--secondary); }
+
+        /* ===== 小贴士 ===== */
+        .tips { background: #fafbff; border: 1px dashed #c9d1ef; }
+        .tips h4 {
+            font-size: 14px; color: var(--primary-2);
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
         }
+        .tips ul { padding-left: 20px; }
+        .tips li { font-size: 13px; color: #555; margin-bottom: 5px; line-height: 1.6; }
 
-        /* Error */
-        .error-box {
-            display: none;
-            padding: 16px 20px;
-            background: #fdecea;
-            border: 1px solid #f5c2c7;
-            border-radius: 10px;
-            color: #842029;
-            font-size: 14px;
-            margin-top: 16px;
-        }
-
-        .error-box.show { display: block; }
-
-        .empty-hint {
-            padding: 40px 20px;
-            text-align: center;
-            color: #aaa;
-            font-size: 14px;
-        }
-
+        /* ===== Toast ===== */
         .toast {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.25s;
-            z-index: 10000;
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%) translateY(-30px);
+            background: #333; color: white; padding: 10px 20px;
+            border-radius: 8px; font-size: 14px;
+            opacity: 0; pointer-events: none; transition: 0.25s;
+            z-index: 10000; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.success { background: #059669; }
+        .toast.error { background: #dc2626; }
+
+        /* ===== 高级模式折叠 ===== */
+        .advanced {
+            margin-top: 14px; padding-top: 14px;
+            border-top: 1px dashed var(--border);
+        }
+        .advanced-toggle {
+            background: none; border: none; color: var(--primary);
+            font-size: 13px; cursor: pointer; padding: 0;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .advanced-body { display: none; margin-top: 12px; }
+        .advanced-body.show { display: block; }
+        .advanced-body input {
+            padding: 10px 14px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; width: 100%; outline: none;
+        }
+        .advanced-body input:focus { border-color: var(--primary); }
+        .advanced-hint { font-size: 12px; color: var(--light-text); margin-top: 6px; }
+
+        /* Skeleton */
+        .skeleton-line {
+            height: 14px; background: linear-gradient(90deg, #eef1f6 0%, #e0e4ec 50%, #eef1f6 100%);
+            background-size: 200% 100%; border-radius: 4px;
+            margin-bottom: 10px; animation: skeleton 1.4s ease-in-out infinite;
+        }
+        @keyframes skeleton {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+        /* 打印样式 */
+        @media print {
+            body { background: white; }
+            .top-bar, .user-card, .card:not(.result-card), .result-actions, .toast { display: none !important; }
+            .result-card { box-shadow: none; padding: 0; }
+            .container { max-width: 100%; margin: 0; padding: 0; }
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .top-bar { padding: 12px 16px; }
+            .logo-icon { width: 34px; height: 34px; font-size: 16px; }
+            .card { padding: 20px; }
+            .user-card { padding: 18px; }
+            .user-name { font-size: 18px; }
+            .btn { padding: 11px 20px; font-size: 13px; }
         }
     </style>
 </head>
@@ -359,40 +313,79 @@
 <div class="top-bar">
     <div class="logo">
         <div class="logo-icon">✨</div>
-        <div style="font-size:18px; font-weight:700;">AI 求职建议</div>
+        <div style="font-size:17px; font-weight:700;">AI 求职建议</div>
     </div>
-    <a href="ta.html" class="back-btn">返回主页</a>
+    <div class="top-actions">
+        <a href="recommend.html" class="back-btn">推荐中心</a>
+        <a href="ta.html" class="back-btn">返回主页</a>
+    </div>
 </div>
 
 <div class="container">
-    <!-- 生成区 -->
+
+    <!-- 用户卡片 -->
+    <div class="user-card" id="userCard" style="display:none;">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+            <div class="user-greeting" id="userGreeting">你好，欢迎回来</div>
+            <div class="user-name" id="userName">加载中...</div>
+            <div class="user-meta" id="userMeta"></div>
+            <div class="user-tags" id="userTags"></div>
+        </div>
+    </div>
+
+    <!-- 控制区 -->
     <div class="card">
         <div class="card-header">
             <div class="card-icon">🤖</div>
             <div>
                 <div class="card-title">个性化求职建议</div>
-                <div class="card-subtitle">基于你的个人资料与推荐岗位，由 AI 顾问生成中肯的申请建议</div>
+                <div class="card-subtitle">AI 顾问会根据你的资料与推荐岗位，给出 300-500 字的申请策略</div>
             </div>
         </div>
 
-        <div class="input-row">
-            <label for="taIdInput">TA ID</label>
-            <input id="taIdInput" type="text" placeholder="留空则使用当前登录用户">
+        <div class="control-row">
             <button class="btn" id="generateBtn" onclick="generateSuggestion()">
-                <span>立即生成建议</span>
+                <span id="generateBtnLabel">✨ 立即生成建议</span>
             </button>
+            <span class="shortcut-hint">或按 <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
         </div>
 
-        <div class="hint">仅 TA 用户可生成建议，非 TA 用户仅能查询自己（默认）。AI 响应可能需要数秒至数十秒，请耐心等待。</div>
+        <div class="advanced">
+            <button class="advanced-toggle" onclick="toggleAdvanced()">
+                <span id="advancedArrow">▸</span> <span>高级：为指定 TA 生成</span>
+            </button>
+            <div class="advanced-body" id="advancedBody">
+                <input id="taIdInput" type="text" placeholder="输入目标 TA 的 userId（留空使用当前登录用户）">
+                <div class="advanced-hint">普通 TA 通常不需要填写。系统会根据后端权限自动校验。</div>
+            </div>
+        </div>
 
-        <div class="error-box" id="errorBox"></div>
+        <!-- 错误/提示 -->
+        <div class="alert alert-error hidden" id="errorAlert">
+            <div class="alert-icon">!</div>
+            <div class="alert-body">
+                <div class="alert-title" id="errorTitle"></div>
+                <div id="errorMessage"></div>
+                <div class="alert-actions" id="errorActions"></div>
+            </div>
+        </div>
+        <div class="alert alert-warn hidden" id="warnAlert">
+            <div class="alert-icon">!</div>
+            <div class="alert-body">
+                <div class="alert-title" id="warnTitle"></div>
+                <div id="warnMessage"></div>
+            </div>
+        </div>
     </div>
 
     <!-- 加载中 -->
     <div class="card loading" id="loadingCard">
         <div class="spinner"></div>
         <div class="loading-text">AI 顾问正在分析你的资料...</div>
-        <div class="loading-sub">通常需要 5-30 秒，请勿刷新页面</div>
+        <div class="loading-sub">通常 5-30 秒；复杂请求可能到 60 秒</div>
+        <div class="loading-timer" id="loadingTimer">已用时 0s</div>
+        <div class="loading-progress"><div class="loading-progress-bar"></div></div>
     </div>
 
     <!-- 结果 -->
@@ -400,14 +393,29 @@
         <div class="result-header">
             <div class="result-title">
                 <span>📝 建议内容</span>
-                <span class="badge">AI 生成</span>
+                <span class="badge" id="resultFreshBadge">AI 生成</span>
             </div>
-            <div class="actions">
-                <button class="btn-ghost" onclick="copyResult()">复制</button>
-                <button class="btn-ghost" onclick="generateSuggestion()">重新生成</button>
+            <div class="result-actions">
+                <button class="btn-ghost" onclick="copyResult()" title="复制纯文本">📋 复制</button>
+                <button class="btn-ghost" onclick="downloadResult()" title="下载为 Markdown">⬇ 下载</button>
+                <button class="btn-ghost" onclick="printResult()" title="打印/另存为 PDF">🖨 打印</button>
+                <button class="btn-ghost" onclick="generateSuggestion()" title="重新生成">🔄 重新生成</button>
             </div>
         </div>
+        <div class="result-meta" id="resultMeta"></div>
         <div class="result-body" id="resultBody"></div>
+    </div>
+
+    <!-- 小贴士 -->
+    <div class="card tips">
+        <h4>💡 如何获得更精准的建议</h4>
+        <ul>
+            <li>在 <b>个人主页</b> 完善自我简介、专业、年级，让 AI 更了解你</li>
+            <li>添加至少 3-5 个与目标岗位相关的 <b>技能标签</b>（如 Python、Grading、ML）</li>
+            <li>上传最新的 <b>简历 PDF</b>，并将资料设为 "对他人可见"</li>
+            <li>多次生成结果可能略有差异，建议对比后择优参考</li>
+            <li>建议内容仅供参考，最终申请请结合岗位描述与个人实际情况</li>
+        </ul>
     </div>
 </div>
 
@@ -415,81 +423,93 @@
 
 <script>
     const BASE = "/tapj";
+    const CACHE_KEY = "tapj.suggestion.last";
+    const TIMEOUT_MS = 60000;
 
     const $ = (id) => document.getElementById(id);
-    const btn = $("generateBtn");
-    const loadingCard = $("loadingCard");
-    const resultCard = $("resultCard");
-    const resultBody = $("resultBody");
-    const errorBox = $("errorBox");
 
-    function showToast(msg) {
+    let currentUser = null;
+    let loadingTimerId = null;
+    let loadingStartAt = 0;
+    let abortController = null;
+
+    // ========= 工具 =========
+
+    function showToast(msg, type = "") {
         const t = $("toast");
+        t.className = "toast " + type;
         t.textContent = msg;
-        t.classList.add("show");
-        setTimeout(() => t.classList.remove("show"), 1800);
+        requestAnimationFrame(() => t.classList.add("show"));
+        setTimeout(() => t.classList.remove("show"), 2000);
     }
 
-    function showError(msg) {
-        errorBox.textContent = msg;
-        errorBox.classList.add("show");
+    function hideAlert(id) { $(id).classList.add("hidden"); }
+
+    function showError(title, message, actions) {
+        $("errorTitle").textContent = title;
+        $("errorMessage").textContent = message || "";
+        const wrap = $("errorActions");
+        wrap.innerHTML = "";
+        (actions || []).forEach(a => {
+            const b = document.createElement("button");
+            b.className = "btn-ghost";
+            b.textContent = a.label;
+            b.onclick = a.onClick;
+            wrap.appendChild(b);
+        });
+        $("errorAlert").classList.remove("hidden");
     }
 
-    function clearError() {
-        errorBox.classList.remove("show");
-        errorBox.textContent = "";
+    function showWarn(title, message) {
+        $("warnTitle").textContent = title;
+        $("warnMessage").textContent = message || "";
+        $("warnAlert").classList.remove("hidden");
     }
 
-    // 轻量 Markdown 渲染：## / ### 标题、**加粗**、有序列表、无序列表、段落换行
+    function clearAlerts() { hideAlert("errorAlert"); hideAlert("warnAlert"); }
+
+    function formatTs(ms) {
+        const d = new Date(ms);
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function countWords(text) {
+        if (!text) return 0;
+        const cn = (text.match(/[一-龥]/g) || []).length;
+        const en = (text.match(/[a-zA-Z]+/g) || []).length;
+        return cn + en;
+    }
+
+    // 轻量 Markdown 渲染
     function renderMarkdown(text) {
         if (!text) return "";
-        const escape = (s) => s
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+        const escape = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const inline = (s) => escape(s)
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/`([^`]+)`/g, "<code>$1</code>");
 
         const lines = text.split(/\r?\n/);
         const out = [];
-        let inUl = false;
-        let inOl = false;
-
+        let inUl = false, inOl = false;
         const closeLists = () => {
             if (inUl) { out.push("</ul>"); inUl = false; }
             if (inOl) { out.push("</ol>"); inOl = false; }
         };
 
-        const inline = (s) => escape(s)
-            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-            .replace(/`([^`]+)`/g, "<code>$1</code>");
-
         for (let raw of lines) {
             const line = raw.trimEnd();
-
-            if (/^###\s+/.test(line)) {
-                closeLists();
-                out.push("<h3>" + inline(line.replace(/^###\s+/, "")) + "</h3>");
-                continue;
-            }
-            if (/^##\s+/.test(line)) {
-                closeLists();
-                out.push("<h2>" + inline(line.replace(/^##\s+/, "")) + "</h2>");
-                continue;
-            }
+            if (/^###\s+/.test(line)) { closeLists(); out.push("<h3>" + inline(line.replace(/^###\s+/, "")) + "</h3>"); continue; }
+            if (/^##\s+/.test(line))  { closeLists(); out.push("<h2>" + inline(line.replace(/^##\s+/, "")) + "</h2>"); continue; }
             if (/^\d+\.\s+/.test(line)) {
                 if (!inOl) { closeLists(); out.push("<ol>"); inOl = true; }
-                out.push("<li>" + inline(line.replace(/^\d+\.\s+/, "")) + "</li>");
-                continue;
+                out.push("<li>" + inline(line.replace(/^\d+\.\s+/, "")) + "</li>"); continue;
             }
             if (/^[-*]\s+/.test(line)) {
                 if (!inUl) { closeLists(); out.push("<ul>"); inUl = true; }
-                out.push("<li>" + inline(line.replace(/^[-*]\s+/, "")) + "</li>");
-                continue;
+                out.push("<li>" + inline(line.replace(/^[-*]\s+/, "")) + "</li>"); continue;
             }
-            if (line === "") {
-                closeLists();
-                out.push("");
-                continue;
-            }
+            if (line === "") { closeLists(); continue; }
             closeLists();
             out.push("<p>" + inline(line) + "</p>");
         }
@@ -497,76 +517,280 @@
         return out.join("\n");
     }
 
+    function toggleAdvanced() {
+        const body = $("advancedBody");
+        const arrow = $("advancedArrow");
+        body.classList.toggle("show");
+        arrow.textContent = body.classList.contains("show") ? "▾" : "▸";
+    }
+
+    // ========= 用户信息 =========
+
+    async function loadCurrentUser() {
+        try {
+            const res = await fetch(`${BASE}/user?action=getLoginUser`, { credentials: "include" });
+            const data = await res.json();
+            if (data.code === 200 && data.data) {
+                currentUser = data.data;
+                renderUserCard(currentUser);
+                return currentUser;
+            }
+            if (data.code === 401) {
+                showError("未登录", "请先登录后再使用本功能。", [
+                    { label: "前往登录", onClick: () => location.href = "login.html" }
+                ]);
+                $("generateBtn").disabled = true;
+                return null;
+            }
+        } catch (e) {
+            // 静默失败，不影响主流程；生成时会再次 401
+        }
+        return null;
+    }
+
+    function renderUserCard(user) {
+        const card = $("userCard");
+        card.style.display = "flex";
+
+        const name = user.realName || user.username || "同学";
+        $("userName").textContent = name;
+        $("userAvatar").textContent = (name[0] || "?").toUpperCase();
+
+        const typeLabel = ({ 1: "TA 助教", 2: "MO 模块负责人", 3: "系统管理员" })[user.userType] || "用户";
+        const hour = new Date().getHours();
+        const greet = hour < 6 ? "凌晨好" : hour < 12 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
+        $("userGreeting").textContent = `${greet}，欢迎使用 AI 求职建议`;
+
+        const meta = $("userMeta");
+        meta.innerHTML = "";
+        const addMeta = (icon, text) => {
+            if (!text) return;
+            const s = document.createElement("span");
+            s.innerHTML = `<span>${icon}</span>${text}`;
+            meta.appendChild(s);
+        };
+        addMeta("🧾", typeLabel);
+        addMeta("🎓", user.major);
+        addMeta("📅", user.grade);
+
+        const tagWrap = $("userTags");
+        tagWrap.innerHTML = "";
+        const tags = Array.isArray(user.tags) ? user.tags : [];
+        tags.slice(0, 6).forEach(t => {
+            const c = document.createElement("span");
+            c.className = "chip";
+            c.textContent = "#" + t;
+            tagWrap.appendChild(c);
+        });
+
+        // 非 TA 提醒
+        if (user.userType !== 1) {
+            showWarn("仅 TA 可生成建议", "当前账户并非 TA，后端会返回 403。你仍可在高级模式中尝试为你自己的 userId 查询（将返回 404）。");
+        } else if (tags.length === 0 && !user.selfIntro) {
+            showWarn("资料较少，建议质量可能受限",
+                "检测到你尚未填写标签和自我简介。建议先到个人主页完善资料，获得更精准的建议。");
+        }
+    }
+
+    // ========= 缓存 =========
+
+    function saveCache(user, text) {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                userId: user ? user.userId : null,
+                ts: Date.now(),
+                text: text
+            }));
+        } catch (_) {}
+    }
+
+    function loadCache() {
+        try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            if (currentUser && obj.userId && obj.userId !== currentUser.userId) return null;
+            return obj;
+        } catch (_) { return null; }
+    }
+
+    // ========= 生成 =========
+
+    function startLoadingTimer() {
+        loadingStartAt = Date.now();
+        const el = $("loadingTimer");
+        el.textContent = "已用时 0s";
+        loadingTimerId = setInterval(() => {
+            const s = Math.floor((Date.now() - loadingStartAt) / 1000);
+            el.textContent = `已用时 ${s}s`;
+            if (s >= 30) el.style.color = "var(--warning)";
+            if (s >= 50) el.style.color = "var(--danger)";
+        }, 1000);
+    }
+
+    function stopLoadingTimer() {
+        if (loadingTimerId) { clearInterval(loadingTimerId); loadingTimerId = null; }
+    }
+
     async function generateSuggestion() {
-        clearError();
-        resultCard.classList.remove("show");
-        loadingCard.classList.add("show");
-        btn.disabled = true;
+        clearAlerts();
+        $("resultCard").classList.remove("show");
+        $("loadingCard").classList.add("show");
+        $("generateBtn").disabled = true;
+        $("generateBtnLabel").innerHTML = "⏳ 正在生成...";
+        startLoadingTimer();
 
         const taId = $("taIdInput").value.trim();
         const url = taId
             ? `${BASE}/suggestion?action=generateForTA&taId=${encodeURIComponent(taId)}`
             : `${BASE}/suggestion?action=generateForTA`;
 
+        if (abortController) abortController.abort();
+        abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), TIMEOUT_MS);
+
         try {
             const res = await fetch(url, {
                 method: "GET",
-                credentials: "include"
+                credentials: "include",
+                signal: abortController.signal
             });
+            clearTimeout(timeoutId);
 
             let data;
-            try {
-                data = await res.json();
-            } catch (_) {
-                throw new Error("服务器响应解析失败（非 JSON）");
-            }
+            try { data = await res.json(); }
+            catch (_) { throw new Error("服务器响应解析失败（非 JSON）"); }
 
             if (data.code === 200) {
-                resultBody.innerHTML = renderMarkdown(data.data || "");
-                resultCard.classList.add("show");
+                renderResult(data.data || "", Date.now(), true);
+                saveCache(currentUser, data.data || "");
+                showToast("生成成功", "success");
             } else if (data.code === 401) {
-                showError("未登录，请先登录后再试。");
-                setTimeout(() => { window.location.href = "login.html"; }, 1200);
+                showError("未登录", "请先登录后再使用本功能。", [
+                    { label: "前往登录", onClick: () => location.href = "login.html" }
+                ]);
             } else if (data.code === 403) {
-                showError(data.msg || "仅 TA 用户可生成建议");
+                showError("权限不足", data.msg || "仅 TA 用户可生成建议。", [
+                    { label: "返回主页", onClick: () => location.href = "ta.html" }
+                ]);
             } else if (data.code === 404) {
-                showError(data.msg || "未找到对应 TA");
+                showError("未找到 TA", data.msg || "请检查 taId 是否正确。");
+            } else if (data.code === 500) {
+                const msg = data.msg || "";
+                let hint = msg;
+                if (/AI_API_TOKEN/i.test(msg)) {
+                    hint = "后端未配置 AI_API_TOKEN。请管理员在 config.properties 中配置 OpenAI 兼容 API 的密钥后重启服务。";
+                }
+                showError("生成失败", hint, [
+                    { label: "重试", onClick: generateSuggestion }
+                ]);
             } else {
-                showError(data.msg || `请求失败（code=${data.code}）`);
+                showError("请求失败", data.msg || `错误码 ${data.code}`, [
+                    { label: "重试", onClick: generateSuggestion }
+                ]);
             }
         } catch (err) {
-            showError("网络异常：" + err.message);
+            clearTimeout(timeoutId);
+            if (err.name === "AbortError") {
+                showError("请求超时", `${TIMEOUT_MS / 1000} 秒内未收到响应，请检查网络或稍后重试。`, [
+                    { label: "重试", onClick: generateSuggestion }
+                ]);
+            } else {
+                showError("网络异常", err.message, [
+                    { label: "重试", onClick: generateSuggestion }
+                ]);
+            }
         } finally {
-            loadingCard.classList.remove("show");
-            btn.disabled = false;
+            stopLoadingTimer();
+            $("loadingCard").classList.remove("show");
+            $("generateBtn").disabled = false;
+            $("generateBtnLabel").innerHTML = "✨ 重新生成建议";
         }
     }
 
+    function renderResult(text, ts, fresh) {
+        $("resultBody").innerHTML = renderMarkdown(text);
+
+        const meta = $("resultMeta");
+        const parts = [];
+        if (ts) parts.push(`🕐 生成于 ${formatTs(ts)}`);
+        parts.push(`📊 约 ${countWords(text)} 字`);
+        if (currentUser && currentUser.realName) parts.push(`👤 ${currentUser.realName}`);
+        meta.textContent = parts.join(" · ");
+
+        const badge = $("resultFreshBadge");
+        badge.textContent = fresh ? "刚刚生成" : "上次结果（缓存）";
+        badge.className = "badge" + (fresh ? "" : " gray");
+
+        $("resultCard").classList.add("show");
+        // 滚动到结果
+        setTimeout(() => {
+            $("resultCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+    }
+
+    // ========= 结果动作 =========
+
     async function copyResult() {
-        const text = resultBody.innerText || "";
-        if (!text) {
-            showToast("没有可复制的内容");
-            return;
-        }
+        const text = $("resultBody").innerText || "";
+        if (!text) { showToast("没有可复制的内容"); return; }
         try {
             await navigator.clipboard.writeText(text);
-            showToast("已复制到剪贴板");
+            showToast("已复制到剪贴板", "success");
         } catch (_) {
-            // Fallback
             const ta = document.createElement("textarea");
-            ta.value = text;
-            document.body.appendChild(ta);
+            ta.value = text; document.body.appendChild(ta);
             ta.select();
-            try { document.execCommand("copy"); showToast("已复制"); }
-            catch (e) { showToast("复制失败"); }
+            try { document.execCommand("copy"); showToast("已复制", "success"); }
+            catch (e) { showToast("复制失败", "error"); }
             document.body.removeChild(ta);
         }
     }
 
-    // 回车触发
-    $("taIdInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") generateSuggestion();
-    });
+    function downloadResult() {
+        const text = $("resultBody").innerText || "";
+        if (!text) { showToast("没有可下载的内容"); return; }
+        const name = (currentUser && currentUser.realName) || "my";
+        const date = new Date().toISOString().slice(0, 10);
+        const blob = new Blob(["# AI 求职建议\n\n生成时间：" + formatTs(Date.now()) + "\n\n---\n\n" + text],
+            { type: "text/markdown;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `suggestion_${name}_${date}.md`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        showToast("下载已开始", "success");
+    }
+
+    function printResult() { window.print(); }
+
+    // ========= 初始化 =========
+
+    (async function init() {
+        // 1. 加载用户
+        await loadCurrentUser();
+
+        // 2. 优先展示缓存结果
+        const cached = loadCache();
+        if (cached && cached.text) {
+            renderResult(cached.text, cached.ts, false);
+            $("generateBtnLabel").innerHTML = "✨ 重新生成建议";
+        }
+
+        // 3. 键盘快捷键
+        document.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                if (!$("generateBtn").disabled) generateSuggestion();
+            }
+        });
+
+        // 4. TA 用户且无缓存 → 自动生成一次
+        if (currentUser && currentUser.userType === 1 && !cached) {
+            setTimeout(generateSuggestion, 300);
+        }
+    })();
 </script>
 </body>
 </html>
