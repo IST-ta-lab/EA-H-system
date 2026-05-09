@@ -1,41 +1,415 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>登录</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - TA Hiring System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+
+        :root {
+            --primary: #667eea;
+            --primary-2: #764ba2;
+            --secondary: #4facfe;
+            --success: #00b472;
+            --danger: #e74c3c;
+            --text: #333;
+            --light-text: #888;
+            --border: #e4e7ed;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 背景装饰 */
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        body::before {
+            width: 420px; height: 420px;
+            background: #4facfe;
+            top: -120px; left: -120px;
+            animation: float 12s ease-in-out infinite;
+        }
+        body::after {
+            width: 380px; height: 380px;
+            background: #f093fb;
+            bottom: -120px; right: -120px;
+            animation: float 14s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, 30px); }
+        }
+
+        .login-wrap {
+            width: 100%; max-width: 440px;
+            position: relative; z-index: 1;
+        }
+
+        .brand {
+            text-align: center; color: white;
+            margin-bottom: 24px;
+        }
+        .brand-logo {
+            width: 60px; height: 60px; border-radius: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 28px; margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .brand-name { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+        .brand-sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 36px 34px 28px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+            animation: cardIn 0.4s ease;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+        .card-sub { color: var(--light-text); font-size: 13px; margin-top: 4px; margin-bottom: 22px; }
+
+        .form-group { margin-bottom: 16px; position: relative; }
+        .form-label {
+            display: block; font-size: 13px;
+            color: #555; font-weight: 500; margin-bottom: 6px;
+        }
+        .input-wrap {
+            position: relative; display: flex; align-items: center;
+            border: 1px solid var(--border); border-radius: 10px;
+            transition: 0.2s; background: #fafbfd;
+        }
+        .input-wrap:focus-within {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+        .input-wrap .icon {
+            width: 40px; display: flex; align-items: center; justify-content: center;
+            color: var(--light-text); font-size: 16px;
+        }
+        .input-wrap input {
+            flex: 1; border: none; outline: none;
+            padding: 13px 12px 13px 0; font-size: 14px;
+            background: transparent; color: var(--text);
+        }
+        .input-wrap input::placeholder { color: #b5bac3; }
+
+        .toggle-pwd {
+            background: none; border: none; cursor: pointer;
+            color: var(--light-text); padding: 0 14px; font-size: 13px;
+            user-select: none;
+        }
+        .toggle-pwd:hover { color: var(--primary); }
+
+        .row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 8px 0 18px; font-size: 13px;
+        }
+        .remember {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #555; cursor: pointer; user-select: none;
+        }
+        .remember input { accent-color: var(--primary); }
+        .link {
+            color: var(--primary); text-decoration: none; font-weight: 500;
+        }
+        .link:hover { text-decoration: underline; }
+
+        .btn-primary {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 15px; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+        .btn-spinner {
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-top-color: white; border-radius: 50%;
+            animation: spin 0.8s linear infinite; display: none;
+        }
+        .btn-primary.loading .btn-spinner { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 22px 0 16px; color: var(--light-text); font-size: 12px;
+        }
+        .divider::before, .divider::after {
+            content: ""; flex: 1; height: 1px; background: var(--border);
+        }
+
+        .role-hints {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 8px; font-size: 12px;
+        }
+        .role-hint {
+            padding: 10px 8px; border: 1px solid var(--border);
+            border-radius: 8px; text-align: center;
+            color: #666; background: #fafbfd;
+        }
+        .role-hint b { display: block; color: #333; font-size: 13px; margin-bottom: 2px; }
+
+        .footer-row {
+            text-align: center; margin-top: 20px; font-size: 13px; color: #666;
+        }
+        .footer-row a { color: var(--primary); font-weight: 500; margin: 0 4px; }
+
+        /* 提示框 */
+        .alert {
+            display: flex; gap: 10px; align-items: center;
+            padding: 11px 14px; border-radius: 10px;
+            font-size: 13px; margin-bottom: 16px;
+            background: #fdecea; border: 1px solid #f5c2c7; color: #842029;
+            animation: shake 0.4s ease;
+        }
+        .alert.hidden { display: none; }
+        .alert.success { background: #e6f7ef; border-color: #b7e4c7; color: #0b6b3a; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        /* Caps Lock 提示 */
+        .caps-hint {
+            display: none; margin-top: 6px;
+            font-size: 12px; color: var(--danger);
+        }
+        .caps-hint.show { display: block; }
+
+        /* 底部版权 */
+        .copyright {
+            position: absolute; bottom: 14px; left: 0; right: 0;
+            text-align: center; color: rgba(255, 255, 255, 0.75);
+            font-size: 12px; z-index: 1;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 26px 22px; }
+            .role-hints { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-<h2>助教招聘系统 - 登录</h2>
-<input id="account" placeholder="账号">
-<input id="pwd" placeholder="密码" type="password">
-<button onclick="login()">登录</button>
+
+<div class="login-wrap">
+    <div class="brand">
+        <div class="brand-logo">🎓</div>
+        <div class="brand-name">BUPT TA Hiring System</div>
+        <div class="brand-sub">北邮国际学院 · 助教招聘系统</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">欢迎回来</div>
+        <div class="card-sub">请使用你的账号登录以继续</div>
+
+        <div class="alert hidden" id="alert"></div>
+
+        <form id="loginForm" autocomplete="on" novalidate>
+            <div class="form-group">
+                <label class="form-label" for="username">用户名</label>
+                <div class="input-wrap">
+                    <span class="icon">👤</span>
+                    <input id="username" name="username" type="text"
+                           autocomplete="username" placeholder="请输入用户名" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">密码</label>
+                <div class="input-wrap">
+                    <span class="icon">🔒</span>
+                    <input id="password" name="password" type="password"
+                           autocomplete="current-password" placeholder="请输入密码" required>
+                    <button type="button" class="toggle-pwd" id="togglePwd" aria-label="切换密码显示">显示</button>
+                </div>
+                <div class="caps-hint" id="capsHint">⚠ 大写锁定（Caps Lock）已开启</div>
+            </div>
+
+            <div class="row">
+                <label class="remember">
+                    <input type="checkbox" id="rememberMe"> 记住用户名
+                </label>
+                <a href="guest.html" class="link">以访客浏览</a>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <span class="btn-spinner"></span>
+                <span id="submitLabel">登 录</span>
+            </button>
+        </form>
+
+        <div class="divider">还没有账号？</div>
+
+        <div class="role-hints">
+            <a class="role-hint" href="index.html#registerTA">
+                <b>TA</b>助教申请者
+            </a>
+            <a class="role-hint" href="index.html#registerMO">
+                <b>MO</b>模块负责人
+            </a>
+            <a class="role-hint" href="index.html#registerAdmin">
+                <b>Admin</b>系统管理员
+            </a>
+        </div>
+
+        <div class="footer-row">
+            <a href="index.html">前往注册页</a> · <a href="index.html">首页</a>
+        </div>
+    </div>
+</div>
+
+<div class="copyright">© BUPT International School · TA Hiring System</div>
 
 <script>
-    // 直接写，不使用模块化，100%兼容Tomcat
-    async function login() {
-        alert("点击登录，开始请求后端"); // 你点了一定会先弹出这个！
+    const BASE = "/tapj";
+    const REMEMBER_KEY = "tapj.login.username";
 
-        let account = document.getElementById("account").value;
-        let pwd = document.getElementById("pwd").value;
+    const $ = (id) => document.getElementById(id);
+    const form = $("loginForm");
+    const alertBox = $("alert");
+    const submitBtn = $("submitBtn");
+
+    // ===== 工具 =====
+    function showAlert(msg, type = "error") {
+        alertBox.textContent = msg;
+        alertBox.className = "alert" + (type === "success" ? " success" : "");
+    }
+    function hideAlert() { alertBox.classList.add("hidden"); }
+
+    function setLoading(on) {
+        submitBtn.disabled = on;
+        submitBtn.classList.toggle("loading", on);
+        $("submitLabel").textContent = on ? "登录中..." : "登 录";
+    }
+
+    // 按角色跳转
+    function redirectByRole(userType) {
+        // 1=TA, 2=MO, 3=Admin
+        const map = { 1: "ta.html", 2: "mo.html", 3: "admin.html" };
+        location.href = map[userType] || "ta.html";
+    }
+
+    // ===== 密码显隐 =====
+    $("togglePwd").addEventListener("click", () => {
+        const pwd = $("password");
+        const shown = pwd.type === "text";
+        pwd.type = shown ? "password" : "text";
+        $("togglePwd").textContent = shown ? "显示" : "隐藏";
+        pwd.focus();
+    });
+
+    // ===== CapsLock 检测 =====
+    const capsHint = $("capsHint");
+    ["keydown", "keyup"].forEach(evt => {
+        $("password").addEventListener(evt, (e) => {
+            const on = e.getModifierState && e.getModifierState("CapsLock");
+            capsHint.classList.toggle("show", !!on);
+        });
+    });
+    $("password").addEventListener("blur", () => capsHint.classList.remove("show"));
+
+    // ===== 记住用户名 =====
+    (function restoreRemember() {
+        const saved = localStorage.getItem(REMEMBER_KEY);
+        if (saved) {
+            $("username").value = saved;
+            $("rememberMe").checked = true;
+            $("password").focus();
+        } else {
+            $("username").focus();
+        }
+    })();
+
+    // ===== 表单提交 =====
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideAlert();
+
+        const username = $("username").value.trim();
+        const password = $("password").value;
+
+        if (!username) { showAlert("请输入用户名"); $("username").focus(); return; }
+        if (!password) { showAlert("请输入密码"); $("password").focus(); return; }
+
+        // 记住用户名
+        if ($("rememberMe").checked) localStorage.setItem(REMEMBER_KEY, username);
+        else localStorage.removeItem(REMEMBER_KEY);
+
+        setLoading(true);
 
         try {
-            let response = await fetch("/tapj/user/login", {
+            const body = new URLSearchParams();
+            body.append("username", username);
+            body.append("password", password);
+
+            const res = await fetch(`${BASE}/user?action=login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userAccount: account, userPwd: pwd })
+                credentials: "include",
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+                body: body.toString()
             });
 
-            let res = await response.json();
-            alert("后端返回：" + res.msg);
+            let data;
+            try { data = await res.json(); }
+            catch (_) { throw new Error("服务器响应解析失败"); }
 
-            if (res.code === 200) {
-                location.href = "job-list.html";
+            if (data.code === 200 && data.data) {
+                showAlert("登录成功，正在跳转...", "success");
+                setTimeout(() => redirectByRole(data.data.userType), 400);
+            } else if (data.code === 400) {
+                showAlert(data.msg || "用户名或密码错误");
+                $("password").select();
+            } else {
+                showAlert(data.msg || `登录失败（code=${data.code}）`);
             }
-        } catch (error) {
-            alert("请求失败：" + error);
-            console.log(error);
+        } catch (err) {
+            showAlert("网络异常：" + err.message);
+        } finally {
+            setLoading(false);
         }
-    }
+    });
+
+    // ===== 已登录自动跳转 =====
+    (async function autoRedirect() {
+        try {
+            const res = await fetch(`${BASE}/user?action=getLoginUser`, { credentials: "include" });
+            const data = await res.json();
+            if (data.code === 200 && data.data && data.data.userType) {
+                showAlert("检测到已登录，正在跳转...", "success");
+                setTimeout(() => redirectByRole(data.data.userType), 500);
+            }
+        } catch (_) { /* 静默 */ }
+    })();
 </script>
 </body>
 </html>
