@@ -16,4 +16,6 @@ public interface JobService {
     Job getJobById(String jobId);
     // 6. MO修改自己发布的岗位
     boolean updateJob(Job job, String moUserId);
+    // 7. MO删除自己发布的岗位
+    boolean deleteJob(String jobId, String moUserId);
 }

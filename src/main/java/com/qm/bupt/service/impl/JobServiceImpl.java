@@ -70,4 +70,16 @@ public class JobServiceImpl implements JobService {
         job.setHiredNum(existingJob.getHiredNum());
         return jobDAO.updateById(job, job.getJobId(), "jobId");
     }
+
+    @Override
+    public boolean deleteJob(String jobId, String moUserId) {
+        Job existingJob = jobDAO.getById(jobId, "jobId").orElse(null);
+        if (existingJob == null) {
+            return false;
+        }
+        if (!moUserId.equals(existingJob.getPublisherMoId())) {
+            return false;
+        }
+        return jobDAO.deleteById(jobId, "jobId");
+    }
 }
