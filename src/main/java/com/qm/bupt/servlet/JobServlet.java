@@ -275,4 +275,35 @@ public class JobServlet extends BaseServlet {
             writeJson(response, Result.error(500, "修改失败"));
         }
     }
+
+    /**
+     * 8. MO删除自己发布的岗位（必须登录）
+     * POST /job?action=delete&jobId=xxx
+     */
+    public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "未登录"));
+            return;
+        }
+        if (loginUser.getUserType() != 2) {
+            writeJson(response, Result.error(403, "无权限，仅MO可删除岗位"));
+            return;
+        }
+
+        String jobId = request.getParameter("jobId");
+        if (jobId == null || jobId.isEmpty()) {
+            writeJson(response, Result.error(400, "缺少jobId参数"));
+            return;
+        }
+
+        boolean success = jobService.deleteJob(jobId, loginUser.getUserId());
+        if (success) {
+            writeJson(response, Result.success("岗位删除成功"));
+        } else {
+            writeJson(response, Result.error(404, "岗位不存在或无权删除"));
+        }
+    }
 }
