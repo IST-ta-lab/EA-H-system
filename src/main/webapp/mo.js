@@ -1355,6 +1355,37 @@
       await loadJobsWithApplicants();
     }
 
+    // 已实现后端接口连接
+    // POST /job?action=delete
+    async function deleteJob(jobId) {
+      const normalizedId = String(jobId || '').trim();
+      if (!normalizedId) {
+        showToast('No position selected.');
+        return false;
+      }
+
+      const params = new URLSearchParams();
+      params.append('jobId', normalizedId);
+
+      const r = await request('/job?action=delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+      });
+
+      if (r.ok && r.data) {
+        showToast(r.data.msg || 'Position deleted.');
+      } else {
+        showToast('Failed to delete position.');
+      }
+
+      if (r.ok && r.data && r.data.code === 200) {
+        await loadJobsWithApplicants();
+        return true;
+      }
+      return false;
+    }
+
     function bindGlobalEvents() {
       if (dom.btnMessageCenter) {
         dom.btnMessageCenter.addEventListener('click', () => {
@@ -1386,11 +1417,27 @@
       }
 
       if (dom.btnConfirmDelete) {
-        dom.btnConfirmDelete.addEventListener('click', () => {
-          // 鏈疄鐜板悗绔帴鍙ｏ紝淇濈暀鍓嶇灞曠ず
-          // Sample APIs do not include MO-side delete job endpoint.
-          closeModal(dom.deleteModal);
-          showToast('Delete endpoint is not available in current API sample.');
+        dom.btnConfirmDelete.addEventListener('click', async () => {
+          const targetJobId = state.deletingJobId;
+          if (!targetJobId) {
+            closeModal(dom.deleteModal);
+            showToast('No position selected.');
+            return;
+          }
+
+          const originalText = dom.btnConfirmDelete.textContent;
+          dom.btnConfirmDelete.disabled = true;
+          dom.btnConfirmDelete.textContent = 'Deleting...';
+
+          const ok = await deleteJob(targetJobId);
+
+          dom.btnConfirmDelete.disabled = false;
+          dom.btnConfirmDelete.textContent = originalText;
+
+          if (ok) {
+            closeModal(dom.deleteModal);
+            state.deletingJobId = null;
+          }
         });
       }
 
