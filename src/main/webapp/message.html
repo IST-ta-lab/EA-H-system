@@ -557,6 +557,28 @@
             }
         }
 
+        /* 字符计数 */
+        .char-count {
+            font-size: 12px;
+            text-align: right;
+            margin-top: 4px;
+            min-height: 16px;
+            transition: color 0.2s;
+        }
+
+        /* 会话项键盘可聚焦 */
+        .conv-item { outline: none; }
+        .conv-item:focus-visible {
+            background: #f0f4ff;
+            box-shadow: inset 0 0 0 2px var(--primary-color);
+        }
+
+        /* 发送按钮 loading 态 */
+        .send-btn.sending {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
         @media (max-width: 900px) {
             .main-container {
                 flex-direction: column;
@@ -573,67 +595,103 @@
                 flex: 1;
                 min-height: 0;
             }
+            .top-bar { padding: 12px 16px; }
+            .back-btn { padding: 8px 14px; font-size: 13px; }
+            .message-bubble { max-width: 220px; }
+            .input-field { font-size: 16px; /* 避免 iOS 聚焦缩放 */ }
+            .job-input-row { flex-direction: column; gap: 8px; }
+        }
+
+        /* 焦点可见 */
+        .send-btn:focus-visible,
+        .back-btn:focus-visible,
+        .new-conv-btn:focus-visible,
+        .conv-item:focus-visible,
+        .modal-btn:focus-visible,
+        .input-field:focus-visible,
+        .modal-input:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* 降级动效 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001s !important;
+                transition-duration: 0.001s !important;
+            }
+            .chat-messages { scroll-behavior: auto; }
         }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
+<div class="top-bar" role="banner">
     <div class="logo-section">
-        <div class="logo-icon">💬</div>
+        <div class="logo-icon" aria-hidden="true">💬</div>
         <div class="logo-text">Message Center</div>
     </div>
     <div class="top-actions">
-        <div class="unread-badge" id="unreadBadge">0 条未读</div>
-        <button class="back-btn" onclick="goHome()">← 返回主页</button>
+        <div class="unread-badge" id="unreadBadge" role="status" aria-live="polite" aria-atomic="true">0 条未读</div>
+        <button class="back-btn" onclick="goHome()" aria-label="返回主页">← 返回主页</button>
     </div>
 </div>
 
-<div class="main-container">
-    <div class="conversation-list">
+<div class="main-container" role="main">
+    <aside class="conversation-list" aria-label="会话列表">
         <div class="conv-header">
             <div class="conv-title">会话列表</div>
-            <button class="new-conv-btn" onclick="openNewConvModal()">+</button>
+            <button class="new-conv-btn" onclick="openNewConvModal()"
+                    aria-label="新建会话" title="新建会话">+</button>
         </div>
-        <div class="conv-items" id="convItems">
+        <div class="conv-items" id="convItems" role="list">
             <div class="conv-empty">暂无会话，点击右上角+新建</div>
         </div>
-    </div>
+    </aside>
 
-    <div class="chat-window">
+    <section class="chat-window" aria-label="聊天窗口">
         <div class="chat-header">
-            <div class="chat-title" id="chatTitle">选择一个会话开始聊天</div>
+            <div class="chat-title" id="chatTitle" aria-live="polite">选择一个会话开始聊天</div>
         </div>
-        <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages" id="chatMessages" aria-live="polite" aria-relevant="additions">
             <div class="chat-empty">
-                <div class="chat-empty-icon">💬</div>
+                <div class="chat-empty-icon" aria-hidden="true">💬</div>
                 <div>点击左侧「+」新建会话，开始聊天</div>
             </div>
         </div>
         <div class="chat-input-area" id="chatInputArea" style="display: none;">
             <div class="job-input-row">
-                <input type="text" class="job-input" id="jobIdInput" placeholder="关联岗位ID（可选）">
-                <input type="text" class="job-input" id="jobTitleInput" placeholder="关联岗位名称（可选）">
+                <input type="text" class="job-input" id="jobIdInput"
+                       placeholder="关联岗位ID（可选）" aria-label="关联岗位ID">
+                <input type="text" class="job-input" id="jobTitleInput"
+                       placeholder="关联岗位名称（可选）" aria-label="关联岗位名称">
             </div>
             <div class="input-row" style="margin-top: 12px;">
-                <input type="text" class="input-field" id="messageInput" placeholder="输入消息内容...">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+                <input type="text" class="input-field" id="messageInput"
+                       placeholder="输入消息内容..." aria-label="消息内容"
+                       autocomplete="off" maxlength="500">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()"
+                        aria-label="发送消息">发送</button>
             </div>
+            <div class="char-count" id="charCount" aria-live="off"></div>
         </div>
-    </div>
+    </section>
 </div>
 
-<div class="modal-overlay" id="newConvModal">
+<div class="modal-overlay" id="newConvModal" role="dialog" aria-modal="true"
+     aria-labelledby="newConvModalTitle">
     <div class="modal-card">
-        <h3 class="modal-title">新建会话</h3>
+        <h3 class="modal-title" id="newConvModalTitle">新建会话</h3>
         <div class="modal-input-group">
-            <label class="modal-label">对方用户ID <span style="color: #dc3545;">*</span></label>
-            <input type="text" class="modal-input" id="targetUserId" placeholder="请输入对方的用户ID">
+            <label class="modal-label" for="targetUserId">对方用户ID <span style="color: #dc3545;">*</span></label>
+            <input type="text" class="modal-input" id="targetUserId" placeholder="请输入对方的用户ID"
+                   autocomplete="off" required>
             <div class="modal-tip">用户ID可从岗位详情、申请列表中获取</div>
         </div>
         <div class="modal-input-group">
-            <label class="modal-label">对方姓名/备注 <span style="color: #dc3545;">*</span></label>
-            <input type="text" class="modal-input" id="targetUserName" placeholder="请输入对方的姓名/备注">
+            <label class="modal-label" for="targetUserName">对方姓名/备注 <span style="color: #dc3545;">*</span></label>
+            <input type="text" class="modal-input" id="targetUserName" placeholder="请输入对方的姓名/备注"
+                   required>
         </div>
         <div class="modal-btns">
             <button class="modal-btn modal-btn-cancel" onclick="closeNewConvModal()">取消</button>
@@ -642,7 +700,7 @@
     </div>
 </div>
 
-<div class="status-toast" id="statusToast"></div>
+<div class="status-toast" id="statusToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
     const BASE_URL = '/tapj';
@@ -650,15 +708,15 @@
     let currentTargetUserId = null;
     let currentTargetUserName = null;
     let conversations = {};
-    let isCreatingConv = false;  // 防止重复创建
+    let isCreatingConv = false;
 
     async function goHome() {
         try {
             const res = await fetch(BASE_URL + '/user?action=getLoginUser', { credentials: 'include' });
             const data = await res.json();
             if (data.code !== 200 || !data.data) {
-                alert("未登录或登录已过期，请重新登录");
-                window.location.href = "index.html";
+                showToast("未登录或登录已过期", 'error');
+                setTimeout(() => { window.location.href = "index.html"; }, 1000);
                 return;
             }
             const userType = data.data.userType;
@@ -668,7 +726,7 @@
             else window.location.href = "index.html";
         } catch (e) {
             console.error(e);
-            alert("获取用户信息失败，请重试");
+            showToast("获取用户信息失败", 'error');
         }
     }
 
@@ -754,11 +812,15 @@
                     const name = conversations[uid] || '未知用户';
                     const hasUnread = result.data[uid].unread || false;
                     html += `
-                        <div class="conv-item" data-uid="${uid}" onclick="selectConversation('${uid}', '${name.replace(/'/g, "\\'")}')">
+                        <div class="conv-item" role="listitem" tabindex="0"
+                             data-uid="${uid}"
+                             onclick="selectConversation('${uid}', '${name.replace(/'/g, "\\'")}')"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectConversation('${uid}', '${name.replace(/'/g, "\\'")}')}"
+                             aria-label="与 ${escapeHtml(name)} 的会话${hasUnread ? '（有未读消息）' : ''}">
                             <div class="conv-info">
                                 <div class="conv-name">${escapeHtml(name)}</div>
                             </div>
-                            <div class="conv-unread-dot ${hasUnread ? 'show' : ''}" id="unread-${uid}"></div>
+                            <div class="conv-unread-dot ${hasUnread ? 'show' : ''}" id="unread-${uid}" aria-hidden="true"></div>
                         </div>
                     `;
                 });
@@ -779,13 +841,18 @@
     }
 
     function openNewConvModal() {
-        document.getElementById('newConvModal').classList.add('show');
+        const modal = document.getElementById('newConvModal');
+        modal.classList.add('show');
         document.getElementById('targetUserId').value = '';
         document.getElementById('targetUserName').value = '';
+        // 聚焦到第一个输入框
+        setTimeout(() => document.getElementById('targetUserId').focus(), 100);
     }
 
     function closeNewConvModal() {
         document.getElementById('newConvModal').classList.remove('show');
+        // 焦点回到触发按钮
+        document.querySelector('.new-conv-btn').focus();
     }
 
     async function createNewConversation() {
@@ -976,9 +1043,53 @@
         await loadUnreadCount();
         await loadConversations();
         await applyPrefillConversation();
-        document.getElementById('messageInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-        document.getElementById('newConvModal').addEventListener('click', (e) => { if (e.target === document.getElementById('newConvModal')) closeNewConvModal(); });
-        document.getElementById('messageInput').focus();
+
+        const msgInput = document.getElementById('messageInput');
+
+        // Enter 发送，Shift+Enter 不触发（留给将来 textarea 换行）
+        msgInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 字符计数
+        msgInput.addEventListener('input', () => {
+            const len = msgInput.value.length;
+            const counter = document.getElementById('charCount');
+            if (len > 400) {
+                counter.textContent = `${len}/500`;
+                counter.style.color = len >= 500 ? '#dc3545' : '#f39c12';
+            } else {
+                counter.textContent = '';
+            }
+        });
+
+        // 点击 modal 背景关闭
+        document.getElementById('newConvModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('newConvModal')) closeNewConvModal();
+        });
+
+        // ESC 关闭 modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('newConvModal');
+                if (modal.classList.contains('show')) closeNewConvModal();
+            }
+        });
+
+        // modal 内 Enter 提交
+        ['targetUserId', 'targetUserName'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    createNewConversation();
+                }
+            });
+        });
+
+        msgInput.focus();
     };
 </script>
 </body>
