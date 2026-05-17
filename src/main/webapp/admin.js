@@ -227,24 +227,10 @@ async function loadLoginUser() {
 // 修复问题3：加载所有申请记录，用于计算TA工作负荷
 async function loadAllApplications() {
     const r = await request("/application?action=listAll");
-    console.log('=== 申请记录API响应 ===');
-    console.log('r.ok:', r.ok);
-    console.log('r.data:', r.data);
-    console.log('r.data.data:', r.data?.data);
-    console.log('r.data.code:', r.data?.code);
-
     if (r.ok && r.data && r.data.code === 200) {
         state.backendApplications = Array.isArray(r.data.data) ? r.data.data : [];
-        // 调试：打印申请记录的关键字段
-        console.log('=== 申请记录调试 ===');
-        console.log('申请记录数量:', state.backendApplications.length);
-        if (state.backendApplications.length > 0) {
-            console.log('第一条申请记录的所有字段:', Object.keys(state.backendApplications[0]));
-            console.log('第一条申请记录:', JSON.stringify(state.backendApplications[0], null, 2));
-        }
         return state.backendApplications;
     }
-console.log('申请记录加载失败');
     state.backendApplications = [];
     return [];
 }
@@ -470,32 +456,18 @@ async function loadAllUsers() {
             let userApplications = [];
 
             if (userDetail) {
-                console.log(`TA ${ta.userId} - userDetail keys:`, Object.keys(userDetail));
-
-                // 使用正确的字段名 taApplicationList
                 userApplications = userDetail.taApplicationList || [];
-
-                console.log(`TA ${ta.userId} - taApplicationList:`, userApplications);
             }
 
-            // 调试：打印匹配过程
-            console.log(`=== TA ${ta.userId} (${ta.realName || ta.username}) ===`);
-            console.log('找到的申请记录:', userApplications);
-
-            // 计算所有申请岗位的总工作时长
-            // 逻辑：先获取申请记录中的岗位ID，再从岗位列表中查找对应岗位的workHoursWeekly并累加
             let totalWorkHours = 0;
             let recentTasks = [];
-            let appliedJobs = []; // 存储完整的岗位信息用于详情展示
+            let appliedJobs = [];
 
             userApplications.forEach(app => {
-                // 从申请记录中获取岗位ID
                 const appJobId = app.jobId;
-                // 从岗位列表中查找对应岗位的工作时长
                 const relatedJob = state.backendJobsList.find(j =>
                     String(j.jobId) === String(appJobId)
                 );
-                console.log('查找岗位:', appJobId, '找到:', relatedJob ? relatedJob.jobName : '未找到', '工作时长:', relatedJob?.workHoursWeekly);
                 if (relatedJob) {
                     // 只要找到岗位就添加，不管workHoursWeekly是否为0
                     const workHours = relatedJob.workHoursWeekly || 0;
@@ -526,10 +498,7 @@ async function loadAllUsers() {
                     });
                 }
             });
-            console.log('总工作时长:', totalWorkHours);
-            console.log('找到的申请岗位数量:', appliedJobs.length);
 
-            // 修复问题4：调整工作负荷状态为三个（红黄绿）
             // 计算工作负荷状态：基于每周工作小时数
             // 假设标准工作上限为20小时
             const maxHours = 20;
@@ -620,25 +589,14 @@ async function logout() {
 // 已实现后端接口连接 - 加载所有岗位
 async function loadAllJobs() {
     const r = await request("/admin?action=listAllJobs");
-    console.log('=== 岗位列表API响应 ===');
-    console.log('r.ok:', r.ok);
-    console.log('r.data:', r.data);
 
     if (r.ok && r.data && r.data.code === 200) {
-        // 直接使用后端返回的原始数据
         state.backendJobsList = Array.isArray(r.data.data) ? r.data.data : [];
-        console.log('岗位列表数量:', state.backendJobsList.length);
-        if (state.backendJobsList.length > 0) {
-            console.log('第一个岗位:', JSON.stringify(state.backendJobsList[0], null, 2));
-        }
 
-        // 更新统计数据
         state.stats.totalPosts = state.backendJobsList.length;
 
         return state.backendJobsList;
     }
-
-    console.log('岗位列表加载失败');
     showError((r.data && r.data.msg) || r.error || "Failed to load job list");
     return [];
 }
@@ -665,10 +623,6 @@ async function deleteJob(jobId) {
 // 已实现后端接口连接 - 加载用户详情
 async function loadUserDetail(userId) {
     const r = await request(`/admin?action=getUserDetail&userId=${encodeURIComponent(userId)}`);
-    console.log(`=== getUserDetail API 响应 (userId: ${userId}) ===`);
-    console.log('r.ok:', r.ok);
-    console.log('r.data:', r.data);
-    console.log('r.data.data 完整内容:', JSON.stringify(r.data?.data, null, 2));
 
     if (r.ok && r.data && r.data.code === 200) {
         return r.data.data;
@@ -1121,31 +1075,6 @@ function render() {
     bindPageEvents();
 }
 
-function cacheElements() {
-    els.heroActions = document.getElementById("heroActions");
-    els.monitorSwitcher = document.getElementById("monitorSwitcher");
-    els.monitorContent = document.getElementById("monitorContent");
-
-    els.openRequestsBtn = document.getElementById("openRequestsBtn");
-    els.requestDot = document.getElementById("requestDot");
-
-    els.taDetailModalOverlay = document.getElementById("taDetailModalOverlay");
-    els.statsModalOverlay = document.getElementById("statsModalOverlay");
-    els.usersModalOverlay = document.getElementById("usersModalOverlay");
-    els.userDetailModalOverlay = document.getElementById("userDetailModalOverlay");
-    els.requestsModalOverlay = document.getElementById("requestsModalOverlay");
-    els.allJobsModalOverlay = document.getElementById("allJobsModalOverlay");
-    els.jobDetailModalOverlay = document.getElementById("jobDetailModalOverlay");
-
-    els.taDetailModalBody = document.getElementById("taDetailModalBody");
-    els.statsModalBody = document.getElementById("statsModalBody");
-    els.usersModalBody = document.getElementById("usersModalBody");
-    els.userDetailModalBody = document.getElementById("userDetailModalBody");
-    els.requestsModalBody = document.getElementById("requestsModalBody");
-    els.allJobsModalBody = document.getElementById("allJobsModalBody");
-    els.jobDetailModalBody = document.getElementById("jobDetailModalBody");
-}
-
 function bindPageEvents() {
     const openStatsBtn = document.getElementById("openStatsBtn");
     const openUsersBtn = document.getElementById("openUsersBtn");
@@ -1228,20 +1157,21 @@ function bindTAViewEvents() {
         }
     });
 
-    // 删除TA按钮
-    parent.addEventListener("click", e => {
-        const btn = e.target.closest(".delete-ta-btn");
-        if (btn && btn.dataset.bound !== "true") {
-            btn.addEventListener("click", async () => {
+    // 删除TA按钮 - 使用事件委托，避免重复绑定
+    let taDeleteHandled = false;
+    if (!taDeleteHandled) {
+        parent.addEventListener("click", async e => {
+            const btn = e.target.closest(".delete-ta-btn");
+            if (btn) {
                 const taId = String(btn.dataset.taId);
                 const ta = getTAById(taId);
                 if (ta && confirm(`Are you sure you want to delete TA "${ta.name}"?`)) {
                     await deleteUser(taId);
                 }
-            });
-            btn.dataset.bound = "true";
-        }
-    });
+            }
+        });
+        taDeleteHandled = true;
+    }
 }
 
 function bindMOViewEvents() {
@@ -1305,35 +1235,30 @@ function bindMOViewEvents() {
         }
     });
 
-    // 删除岗位按钮（MO发布的岗位）
-    parent.addEventListener("click", e => {
-        const btn = e.target.closest(".delete-post-btn");
-        if (btn && btn.dataset.bound !== "true") {
-            btn.addEventListener("click", async () => {
-                const jobId = String(btn.dataset.postId);
-                if (confirm(`Are you sure you want to delete this job?`)) {
+    // 删除岗位和删除MO按钮 - 使用事件委托，避免重复绑定
+    let moDeleteHandled = false;
+    if (!moDeleteHandled) {
+        parent.addEventListener("click", async e => {
+            const postBtn = e.target.closest(".delete-post-btn");
+            if (postBtn) {
+                const jobId = String(postBtn.dataset.postId);
+                if (confirm("Are you sure you want to delete this job?")) {
                     await deleteJob(jobId);
-                    render(); // 刷新视图
+                    render();
                 }
-            });
-            btn.dataset.bound = "true";
-        }
-    });
+            }
 
-    // 删除MO按钮
-    parent.addEventListener("click", e => {
-        const btn = e.target.closest(".delete-mo-btn");
-        if (btn && btn.dataset.bound !== "true") {
-            btn.addEventListener("click", async () => {
-                const moId = String(btn.dataset.moId);
+            const moBtn = e.target.closest(".delete-mo-btn");
+            if (moBtn) {
+                const moId = String(moBtn.dataset.moId);
                 const mo = getMOById(moId);
                 if (mo && confirm(`Are you sure you want to delete MO "${mo.name}"?`)) {
                     await deleteUser(moId);
                 }
-            });
-            btn.dataset.bound = "true";
-        }
-    });
+            }
+        });
+        moDeleteHandled = true;
+    }
 }
 
 function bindLogsViewEvents() {
@@ -1399,7 +1324,6 @@ function openTADetailModal(id) {
     // 直接使用字符串id进行匹配
     const ta = getTAById(id);
     if (!ta) {
-        console.error("TA not found, id:", id, "available ids:", state.taWorkloads.map(t => t.id));
         alert("TA user not found. Please refresh the page and try again.");
         return;
     }
