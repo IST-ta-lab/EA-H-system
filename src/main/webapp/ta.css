@@ -723,6 +723,47 @@ button {
     margin-bottom: 8px;
 }
 
+.empty-state span {
+    display: block;
+    line-height: 1.75;
+}
+
+.empty-state-compact {
+    margin-top: 12px;
+    padding: 18px 16px;
+    border-radius: 18px;
+}
+
+.empty-state-tips {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.empty-tip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(96, 165, 250, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(96, 165, 250, 0.16);
+    font-size: 12px;
+}
+
+.empty-hint strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.empty-hint p {
+    margin: 0;
+}
+
 .profile-page-grid {
     display: grid;
     gap: 18px;
