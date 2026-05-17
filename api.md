@@ -81,6 +81,7 @@
 |--------|--------|------------|
 | POST | `publish` | `jobName`, `jobType`, `belongModule`, `jobDesc`, `workHoursWeekly`, `recruitNum`, `applyDeadline`, `tags` |
 | POST | `update` | `jobId`, `jobName`, `jobType`, `belongModule`, `jobDesc`, `workHoursWeekly`, `recruitNum`, `applyDeadline`, `tags` |
+| POST | `delete` | `jobId` |
 | GET | `listAll` | (none) |
 | GET | `listOpen` | (none) |
 | GET | `listMy` | (none) |
