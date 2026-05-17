@@ -566,6 +566,24 @@ function renderJobMatchSummary(match) {
   `;
 }
 
+function renderEmptyState({ title, description, tips = [], compact = false }) {
+    return `
+    <div class="empty-state ${compact ? "empty-state-compact" : ""}">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(description)}</span>
+      ${
+        tips.length > 0
+            ? `
+              <div class="empty-state-tips">
+                ${tips.map(tip => `<span class="empty-tip">${escapeHtml(tip)}</span>`).join("")}
+              </div>
+            `
+            : ""
+    }
+    </div>
+  `;
+}
+
 function setView(viewName) {
     if (viewName === "profile" && !portalConfig.allowProfileView) {
         handleRestrictedAction();
@@ -899,6 +917,7 @@ function renderFeedView() {
     const recommendedCount = portalConfig.showRecommendations
         ? filteredJobs.filter(job => getJobRecommendationScore(job) > 0).length
         : 0;
+    const hasRecommendations = Object.keys(state.recommendedJobs || {}).length > 0;
     const pageDescription = recommendedCount > 0
         ? portalConfig.uiText.pageRecommendedDescription
             .replace("{count}", String(recommendedCount))
@@ -945,14 +964,29 @@ function renderFeedView() {
 
     <div class="job-list" id="jobList">
       ${
+        portalConfig.showRecommendations && state.recommendationLoaded && !hasRecommendations && state.jobs.length > 0
+            ? `
+              <div class="status-box empty-hint">
+                <strong>No personalized recommendations yet.</strong>
+                <p>Open more role details or update your profile tags to help the system surface stronger matches.</p>
+              </div>
+            `
+            : ""
+    }
+      ${
         filteredJobs.length > 0
             ? filteredJobs.map(job => renderJobCard(job)).join("")
-            : `
-            <div class="empty-state glass-card">
-              <strong>No positions match your current criteria.</strong>
-              <span>Try adjusting the search text or selected tags.</span>
-            </div>
-          `
+            : state.jobs.length === 0
+                ? renderEmptyState({
+                    title: "No open roles are available right now.",
+                    description: "Check back later for newly published TA opportunities.",
+                    tips: ["Refresh after new postings are released", "Keep your profile ready for future openings"]
+                })
+                : renderEmptyState({
+                    title: "No roles match your current filters.",
+                    description: "Try adjusting your search text or selected tags to see more results.",
+                    tips: ["Clear one or two tags", "Search by a broader course keyword"]
+                })
     }
     </div>
   `;
@@ -969,14 +1003,29 @@ function renderJobList() {
 
     jobListEl.innerHTML = `
       ${
+        portalConfig.showRecommendations && state.recommendationLoaded && Object.keys(state.recommendedJobs || {}).length === 0 && state.jobs.length > 0
+            ? `
+              <div class="status-box empty-hint">
+                <strong>No personalized recommendations yet.</strong>
+                <p>Open more role details or update your profile tags to help the system surface stronger matches.</p>
+              </div>
+            `
+            : ""
+    }
+      ${
         filteredJobs.length > 0
             ? filteredJobs.map(job => renderJobCard(job)).join("")
-            : `
-            <div class="empty-state glass-card">
-              <strong>No positions match your current criteria.</strong>
-              <span>Try adjusting the search text or selected tags.</span>
-            </div>
-          `
+            : state.jobs.length === 0
+                ? renderEmptyState({
+                    title: "No open roles are available right now.",
+                    description: "Check back later for newly published TA opportunities.",
+                    tips: ["Refresh after new postings are released", "Keep your profile ready for future openings"]
+                })
+                : renderEmptyState({
+                    title: "No roles match your current filters.",
+                    description: "Try adjusting your search text or selected tags to see more results.",
+                    tips: ["Clear one or two tags", "Search by a broader course keyword"]
+                })
     }
     `;
 
@@ -1122,10 +1171,16 @@ function renderSidebar() {
                   </div>
                   <div style="text-align:center;">
                     <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
-                    <p style="margin:0;">Optional, but recommended</p>
+                    <p style="margin:0;">Add your PDF resume to unlock faster applications and better job matching.</p>
                   </div>
                 </div>
               </button>
+              ${renderEmptyState({
+                    title: "No resume uploaded yet.",
+                    description: "You can still browse roles, but uploading a resume makes it easier to apply when a good match appears.",
+                    tips: ["Upload a PDF file", "Keep one updated version ready"],
+                    compact: true
+                })}
             `
     }
       </section>
@@ -1135,12 +1190,12 @@ function renderSidebar() {
         <div class="application-list">
           ${
         state.applications.length === 0
-            ? `
-                <div class="empty-state">
-                  <strong>No applications submitted yet.</strong>
-                  <span>Your submitted jobs will appear here.</span>
-                </div>
-              `
+            ? renderEmptyState({
+                title: "No application records yet.",
+                description: "Roles you apply for will appear here with their latest review status.",
+                tips: ["Browse open roles", "Submit your first application"],
+                compact: true
+            })
             : state.applications.map(app => `
                   <div class="application-item fade-in">
                     <div class="application-head">
@@ -1293,6 +1348,12 @@ function renderProfileView() {
                   </div>
                 </div>
               </button>
+              ${renderEmptyState({
+                    title: "Your resume section is still empty.",
+                    description: "Upload one PDF resume so you are ready when you decide to apply for a role.",
+                    tips: ["Use a recent version", "Highlight teaching or grading experience"],
+                    compact: true
+                })}
             `
     }
       </section>
