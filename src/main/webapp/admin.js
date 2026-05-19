@@ -161,6 +161,31 @@ const Icons = {
   `
 };
 
+let scrollLockCount = 0;
+
+function lockBodyScroll() {
+    scrollLockCount++;
+    document.body.classList.add("modal-open");
+}
+
+function unlockBodyScroll() {
+    scrollLockCount = Math.max(0, scrollLockCount - 1);
+    if (scrollLockCount === 0) {
+        document.body.classList.remove("modal-open");
+    }
+}
+
+function closeModal(overlay) {
+    if (!overlay || overlay.classList.contains("hidden")) return;
+    overlay.classList.add("scale-exit");
+    overlay.addEventListener("animationend", function handler() {
+        overlay.removeEventListener("animationend", handler);
+        overlay.classList.add("hidden");
+        overlay.classList.remove("scale-exit");
+        unlockBodyScroll();
+    }, { once: true });
+}
+
 // 已实现后端接口连接
 function showError(message) {
     alert(message || "Request failed");
@@ -708,8 +733,22 @@ function renderHeroActions() {
         <span class="badge badge-soft">Backend API</span>
       </div>
       <h2 class="action-title">Statistics Report</h2>
+      <div class="action-stat-row">
+        <div class="action-stat">
+          <span class="action-stat-num">${state.stats.totalUsers || 0}</span>
+          <span class="action-stat-label">Users</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${state.stats.totalPosts || 0}</span>
+          <span class="action-stat-label">Jobs</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${computeApplicationStats().totalApplications}</span>
+          <span class="action-stat-label">Apps</span>
+        </div>
+      </div>
       <p class="action-subtitle">
-        View platform statistics overview including users, jobs, applications and pending items. Statistics are updated in real-time from the backend.
+        View platform statistics overview. Data updated in real-time from backend.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openStatsBtn" type="button">
@@ -724,8 +763,22 @@ function renderHeroActions() {
         <span class="badge badge-soft">Backend API</span>
       </div>
       <h2 class="action-title">System Users</h2>
+      <div class="action-stat-row">
+        <div class="action-stat">
+          <span class="action-stat-num">${state.stats.totalTAs || 0}</span>
+          <span class="action-stat-label">TAs</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${state.stats.totalMOs || 0}</span>
+          <span class="action-stat-label">MOs</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${state.backendUsers.filter(u => u.userType === 3).length}</span>
+          <span class="action-stat-label">Admins</span>
+        </div>
+      </div>
       <p class="action-subtitle">
-        Manage all platform users, view their roles, status and basic information. User data comes from the backend API.
+        Manage all platform users. Click to view roles, status and details.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openUsersBtn" type="button">
@@ -740,8 +793,22 @@ function renderHeroActions() {
         <span class="badge badge-soft">Backend API</span>
       </div>
       <h2 class="action-title">All Jobs</h2>
+      <div class="action-stat-row">
+        <div class="action-stat">
+          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 0).length}</span>
+          <span class="action-stat-label">Open</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 1).length}</span>
+          <span class="action-stat-label">Closed</span>
+        </div>
+        <div class="action-stat">
+          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 2).length}</span>
+          <span class="action-stat-label">Filled</span>
+        </div>
+      </div>
       <p class="action-subtitle">
-        View and manage all published jobs, including job deletion. Job data comes from the backend API.
+        View and manage all published jobs. Job data comes from the backend API.
       </p>
       <div class="action-button-row">
         <button class="btn btn-primary action-btn" id="openAllJobsBtn" type="button">
@@ -833,14 +900,15 @@ function renderTAView() {
                   </span>
                 </div>
 
-                <!-- 工作负荷进度条 - 红黄绿三色（修复问题4） -->
+                <!-- 工作负荷进度条 -->
                 <div class="workload-progress-container">
                   <div class="workload-progress-header">
                     <span class="workload-progress-label">Weekly Workload</span>
                     <span class="workload-progress-value ${item.workloadStatus}">${item.hoursDisplay}</span>
                   </div>
-                  <div class="workload-progress-bar">
-                    <div class="workload-progress-fill ${item.workloadStatus}" style="width: ${progressPercent}%;"></div>
+                  <div class="workload-progress-bar ticked">
+                    <div class="workload-progress-fill ${item.workloadStatus}${progressPercent > 100 ? ' overloaded-glow' : ''}" style="width: ${Math.min(progressPercent, 100)}%;"></div>
+                    ${progressPercent > 100 ? `<div class="workload-progress-overflow" style="left:100%;width:${progressPercent - 100}%;"></div>` : ''}
                   </div>
                 </div>
 
@@ -1383,8 +1451,9 @@ function openTADetailModal(id) {
           <span class="workload-progress-label">Weekly Workload Progress</span>
           <span class="workload-progress-value ${ta.workloadStatus}" style="font-weight:600;">${ta.hoursDisplay}</span>
         </div>
-        <div class="workload-progress-bar" style="height:12px;">
-          <div class="workload-progress-fill ${ta.workloadStatus}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
+        <div class="workload-progress-bar ticked" style="height:12px;">
+          <div class="workload-progress-fill ${ta.workloadStatus}${ta.currentHours > ta.maxHours ? ' overloaded-glow' : ''}" style="width: ${ta.currentHours === 0 ? 0 : Math.min((ta.currentHours / ta.maxHours) * 100, 100)}%;"></div>
+          ${ta.currentHours > ta.maxHours ? `<div class="workload-progress-overflow" style="left:100%;width:${((ta.currentHours - ta.maxHours) / ta.maxHours) * 100}%;"></div>` : ''}
         </div>
       </div>
 
@@ -1597,25 +1666,18 @@ function openTADetailModal(id) {
     });
 
     els.taDetailModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
 function closeTADetailModal() {
     state.selectedTA = null;
-    // 重置PDF预览状态
     const previewContainer = els.taDetailModalOverlay.querySelector('#pdfPreviewContainer');
-    if (previewContainer) {
-        previewContainer.classList.add("hidden");
-        previewContainer.innerHTML = '';
-    }
+    if (previewContainer) { previewContainer.classList.add("hidden"); previewContainer.innerHTML = ''; }
     const closePreviewBtn = els.taDetailModalOverlay.querySelector('#closePreviewBtn');
-    if (closePreviewBtn) {
-        closePreviewBtn.classList.add("hidden");
-    }
+    if (closePreviewBtn) closePreviewBtn.classList.add("hidden");
     const detailContent = els.taDetailModalOverlay.querySelector('#taDetailContent');
-    if (detailContent) {
-        detailContent.classList.remove("hidden");
-    }
-    els.taDetailModalOverlay.classList.add("hidden");
+    if (detailContent) detailContent.classList.remove("hidden");
+    closeModal(els.taDetailModalOverlay);
 }
 
 function openJobDetailModal(job) {
@@ -1686,11 +1748,10 @@ function openJobDetailModal(job) {
     if (header) header.textContent = "Job Details";
 
     els.jobDetailModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
-function closeJobDetailModal() {
-    els.jobDetailModalOverlay.classList.add("hidden");
-}
+function closeJobDetailModal() { closeModal(els.jobDetailModalOverlay); }
 
 function openStatsModal() {
     const appStats = computeApplicationStats();
@@ -1815,11 +1876,15 @@ function openStatsModal() {
   `;
 
     els.statsModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
-function closeStatsModal() {
-    els.statsModalOverlay.classList.add("hidden");
-}
+function closeStatsModal() { closeModal(els.statsModalOverlay); }
+function closeUsersModal() { closeModal(els.usersModalOverlay); }
+function closeUserDetailModal() { state.selectedUser = null; closeModal(els.userDetailModalOverlay); }
+function closeRequestsModal() { closeModal(els.requestsModalOverlay); }
+function closeAllJobsModal() { closeModal(els.allJobsModalOverlay); }
+function closeJobDetailModal() { closeModal(els.jobDetailModalOverlay); }
 
 // 已实现后端接口连接
 // 添加用户筛选状态
@@ -1830,6 +1895,7 @@ async function openUsersModal() {
     await loadAllUsers();
     renderUsersModal();
     els.usersModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
 function renderUsersModal() {
@@ -1991,15 +2057,14 @@ function bindUsersModalEvents() {
     });
 }
 
-function closeUsersModal() {
-    els.usersModalOverlay.classList.add("hidden");
-}
+function closeUsersModal() { closeModal(els.usersModalOverlay); }
 
 // 已实现后端接口连接 - All Jobs 弹窗
 async function openAllJobsModal() {
     await loadAllJobs();
     renderAllJobsModal();
     els.allJobsModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
 function renderAllJobsModal() {
@@ -2140,9 +2205,7 @@ function bindAllJobsModalEvents() {
     });
 }
 
-function closeAllJobsModal() {
-    els.allJobsModalOverlay.classList.add("hidden");
-}
+function closeAllJobsModal() { closeModal(els.allJobsModalOverlay); }
 
 // 已实现后端接口连接
 async function openUserDetailModal(userId) {
@@ -2250,12 +2313,10 @@ async function openUserDetailModal(userId) {
   `;
 
     els.userDetailModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
-function closeUserDetailModal() {
-    state.selectedUser = null;
-    els.userDetailModalOverlay.classList.add("hidden");
-}
+function closeUserDetailModal() { state.selectedUser = null; closeModal(els.userDetailModalOverlay); }
 
 // 已实现后端接口连接
 async function openPostPreview(postId) {
@@ -2329,6 +2390,7 @@ async function openPostPreview(postId) {
         if (header) header.textContent = "Post Preview";
 
         els.taDetailModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
         return;
     }
 
@@ -2411,6 +2473,7 @@ async function openPostApplicantsModal(jobId) {
         if (header) header.textContent = "Applicants";
 
         els.taDetailModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 
         const passBtns = els.taDetailModalBody.querySelectorAll(".audit-pass-btn");
         const rejectBtns = els.taDetailModalBody.querySelectorAll(".audit-reject-btn");
@@ -2442,14 +2505,14 @@ function openRejectPostModal(postId, moId) {
     state.rejectReason = "";
     els.rejectReasonInput.value = "";
     els.rejectPostModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 }
 
 // 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
 function closeRejectPostModal() {
     state.selectedPost = null;
     state.rejectReason = "";
-    els.rejectReasonInput.value = "";
-    els.rejectPostModalOverlay.classList.add("hidden");
+    closeModal(els.rejectPostModalOverlay);
 }
 
 // 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
@@ -2563,6 +2626,7 @@ function openRequestsModal() {
   `;
 
     els.requestsModalOverlay.classList.remove("hidden");
+    lockBodyScroll();
 
     const approveBtns = els.requestsModalBody.querySelectorAll(".approve-request-btn");
     const rejectBtns = els.requestsModalBody.querySelectorAll(".reject-request-btn");
@@ -2581,9 +2645,7 @@ function openRequestsModal() {
 }
 
 // 未实现后端接口连接：示例接口文档中没有管理员角色申请通知接口，先保留前端演示逻辑
-function closeRequestsModal() {
-    els.requestsModalOverlay.classList.add("hidden");
-}
+function closeRequestsModal() { closeModal(els.requestsModalOverlay); }
 
 // 未实现后端接口连接：示例接口文档中没有管理员角色申请通知接口，先保留前端演示逻辑
 function handleRoleRequest(id, nextStatus) {
