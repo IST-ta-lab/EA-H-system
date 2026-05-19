@@ -50,6 +50,7 @@
       formCourseName: document.getElementById('formCourseName'),
       formHoursPerWeek: document.getElementById('formHoursPerWeek'),
       formMaxCapacity: document.getElementById('formMaxCapacity'),
+      formApplyDeadline: document.getElementById('formApplyDeadline'),
       formRequirements: document.getElementById('formRequirements'),
       formTagOptions: document.getElementById('formTagOptions'),
       formTags: document.getElementById('formTags'),
@@ -354,6 +355,24 @@
       renderTagOptions();
     }
 
+    function normalizeDeadlineDate(deadlineRaw) {
+      if (deadlineRaw === null || deadlineRaw === undefined) return '';
+      const text = String(deadlineRaw).trim();
+      if (!text) return '';
+
+      const directMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (directMatch) {
+        return directMatch[1] + '-' + directMatch[2] + '-' + directMatch[3];
+      }
+
+      const embeddedMatch = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (embeddedMatch) {
+        return embeddedMatch[1] + '-' + embeddedMatch[2] + '-' + embeddedMatch[3];
+      }
+
+      return '';
+    }
+
     function mapJob(rawJob, applicants) {
       const approvedCount = applicants.filter((a) => a.status === 'approved').length;
       const tags = collectJobTags(rawJob);
@@ -366,9 +385,10 @@
         tags,
         recruitedCount: Number(rawJob.hiredNum || approvedCount),
         maxCapacity: Number(rawJob.recruitNum || 1),
+        jobStatus: rawJob.jobStatus,
         jobType: rawJob.jobType,
         belongModule: rawJob.belongModule || '',
-        deadline: rawJob.applyDeadline || '',
+        deadline: normalizeDeadlineDate(rawJob.applyDeadline || ''),
         applicants
       };
     }
@@ -531,6 +551,7 @@
 
         const pendingCount = job.applicants.filter((a) => a.status === 'pending').length;
         const remainingCapacity = getRemainingCapacity(job);
+        const deadlineLabel = job.deadline || 'N/A';
         const canAcceptAll = pendingCount > 0 && pendingCount <= remainingCapacity;
         let acceptAllBlockReason = '';
         let acceptAllTitle = 'Accept all pending applicants.';
@@ -567,6 +588,7 @@
           + '    <div class="pill"><span class="dot dot-purple"></span><span>' + escapeHtml(state.currentUserDisplayName || 'MO') + '</span></div>'
           + '    <div class="pill"><span class="dot dot-green"></span><span>' + escapeHtml(job.hoursPerWeek) + ' hrs/wk</span></div>'
           + '    <div class="pill"><span class="dot dot-blue"></span><span>' + escapeHtml(job.recruitedCount) + ' / ' + escapeHtml(job.maxCapacity) + ' Recruited</span></div>'
+          + '    <div class="pill"><span class="dot dot-amber"></span><span>Apply By ' + escapeHtml(deadlineLabel) + '</span></div>'
           + '  </div>'
 
           + '  <div class="flex flex-wrap items-center gap-2 mb-8">'
@@ -634,6 +656,16 @@
         if (exists) return job;
       }
       return null;
+    }
+
+    function isJobEnded(job) {
+      if (!job) return false;
+      const statusCode = Number(job.jobStatus);
+      if (statusCode === 1) return true;
+
+      const normalizedDeadline = normalizeDeadlineDate(job.deadline);
+      if (!normalizedDeadline) return false;
+      return normalizedDeadline < getTodayDateText();
     }
 
     function configureDeleteModalForDelete() {
@@ -709,6 +741,14 @@
 
           const approvedApplicants = job.applicants.filter((a) => a.status === 'approved');
           const pendingApplicants = job.applicants.filter((a) => a.status === 'pending');
+
+          if (isJobEnded(job)) {
+            state.deletingJobId = jobId;
+            state.deleteApprovedApplicants = [];
+            configureDeleteModalForDelete();
+            openModal(dom.deleteModal);
+            return;
+          }
 
           if (approvedApplicants.length > 0) {
             state.deletingJobId = jobId;
@@ -796,6 +836,10 @@
       dom.formCourseName.value = '';
       dom.formHoursPerWeek.value = '10';
       dom.formMaxCapacity.value = '1';
+      if (dom.formApplyDeadline) {
+        dom.formApplyDeadline.value = getDefaultDeadlineDate();
+        dom.formApplyDeadline.min = getTodayDateText();
+      }
       dom.formRequirements.value = '';
       setSelectedTags([]);
     }
@@ -815,6 +859,10 @@
           dom.formCourseName.value = job.courseName;
           dom.formHoursPerWeek.value = String(job.hoursPerWeek);
           dom.formMaxCapacity.value = String(job.maxCapacity);
+          if (dom.formApplyDeadline) {
+            dom.formApplyDeadline.value = normalizeDeadlineDate(job.deadline) || getDefaultDeadlineDate();
+            dom.formApplyDeadline.min = getTodayDateText();
+          }
           dom.formRequirements.value = job.requirements || '';
           setSelectedTags(job.tags);
         }
@@ -827,6 +875,16 @@
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return y + '-' + m + '-' + day;
+    }
+
+    function getTodayDateText() {
+      return formatDateYYYYMMDD(new Date());
+    }
+
+    function getDefaultDeadlineDate() {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      return formatDateYYYYMMDD(d);
     }
 
     function deriveBelongModule(courseName, tagsText) {
@@ -853,6 +911,7 @@
 
       const hoursRaw = dom.formHoursPerWeek.value.trim();
       const capacityRaw = dom.formMaxCapacity.value.trim();
+      const deadlineRaw = dom.formApplyDeadline ? dom.formApplyDeadline.value.trim() : '';
 
       if (!hoursRaw) {
         showToast('Hours/week is required.');
@@ -877,6 +936,22 @@
         showToast('Max capacity must be a positive integer.');
         return;
       }
+      if (!deadlineRaw) {
+        showToast('Application deadline is required.');
+        return;
+      }
+
+      const deadlineValue = normalizeDeadlineDate(deadlineRaw);
+      if (!deadlineValue) {
+        showToast('Application deadline format is invalid.');
+        return;
+      }
+
+      const parsedDeadline = new Date(deadlineValue + 'T00:00:00');
+      if (Number.isNaN(parsedDeadline.getTime()) || formatDateYYYYMMDD(parsedDeadline) !== deadlineValue) {
+        showToast('Application deadline is invalid.');
+        return;
+      }
 
       const params = new URLSearchParams();
       const courseName = dom.formCourseName.value.trim();
@@ -889,10 +964,6 @@
         ? String(editingJob.jobType)
         : '1';
       const autoBelongModule = deriveBelongModule(courseName, tagsText);
-      const d = new Date();
-      d.setDate(d.getDate() + 30);
-      const autoDeadline = formatDateYYYYMMDD(d);
-      const deadlineValue = editingJob && editingJob.deadline ? String(editingJob.deadline) : autoDeadline;
 
       params.append('jobName', dom.formCourseName.value.trim());
       params.append('jobType', fallbackJobType);
