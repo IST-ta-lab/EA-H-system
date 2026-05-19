@@ -79,7 +79,7 @@ public class SuggestionService {
         }
 
         if (recommendedJobs.isEmpty()) {
-            return "当前没有足够的推荐数据来生成建议。请确保你已完善个人资料（个人简介和标签），且系统中存在招聘岗位。";
+            return "No recommendation data available to generate suggestions. Please ensure your profile (self-introduction and tags) is complete and that there are active job postings in the system.";
         }
 
         String prompt = buildPrompt(ta, recommendedJobs, isTagFallback);
@@ -127,53 +127,53 @@ public class SuggestionService {
 
     private String buildPrompt(TA ta, List<RecommendResult> recommendedJobs, boolean isTagFallback) {
         StringBuilder sb = new StringBuilder();
-        sb.append("你是一位大学生助教（TA）岗位的职业顾问。请根据以下学生信息和推荐岗位，为该学生提供个性化的求职建议。\n\n");
+        sb.append("You are a career advisor for university Teaching Assistant (TA) positions. Provide personalized job-seeking advice based on the student's profile and recommended positions.\n\n");
 
         // TA profile
-        sb.append("## 学生信息\n");
-        sb.append("- 姓名：").append(nullToEmpty(ta.getRealName())).append("\n");
-        sb.append("- 专业：").append(nullToEmpty(ta.getMajor())).append("\n");
-        sb.append("- 学历：").append(nullToEmpty(ta.getEducation())).append("\n");
-        sb.append("- 年级：").append(nullToEmpty(ta.getGrade())).append("\n");
+        sb.append("## Student Profile\n");
+        sb.append("- Name: ").append(nullToEmpty(ta.getRealName())).append("\n");
+        sb.append("- Major: ").append(nullToEmpty(ta.getMajor())).append("\n");
+        sb.append("- Education: ").append(nullToEmpty(ta.getEducation())).append("\n");
+        sb.append("- Grade: ").append(nullToEmpty(ta.getGrade())).append("\n");
         if (ta.getSelfIntro() != null && !ta.getSelfIntro().isEmpty()) {
-            sb.append("- 个人简介：").append(ta.getSelfIntro()).append("\n");
+            sb.append("- Self Introduction: ").append(ta.getSelfIntro()).append("\n");
         }
         if (ta.getTags() != null && !ta.getTags().isEmpty()) {
-            sb.append("- 技能标签：").append(String.join("、", ta.getTags())).append("\n");
+            sb.append("- Skill Tags: ").append(String.join(", ", ta.getTags())).append("\n");
         }
         if (ta.getSkillIds() != null && !ta.getSkillIds().isEmpty()) {
-            sb.append("- 技能：").append(String.join("、", ta.getSkillIds())).append("\n");
+            sb.append("- Skills: ").append(String.join(", ", ta.getSkillIds())).append("\n");
         }
 
         // Recommended jobs
-        String matchLabel = isTagFallback ? "按标签匹配度降序" : "按AI匹配度降序";
-        sb.append("\n## 推荐的岗位（").append(matchLabel).append("）\n");
+        String matchLabel = isTagFallback ? "sorted by tag match (descending)" : "sorted by AI match score (descending)";
+        sb.append("\n## Recommended Positions (").append(matchLabel).append(")\n");
         for (int i = 0; i < recommendedJobs.size(); i++) {
             RecommendResult result = recommendedJobs.get(i);
             Job job = jobDAO.getById(result.getId(), "jobId").orElse(null);
             sb.append("\n### ").append(i + 1).append(". ").append(result.getName());
-            sb.append("（匹配度：").append(String.format("%.0f%%", result.getScore() * 100)).append("）\n");
+            sb.append(" (Match: ").append(String.format("%.0f%%", result.getScore() * 100)).append(")\n");
             if (job != null) {
                 if (job.getBelongModule() != null) {
-                    sb.append("- 所属模块：").append(job.getBelongModule()).append("\n");
+                    sb.append("- Module: ").append(job.getBelongModule()).append("\n");
                 }
                 if (job.getJobDesc() != null) {
-                    sb.append("- 岗位描述：").append(job.getJobDesc()).append("\n");
+                    sb.append("- Description: ").append(job.getJobDesc()).append("\n");
                 }
                 if (job.getTags() != null && !job.getTags().isEmpty()) {
-                    sb.append("- 要求技能：").append(String.join("、", job.getTags())).append("\n");
+                    sb.append("- Required Skills: ").append(String.join(", ", job.getTags())).append("\n");
                 }
                 if (job.getWorkHoursWeekly() != null) {
-                    sb.append("- 每周工时：").append(job.getWorkHoursWeekly()).append("小时\n");
+                    sb.append("- Weekly Hours: ").append(job.getWorkHoursWeekly()).append(" hours\n");
                 }
             }
         }
 
-        sb.append("\n请给出以下建议（使用中文，共300-500字）：\n");
-        sb.append("1. 综合评估该学生的竞争力\n");
-        sb.append("2. 针对最匹配的1-2个岗位，给出具体的申请准备建议\n");
-        sb.append("3. 指出学生还需提升的技能或方向\n");
-        sb.append("请使用友好的语气，直接给出建议内容，不要称呼「学生」或「你」，用「同学你」代替。");
+        sb.append("\nPlease provide the following advice (300-500 words in English):\n");
+        sb.append("1. Overall assessment of the student's competitiveness\n");
+        sb.append("2. Specific application preparation advice for the 1-2 best-matching positions\n");
+        sb.append("3. Skills or areas the student should further improve\n");
+        sb.append("Use a friendly and encouraging tone, addressing the student directly.\n");
 
         return sb.toString();
     }
@@ -186,7 +186,7 @@ public class SuggestionService {
 
         JsonObject systemMsg = new JsonObject();
         systemMsg.addProperty("role", "system");
-        systemMsg.addProperty("content", "你是一位专业的大学生助教岗位职业顾问，提供中肯、实用的求职建议。");
+        systemMsg.addProperty("content", "You are a professional career advisor for university Teaching Assistant positions. Provide practical and actionable job-seeking advice.");
         messages.add(systemMsg);
 
         JsonObject userMsg = new JsonObject();
