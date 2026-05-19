@@ -295,6 +295,41 @@ button {
     flex-grow: 1;
 }
 
+.action-stat-row {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0 8px;
+}
+
+.action-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.action-stat-num {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.action-stat-label {
+    font-size: 11px;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.purple .action-icon {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+}
+
+.purple .action-stat-num {
+    color: #6366f1;
+}
+
 .action-button-row {
     display: flex;
     justify-content: flex-end;
@@ -1085,6 +1120,54 @@ button {
     background: linear-gradient(90deg, #10b981 0%, #059669 100%); /* 绿色 - 健康 */
 }
 
+/* 进度条刻度标记 */
+.workload-progress-bar.ticked {
+    background:
+        repeating-linear-gradient(to right,
+            transparent, transparent 24%,
+            rgba(255,255,255,0.3) 24%, rgba(255,255,255,0.3) 25%,
+            transparent 25%, transparent 49%,
+            rgba(255,255,255,0.3) 49%, rgba(255,255,255,0.3) 50%,
+            transparent 50%, transparent 74%,
+            rgba(255,255,255,0.3) 74%, rgba(255,255,255,0.3) 75%,
+            transparent 75%
+        ),
+        rgba(148, 163, 184, 0.2);
+    position: relative;
+}
+
+/* 超负荷光芒效果 */
+.workload-progress-fill.overloaded-glow {
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* 溢出进度条（超100%部分） */
+.workload-progress-overflow {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: repeating-linear-gradient(
+        -45deg,
+        #ef4444,
+        #ef4444 4px,
+        #dc2626 4px,
+        #dc2626 8px
+    );
+    border-radius: 0 5px 5px 0;
+    animation: dangerStripe 0.8s linear infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.7); }
+    50% { box-shadow: 0 0 24px rgba(239, 68, 68, 1); }
+}
+
+@keyframes dangerStripe {
+    from { background-position: 0 0; }
+    to { background-position: 16px 0; }
+}
+
 /* 进度条状态文字颜色 */
 .workload-progress-value.overloaded {
     color: var(--danger); /* 红色 */
@@ -1169,6 +1252,26 @@ button {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
+}
+
+@keyframes scaleExit {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+    }
+}
+
+.scale-exit {
+    animation: scaleExit 0.2s ease both;
+}
+
+/* 弹窗打开时禁止body滚动 */
+body.modal-open {
+    overflow: hidden;
 }
 
 @media (max-width: 1100px) {
