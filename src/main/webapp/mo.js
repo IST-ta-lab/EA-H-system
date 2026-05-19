@@ -13,7 +13,9 @@
       editingJobId: null,
       deletingJobId: null,
       viewingApplicant: null,
-      auditBusyByJob: {}
+      auditBusyByJob: {},
+      deleteModalMode: 'confirm_delete',
+      deleteApprovedApplicants: []
     };
 
     const FALLBACK_TAGS = [
@@ -58,6 +60,8 @@
       applicantModalBody: document.getElementById('applicantModalBody'),
 
       deleteModal: document.getElementById('deleteModal'),
+      deleteModalMessage: document.getElementById('deleteModalMessage'),
+      btnDeleteCancel: document.getElementById('btnDeleteCancel'),
       btnConfirmDelete: document.getElementById('btnConfirmDelete')
     };
 
@@ -103,6 +107,11 @@
     function closeModal(el) {
       if (!el) return;
       el.classList.remove('show');
+      if (el === dom.deleteModal) {
+        state.deleteModalMode = 'confirm_delete';
+        state.deleteApprovedApplicants = [];
+        configureDeleteModalForDelete();
+      }
     }
 
     function bindModalClose() {
@@ -627,6 +636,39 @@
       return null;
     }
 
+    function configureDeleteModalForDelete() {
+      state.deleteModalMode = 'confirm_delete';
+      if (dom.deleteModalMessage) {
+        dom.deleteModalMessage.textContent = 'Are you sure you want to delete this position? This action cannot be undone.';
+      }
+      if (dom.btnDeleteCancel) {
+        dom.btnDeleteCancel.textContent = 'Cancel';
+      }
+      if (dom.btnConfirmDelete) {
+        dom.btnConfirmDelete.classList.remove('hidden', 'bg-slate-900');
+        dom.btnConfirmDelete.classList.add('bg-red-600');
+        dom.btnConfirmDelete.textContent = 'Yes, Delete';
+        dom.btnConfirmDelete.disabled = false;
+      }
+    }
+
+    function configureDeleteModalForApprovedApplicants(approvedApplicants) {
+      state.deleteModalMode = 'contact_approved';
+      state.deleteApprovedApplicants = Array.isArray(approvedApplicants) ? approvedApplicants.slice() : [];
+      if (dom.deleteModalMessage) {
+        dom.deleteModalMessage.textContent = 'This job already has approved applications and cannot be deleted. Please contact the approved applicant(s) and ask them to withdraw before deleting this job.';
+      }
+      if (dom.btnDeleteCancel) {
+        dom.btnDeleteCancel.textContent = 'Cancel';
+      }
+      if (dom.btnConfirmDelete) {
+        dom.btnConfirmDelete.classList.remove('hidden', 'bg-red-600');
+        dom.btnConfirmDelete.classList.add('bg-slate-900');
+        dom.btnConfirmDelete.textContent = 'Contact Applicant';
+        dom.btnConfirmDelete.disabled = false;
+      }
+    }
+
     function bindJobCardEvents() {
       dom.jobCards.querySelectorAll('.job-app-search').forEach((input) => {
         input.addEventListener('input', () => {
@@ -659,7 +701,30 @@
       dom.jobCards.querySelectorAll('.btn-delete-job').forEach((btn) => {
         btn.addEventListener('click', () => {
           const jobId = btn.getAttribute('data-jobid');
+          const job = findJob(jobId);
+          if (!job) {
+            showToast('Job not found.', 'warning');
+            return;
+          }
+
+          const approvedApplicants = job.applicants.filter((a) => a.status === 'approved');
+          const pendingApplicants = job.applicants.filter((a) => a.status === 'pending');
+
+          if (approvedApplicants.length > 0) {
+            state.deletingJobId = jobId;
+            configureDeleteModalForApprovedApplicants(approvedApplicants);
+            openModal(dom.deleteModal);
+            return;
+          }
+
+          if (pendingApplicants.length > 0) {
+            showToast('This job has pending applications. Please process them before deleting.', 'warning');
+            return;
+          }
+
           state.deletingJobId = jobId;
+          state.deleteApprovedApplicants = [];
+          configureDeleteModalForDelete();
           openModal(dom.deleteModal);
         });
       });
@@ -1573,6 +1638,23 @@
             return;
           }
 
+          if (state.deleteModalMode === 'contact_approved') {
+            const job = findJob(targetJobId);
+            const approvedApplicants = state.deleteApprovedApplicants.length > 0
+              ? state.deleteApprovedApplicants
+              : (job ? job.applicants.filter((a) => a.status === 'approved') : []);
+            const targetApplicant = approvedApplicants.find((a) => a.taUserId) || approvedApplicants[0];
+            if (!targetApplicant || !targetApplicant.taUserId) {
+              showToast('Approved applicant info is missing.', 'warning');
+              return;
+            }
+            closeModal(dom.deleteModal);
+            state.deleteModalMode = 'confirm_delete';
+            state.deleteApprovedApplicants = [];
+            gotoMessageCenter(targetApplicant.taUserId, targetApplicant.name || 'Applicant', job);
+            return;
+          }
+
           const originalText = dom.btnConfirmDelete.textContent;
           dom.btnConfirmDelete.disabled = true;
           dom.btnConfirmDelete.textContent = 'Deleting...';
@@ -1585,6 +1667,8 @@
           if (ok) {
             closeModal(dom.deleteModal);
             state.deletingJobId = null;
+            state.deleteModalMode = 'confirm_delete';
+            state.deleteApprovedApplicants = [];
           }
         });
       }
