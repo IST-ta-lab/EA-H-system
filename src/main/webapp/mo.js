@@ -27,6 +27,7 @@
       'Communication',
       'Research'
     ];
+    const MAX_WEEKLY_HOURS = 7 * 24;
 
     const dom = {
       headerRealName: document.getElementById('headerRealName'),
@@ -708,6 +709,33 @@
         return;
       }
 
+      const hoursRaw = dom.formHoursPerWeek.value.trim();
+      const capacityRaw = dom.formMaxCapacity.value.trim();
+
+      if (!hoursRaw) {
+        showToast('Hours/week is required.');
+        return;
+      }
+      const hoursValue = Number(hoursRaw);
+      if (!Number.isFinite(hoursValue) || hoursValue <= 0) {
+        showToast('Hours/week must be a positive number.');
+        return;
+      }
+      if (hoursValue > MAX_WEEKLY_HOURS) {
+        showToast('Hours/week cannot exceed 168.');
+        return;
+      }
+
+      if (!capacityRaw) {
+        showToast('Max capacity is required.');
+        return;
+      }
+      const capacityValue = Number(capacityRaw);
+      if (!Number.isInteger(capacityValue) || capacityValue <= 0) {
+        showToast('Max capacity must be a positive integer.');
+        return;
+      }
+
       const params = new URLSearchParams();
       const courseName = dom.formCourseName.value.trim();
       const selectedTags = parseTagsText(dom.formTags.value);
@@ -728,8 +756,8 @@
       params.append('jobType', fallbackJobType);
       params.append('belongModule', autoBelongModule);
       params.append('jobDesc', dom.formRequirements.value.trim());
-      params.append('workHoursWeekly', dom.formHoursPerWeek.value.trim());
-      params.append('recruitNum', dom.formMaxCapacity.value.trim());
+      params.append('workHoursWeekly', String(hoursValue));
+      params.append('recruitNum', String(capacityValue));
       params.append('applyDeadline', deadlineValue);
       if (tagsText) {
         params.append('tags', tagsText);
