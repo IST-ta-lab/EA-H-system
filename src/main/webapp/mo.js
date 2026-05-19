@@ -12,7 +12,8 @@
       applicantSearchByJob: {},
       editingJobId: null,
       deletingJobId: null,
-      viewingApplicant: null
+      viewingApplicant: null,
+      auditBusyByJob: {}
     };
 
     const FALLBACK_TAGS = [
@@ -70,15 +71,28 @@
         .replace(/'/g, '&#39;');
     }
 
-    function showToast(message) {
+    let toastTimer = null;
+
+    function showToast(message, tone) {
       if (!dom.toast) {
         return;
       }
       dom.toast.textContent = message;
+      dom.toast.classList.remove('toast-info', 'toast-warning', 'toast-success');
+      if (tone === 'warning') {
+        dom.toast.classList.add('toast-warning');
+      } else if (tone === 'success') {
+        dom.toast.classList.add('toast-success');
+      } else {
+        dom.toast.classList.add('toast-info');
+      }
       dom.toast.classList.add('show');
-      window.setTimeout(() => {
+      if (toastTimer) {
+        window.clearTimeout(toastTimer);
+      }
+      toastTimer = window.setTimeout(() => {
         dom.toast.classList.remove('show');
-      }, 2600);
+      }, 3200);
     }
 
     function openModal(el) {
@@ -437,6 +451,40 @@
       }, 0);
     }
 
+    function getRemainingCapacity(job) {
+      const maxCapacity = Number(job && job.maxCapacity);
+      const recruitedCount = Number(job && job.recruitedCount);
+
+      if (!Number.isFinite(maxCapacity) || maxCapacity <= 0) {
+        return 0;
+      }
+
+      const normalizedMax = Math.floor(maxCapacity);
+      const normalizedRecruited = Number.isFinite(recruitedCount)
+        ? Math.max(0, Math.floor(recruitedCount))
+        : 0;
+      return Math.max(0, normalizedMax - normalizedRecruited);
+    }
+
+    function showAcceptAllBlockedToast(blockReason, pendingCount, remainingCapacity) {
+      if (blockReason === 'pending_exceeds') {
+        const rejectAtLeast = Math.max(0, pendingCount - remainingCapacity);
+        showToast(
+          'Cannot accept all now: pending ' + pendingCount + ', remaining slots ' + remainingCapacity + '. Reject at least ' + rejectAtLeast + ' first.',
+          'warning'
+        );
+        return;
+      }
+      if (blockReason === 'no_capacity') {
+        showToast(
+          'This position is already full. Accepted decisions are final, so Accept All is unavailable.',
+          'warning'
+        );
+        return;
+      }
+      showToast('No pending applicants.', 'warning');
+    }
+
     function renderAll() {
       dom.statJobCount.textContent = String(state.jobs.length);
       dom.statPendingCount.textContent = String(pendingCountAll());
@@ -473,6 +521,20 @@
         });
 
         const pendingCount = job.applicants.filter((a) => a.status === 'pending').length;
+        const remainingCapacity = getRemainingCapacity(job);
+        const canAcceptAll = pendingCount > 0 && pendingCount <= remainingCapacity;
+        let acceptAllBlockReason = '';
+        let acceptAllTitle = 'Accept all pending applicants.';
+        if (pendingCount === 0) {
+          acceptAllBlockReason = 'no_pending';
+          acceptAllTitle = 'No pending applicants.';
+        } else if (remainingCapacity <= 0) {
+          acceptAllBlockReason = 'no_capacity';
+          acceptAllTitle = 'Position is full. Accept All is unavailable.';
+        } else if (pendingCount > remainingCapacity) {
+          acceptAllBlockReason = 'pending_exceeds';
+          acceptAllTitle = 'Only ' + remainingCapacity + ' slot(s) left. Reject some pending applicants first.';
+        }
 
         return ''
           + '<article class="soft-card job-card rounded-[28px] p-8">'
@@ -487,7 +549,7 @@
           + '    </div>'
           + '    <div class="flex items-center gap-2 self-start sm:self-auto">'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-match-job" data-jobid="' + escapeHtml(job.id) + '">Recommend TAs</button>'
-          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all" data-jobid="' + escapeHtml(job.id) + '">Accept All</button>'
+          + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-accept-all' + (canAcceptAll ? '' : ' blocked') + '" data-jobid="' + escapeHtml(job.id) + '" data-block-reason="' + escapeHtml(acceptAllBlockReason) + '" data-pending="' + escapeHtml(String(pendingCount)) + '" data-remaining="' + escapeHtml(String(remainingCapacity)) + '" title="' + escapeHtml(acceptAllTitle) + '">Accept All</button>'
           + '      <button class="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition btn-reject-all" data-jobid="' + escapeHtml(job.id) + '">Reject All</button>'
           + '    </div>'
           + '  </div>'
@@ -539,9 +601,6 @@
           + '    </div>'
           + '  </div>'
 
-          + (pendingCount > 0
-              ? '<div class="mt-4 text-xs text-slate-500">Pending applications for this job: <span class="mono">' + pendingCount + '</span></div>'
-              : '')
           + '</article>';
       }).join('');
 
@@ -556,6 +615,16 @@
       const job = findJob(jobId);
       if (!job) return null;
       return job.applicants.find((a) => String(a.applicationId) === String(appId)) || null;
+    }
+
+    function findJobByApplicationId(appId) {
+      const target = String(appId || '');
+      for (let i = 0; i < state.jobs.length; i += 1) {
+        const job = state.jobs[i];
+        const exists = job.applicants.some((a) => String(a.applicationId) === target);
+        if (exists) return job;
+      }
+      return null;
     }
 
     function bindJobCardEvents() {
@@ -604,6 +673,13 @@
 
       dom.jobCards.querySelectorAll('.btn-accept-all').forEach((btn) => {
         btn.addEventListener('click', async () => {
+          const blockReason = btn.getAttribute('data-block-reason') || '';
+          if (blockReason) {
+            const pendingCount = Number(btn.getAttribute('data-pending') || 0);
+            const remainingCapacity = Number(btn.getAttribute('data-remaining') || 0);
+            showAcceptAllBlockedToast(blockReason, pendingCount, remainingCapacity);
+            return;
+          }
           const jobId = btn.getAttribute('data-jobid');
           await batchAudit(jobId, 1);
         });
@@ -618,8 +694,9 @@
 
       dom.jobCards.querySelectorAll('.btn-approve-app').forEach((btn) => {
         btn.addEventListener('click', async () => {
+          const jobId = btn.getAttribute('data-jobid');
           const appId = btn.getAttribute('data-appid');
-          await auditApplication(appId, 1);
+          await auditApplication(appId, 1, jobId);
         });
       });
 
@@ -1313,7 +1390,8 @@
       const approveBtn = document.getElementById('btnModalApprove');
       if (approveBtn) {
         approveBtn.addEventListener('click', async () => {
-          await auditApplication(app.applicationId, 1);
+          const currentJobId = state.viewingApplicant ? state.viewingApplicant.jobId : '';
+          await auditApplication(app.applicationId, 1, currentJobId);
           closeModal(dom.applicantModal);
         });
       }
@@ -1332,55 +1410,97 @@
 
     // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
     // POST /application?action=audit
-    async function auditApplication(applicationId, auditStatus) {
+    async function auditApplication(applicationId, auditStatus, jobIdOrNull) {
+      const targetJob = jobIdOrNull ? findJob(jobIdOrNull) : findJobByApplicationId(applicationId);
+      if (auditStatus === 1 && targetJob) {
+        const remainingCapacity = getRemainingCapacity(targetJob);
+        if (remainingCapacity <= 0) {
+          showToast('This position is already full. Accepted decisions are final, so this applicant cannot be approved.', 'warning');
+          return;
+        }
+      }
+
+      const lockKey = targetJob ? String(targetJob.id) : '__global__';
+      if (state.auditBusyByJob[lockKey]) {
+        showToast('A review operation is in progress. Please wait a moment.', 'warning');
+        return;
+      }
+      state.auditBusyByJob[lockKey] = true;
+
       const params = new URLSearchParams();
       params.append('applicationId', String(applicationId));
       params.append('auditStatus', String(auditStatus));
       params.append('remark', auditStatus === 1 ? 'Approved by MO' : 'Rejected by MO');
 
-      const r = await request('/application?action=audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-      });
+      try {
+        const r = await request('/application?action=audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
 
-      if (r.ok && r.data) {
-        showToast(r.data.msg || 'Application audited.');
-      } else {
-        showToast('Audit failed.');
-      }
+        if (r.ok && r.data) {
+          showToast(r.data.msg || 'Application audited.');
+        } else {
+          showToast('Audit failed.');
+        }
 
-      if (r.ok && r.data && r.data.code === 200) {
-        await loadJobsWithApplicants();
+        if (r.ok && r.data && r.data.code === 200) {
+          await loadJobsWithApplicants();
+        }
+      } finally {
+        state.auditBusyByJob[lockKey] = false;
       }
     }
 
     async function batchAudit(jobId, auditStatus) {
       const job = findJob(jobId);
       if (!job) return;
-
-      const pending = job.applicants.filter((a) => a.status === 'pending');
-      if (pending.length === 0) {
-        showToast('No pending applicants.');
+      const lockKey = String(job.id);
+      if (state.auditBusyByJob[lockKey]) {
+        showToast('A review operation is in progress. Please wait a moment.', 'warning');
         return;
       }
 
-      for (let i = 0; i < pending.length; i += 1) {
-        const app = pending[i];
-        const params = new URLSearchParams();
-        params.append('applicationId', String(app.applicationId));
-        params.append('auditStatus', String(auditStatus));
-        params.append('remark', auditStatus === 1 ? 'Approved by MO (batch)' : 'Rejected by MO (batch)');
-
-        await request('/application?action=audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params
-        });
+      const pending = job.applicants.filter((a) => a.status === 'pending');
+      if (pending.length === 0) {
+        showToast('No pending applicants.', 'warning');
+        return;
       }
 
-      showToast(auditStatus === 1 ? 'All pending applicants accepted.' : 'All pending applicants rejected.');
-      await loadJobsWithApplicants();
+      if (auditStatus === 1) {
+        const remainingCapacity = getRemainingCapacity(job);
+        if (remainingCapacity <= 0) {
+          showToast('This position is already full. Accepted decisions are final, so Accept All is unavailable.', 'warning');
+          return;
+        }
+        if (pending.length > remainingCapacity) {
+          showToast('Pending exceeds remaining slots (' + remainingCapacity + '). Reject some first.', 'warning');
+          return;
+        }
+      }
+
+      state.auditBusyByJob[lockKey] = true;
+      try {
+        for (let i = 0; i < pending.length; i += 1) {
+          const app = pending[i];
+          const params = new URLSearchParams();
+          params.append('applicationId', String(app.applicationId));
+          params.append('auditStatus', String(auditStatus));
+          params.append('remark', auditStatus === 1 ? 'Approved by MO (batch)' : 'Rejected by MO (batch)');
+
+          await request('/application?action=audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+          });
+        }
+
+        showToast(auditStatus === 1 ? 'All pending applicants accepted.' : 'All pending applicants rejected.', 'success');
+        await loadJobsWithApplicants();
+      } finally {
+        state.auditBusyByJob[lockKey] = false;
+      }
     }
 
     // 已实现后端接口连接
