@@ -312,6 +312,10 @@ body::before {
   background: var(--accent-2);
 }
 
+.dot-amber {
+  background: var(--accent-warm);
+}
+
 .job-card .break-all {
   display: inline-flex;
   align-items: center;
