@@ -754,93 +754,78 @@ function getFilteredLogs() {
 
 function renderHeroActions() {
     els.heroActions.innerHTML = `
-    <article class="action-card">
+    <article class="action-card card-accent-blue">
       <div class="action-top">
-        <div class="action-icon">${Icons.chart}</div>
-        <span class="badge badge-soft">Backend API</span>
+        <div class="action-icon icon-glow-blue">${Icons.chart}</div>
+        <span class="live-dot">● Live</span>
       </div>
-      <h2 class="action-title">Statistics Report</h2>
+      <h2 class="action-title">Platform Overview</h2>
       <div class="action-stat-row">
         <div class="action-stat">
-          <span class="action-stat-num">${state.stats.totalUsers || 0}</span>
+          <span class="action-stat-num stat-blue">${state.stats.totalUsers || 0}</span>
           <span class="action-stat-label">Users</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${state.stats.totalPosts || 0}</span>
+          <span class="action-stat-num stat-blue">${state.stats.totalPosts || 0}</span>
           <span class="action-stat-label">Jobs</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${computeApplicationStats().totalApplications}</span>
-          <span class="action-stat-label">Apps</span>
+          <span class="action-stat-num stat-blue">${computeApplicationStats().totalApplications}</span>
+          <span class="action-stat-label">Applications</span>
         </div>
       </div>
-      <p class="action-subtitle">
-        View platform statistics overview. Data updated in real-time from backend.
-      </p>
       <div class="action-button-row">
-        <button class="btn btn-primary action-btn" id="openStatsBtn" type="button">
-          View Report
-        </button>
+        <button class="btn btn-primary action-btn" id="openStatsBtn" type="button">View Report</button>
       </div>
     </article>
 
-    <article class="action-card">
+    <article class="action-card card-accent-violet">
       <div class="action-top">
-        <div class="action-icon" style="background: linear-gradient(135deg, var(--violet) 0%, var(--primary) 100%);">${Icons.users}</div>
-        <span class="badge badge-soft">Backend API</span>
+        <div class="action-icon icon-glow-violet">${Icons.users}</div>
+        <span class="live-dot">● Active</span>
       </div>
-      <h2 class="action-title">System Users</h2>
+      <h2 class="action-title">User Management</h2>
       <div class="action-stat-row">
         <div class="action-stat">
-          <span class="action-stat-num">${state.stats.totalTAs || 0}</span>
+          <span class="action-stat-num stat-violet">${state.stats.totalTAs || 0}</span>
           <span class="action-stat-label">TAs</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${state.stats.totalMOs || 0}</span>
+          <span class="action-stat-num stat-violet">${state.stats.totalMOs || 0}</span>
           <span class="action-stat-label">MOs</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${state.backendUsers.filter(u => u.userType === 3).length}</span>
+          <span class="action-stat-num stat-violet">${state.backendUsers.filter(u => u.userType === 3).length}</span>
           <span class="action-stat-label">Admins</span>
         </div>
       </div>
-      <p class="action-subtitle">
-        Manage all platform users. Click to view roles, status and details.
-      </p>
       <div class="action-button-row">
-        <button class="btn btn-primary action-btn" id="openUsersBtn" type="button">
-          Manage Users
-        </button>
+        <button class="btn btn-primary action-btn" id="openUsersBtn" type="button">Manage Users</button>
       </div>
     </article>
 
-    <article class="action-card purple">
+    <article class="action-card card-accent-purple">
       <div class="action-top">
-        <div class="action-icon">${Icons.briefcase}</div>
-        <span class="badge badge-soft">Backend API</span>
+        <div class="action-icon icon-glow-purple">${Icons.briefcase}</div>
+        <span class="live-dot dot-purple">● Tracking</span>
       </div>
-      <h2 class="action-title">All Jobs</h2>
+      <h2 class="action-title">Job Management</h2>
       <div class="action-stat-row">
         <div class="action-stat">
-          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 0).length}</span>
+          <span class="action-stat-num stat-green">${state.backendJobsList.filter(j => j.jobStatus === 0).length}</span>
           <span class="action-stat-label">Open</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 1).length}</span>
+          <span class="action-stat-num stat-yellow">${state.backendJobsList.filter(j => j.jobStatus === 1).length}</span>
           <span class="action-stat-label">Closed</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num">${state.backendJobsList.filter(j => j.jobStatus === 2).length}</span>
+          <span class="action-stat-num stat-red">${state.backendJobsList.filter(j => j.jobStatus === 2).length}</span>
           <span class="action-stat-label">Filled</span>
         </div>
       </div>
-      <p class="action-subtitle">
-        View and manage all published jobs. Job data comes from the backend API.
-      </p>
       <div class="action-button-row">
-        <button class="btn btn-primary action-btn" id="openAllJobsBtn" type="button">
-          Manage Jobs
-        </button>
+        <button class="btn btn-primary action-btn" id="openAllJobsBtn" type="button">Manage Jobs</button>
       </div>
     </article>
   `;
