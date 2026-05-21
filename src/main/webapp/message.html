@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消息中心 - TA Hiring System</title>
+    <title>Messages - TA Hiring System</title>
     <style>
         * {
             margin: 0;
@@ -632,46 +632,46 @@
         <div class="logo-text">Message Center</div>
     </div>
     <div class="top-actions">
-        <div class="unread-badge" id="unreadBadge" role="status" aria-live="polite" aria-atomic="true">0 条未读</div>
-        <button class="back-btn" onclick="goHome()" aria-label="返回主页">← 返回主页</button>
+        <div class="unread-badge" id="unreadBadge" role="status" aria-live="polite" aria-atomic="true">0 unread</div>
+        <button class="back-btn" onclick="goHome()" aria-label="Back to home">← Back to Home</button>
     </div>
 </div>
 
 <div class="main-container" role="main">
-    <aside class="conversation-list" aria-label="会话列表">
+    <aside class="conversation-list" aria-label="Conversation list">
         <div class="conv-header">
-            <div class="conv-title">会话列表</div>
+            <div class="conv-title">Conversations</div>
             <button class="new-conv-btn" onclick="openNewConvModal()"
-                    aria-label="新建会话" title="新建会话">+</button>
+                    aria-label="New conversation" title="New conversation">+</button>
         </div>
         <div class="conv-items" id="convItems" role="list">
-            <div class="conv-empty">暂无会话，点击右上角+新建</div>
+            <div class="conv-empty">No conversations yet. Click + to start one.</div>
         </div>
     </aside>
 
-    <section class="chat-window" aria-label="聊天窗口">
+    <section class="chat-window" aria-label="Chat window">
         <div class="chat-header">
-            <div class="chat-title" id="chatTitle" aria-live="polite">选择一个会话开始聊天</div>
+            <div class="chat-title" id="chatTitle" aria-live="polite">Select a conversation to start chatting</div>
         </div>
         <div class="chat-messages" id="chatMessages" aria-live="polite" aria-relevant="additions">
             <div class="chat-empty">
                 <div class="chat-empty-icon" aria-hidden="true">💬</div>
-                <div>点击左侧「+」新建会话，开始聊天</div>
+                <div>Click the + on the left to start a new conversation</div>
             </div>
         </div>
         <div class="chat-input-area" id="chatInputArea" style="display: none;">
             <div class="job-input-row">
                 <input type="text" class="job-input" id="jobIdInput"
-                       placeholder="关联岗位ID（可选）" aria-label="关联岗位ID">
+                       placeholder="Linked Job ID (optional)" aria-label="Linked Job ID">
                 <input type="text" class="job-input" id="jobTitleInput"
-                       placeholder="关联岗位名称（可选）" aria-label="关联岗位名称">
+                       placeholder="Linked Job title (optional)" aria-label="Linked Job title">
             </div>
             <div class="input-row" style="margin-top: 12px;">
                 <input type="text" class="input-field" id="messageInput"
-                       placeholder="输入消息内容..." aria-label="消息内容"
+                       placeholder="Type a message..." aria-label="Message content"
                        autocomplete="off" maxlength="500">
                 <button class="send-btn" id="sendBtn" onclick="sendMessage()"
-                        aria-label="发送消息">发送</button>
+                        aria-label="Send message">Send</button>
             </div>
             <div class="char-count" id="charCount" aria-live="off"></div>
         </div>
@@ -681,21 +681,21 @@
 <div class="modal-overlay" id="newConvModal" role="dialog" aria-modal="true"
      aria-labelledby="newConvModalTitle">
     <div class="modal-card">
-        <h3 class="modal-title" id="newConvModalTitle">新建会话</h3>
+        <h3 class="modal-title" id="newConvModalTitle">New Conversation</h3>
         <div class="modal-input-group">
-            <label class="modal-label" for="targetUserId">对方用户ID <span style="color: #dc3545;">*</span></label>
-            <input type="text" class="modal-input" id="targetUserId" placeholder="请输入对方的用户ID"
+            <label class="modal-label" for="targetUserId">Recipient User ID <span style="color: #dc3545;">*</span></label>
+            <input type="text" class="modal-input" id="targetUserId" placeholder="Enter the recipient's user ID"
                    autocomplete="off" required>
-            <div class="modal-tip">用户ID可从岗位详情、申请列表中获取</div>
+            <div class="modal-tip">User IDs can be found in job details or application lists</div>
         </div>
         <div class="modal-input-group">
-            <label class="modal-label" for="targetUserName">对方姓名/备注 <span style="color: #dc3545;">*</span></label>
-            <input type="text" class="modal-input" id="targetUserName" placeholder="请输入对方的姓名/备注"
+            <label class="modal-label" for="targetUserName">Recipient Name / Note <span style="color: #dc3545;">*</span></label>
+            <input type="text" class="modal-input" id="targetUserName" placeholder="Enter a name or note for this contact"
                    required>
         </div>
         <div class="modal-btns">
-            <button class="modal-btn modal-btn-cancel" onclick="closeNewConvModal()">取消</button>
-            <button class="modal-btn modal-btn-confirm" id="confirmNewConvBtn" onclick="createNewConversation()">开始聊天</button>
+            <button class="modal-btn modal-btn-cancel" onclick="closeNewConvModal()">Cancel</button>
+            <button class="modal-btn modal-btn-confirm" id="confirmNewConvBtn" onclick="createNewConversation()">Start Chat</button>
         </div>
     </div>
 </div>
@@ -715,7 +715,7 @@
             const res = await fetch(BASE_URL + '/user?action=getLoginUser', { credentials: 'include' });
             const data = await res.json();
             if (data.code !== 200 || !data.data) {
-                showToast("未登录或登录已过期", 'error');
+                showToast("Not signed in or session expired", 'error');
                 setTimeout(() => { window.location.href = "index.html"; }, 1000);
                 return;
             }
@@ -726,7 +726,7 @@
             else window.location.href = "index.html";
         } catch (e) {
             console.error(e);
-            showToast("获取用户信息失败", 'error');
+            showToast("Failed to load user info", 'error');
         }
     }
 
@@ -758,13 +758,13 @@
                 currentUserId = result.data.userId;
                 return result.data;
             } else {
-                showToast('请先登录', 'error');
+                showToast('Please sign in first', 'error');
                 setTimeout(() => { location.href = 'index.html'; }, 1500);
                 return null;
             }
         } catch (e) {
-            console.error('获取用户信息失败', e);
-            showToast('获取用户信息失败', 'error');
+            console.error('Failed to load user info', e);
+            showToast('Failed to load user info', 'error');
             return null;
         }
     }
@@ -776,7 +776,7 @@
             const result = await res.json();
             if (result.code === 200 && result.data > 0) {
                 const badge = document.getElementById('unreadBadge');
-                badge.textContent = result.data + ' 条未读';
+                badge.textContent = result.data + ' unread';
                 badge.classList.add('show');
             } else {
                 document.getElementById('unreadBadge').classList.remove('show');
@@ -796,7 +796,7 @@
 
     async function loadConversations() {
         const convItems = document.getElementById('convItems');
-        convItems.innerHTML = '<div class="conv-empty">加载中...</div>';
+        convItems.innerHTML = '<div class="conv-empty">Loading...</div>';
         try {
             const res = await fetch(BASE_URL + '/message?action=listConversations', { credentials: 'include' });
             const result = await res.json();
@@ -804,19 +804,19 @@
                 conversations = result.data;
                 const uids = Object.keys(conversations);
                 if (uids.length === 0) {
-                    convItems.innerHTML = '<div class="conv-empty">暂无会话，点击右上角+新建</div>';
+                    convItems.innerHTML = '<div class="conv-empty">No conversations yet. Click + to start one.</div>';
                     return;
                 }
                 let html = '';
                 uids.forEach(uid => {
-                    const name = conversations[uid] || '未知用户';
+                    const name = conversations[uid] || 'Unknown user';
                     const hasUnread = result.data[uid].unread || false;
                     html += `
                         <div class="conv-item" role="listitem" tabindex="0"
                              data-uid="${uid}"
                              onclick="selectConversation('${uid}', '${name.replace(/'/g, "\\'")}')"
                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectConversation('${uid}', '${name.replace(/'/g, "\\'")}')}"
-                             aria-label="与 ${escapeHtml(name)} 的会话${hasUnread ? '（有未读消息）' : ''}">
+                             aria-label="Conversation with ${escapeHtml(name)}${hasUnread ? ' (unread)' : ''}">
                             <div class="conv-info">
                                 <div class="conv-name">${escapeHtml(name)}</div>
                             </div>
@@ -860,11 +860,11 @@
         const targetId = document.getElementById('targetUserId').value.trim();
         const targetNameInput = document.getElementById('targetUserName').value.trim();
         if (!targetId) {
-            showToast('请输入对方用户ID', 'error');
+            showToast('Please enter a recipient user ID', 'error');
             return;
         }
         if (targetId === currentUserId) {
-            showToast('不能和自己聊天', 'error');
+            showToast('Cannot chat with yourself', 'error');
             return;
         }
         // 检查是否已有会话
@@ -876,9 +876,9 @@
         isCreatingConv = true;
         const confirmBtn = document.getElementById('confirmNewConvBtn');
         confirmBtn.disabled = true;
-        confirmBtn.textContent = '创建中...';
+        confirmBtn.textContent = 'Creating...';
 
-        const targetName = targetNameInput || ('用户 ' + targetId.slice(0, 8));
+        const targetName = targetNameInput || ('User ' + targetId.slice(0, 8));
         closeNewConvModal();
 
         // 临时添加到左侧列表，提升体验
@@ -904,13 +904,13 @@
         document.getElementById('chatMessages').innerHTML = `
             <div class="chat-empty">
                 <div class="chat-empty-icon">✉️</div>
-                <div>发送第一条消息，开始和${escapeHtml(targetName)}聊天</div>
+                <div>Send the first message to start chatting with ${escapeHtml(targetName)}</div>
             </div>
         `;
         conversations[targetId] = targetName;
 
         confirmBtn.disabled = false;
-        confirmBtn.textContent = '开始聊天';
+        confirmBtn.textContent = 'Start Chat';
         isCreatingConv = false;
     }
 
@@ -931,7 +931,7 @@
         if (!prefill.targetUserId || prefill.targetUserId === currentUserId) return;
         if (prefill.jobId) document.getElementById('jobIdInput').value = prefill.jobId;
         if (prefill.jobTitle) document.getElementById('jobTitleInput').value = prefill.jobTitle;
-        const targetName = prefill.targetUserName || conversations[prefill.targetUserId] || ('用户 ' + prefill.targetUserId.slice(0, 8));
+        const targetName = prefill.targetUserName || conversations[prefill.targetUserId] || ('User ' + prefill.targetUserId.slice(0, 8));
         const hasConversation = conversations[prefill.targetUserId];
         if (hasConversation) {
             await selectConversation(prefill.targetUserId, targetName);
@@ -943,7 +943,7 @@
             document.getElementById('chatMessages').innerHTML = `
                 <div class="chat-empty">
                     <div class="chat-empty-icon">✉️</div>
-                    <div>已定位到目标用户，发送第一条消息即可建立会话</div>
+                    <div>Located the target user. Send a message to begin the conversation.</div>
                 </div>
             `;
         }
@@ -951,14 +951,14 @@
 
     async function loadHistory(otherUserId) {
         const chatMessages = document.getElementById('chatMessages');
-        chatMessages.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">⏳</div><div>加载中...</div></div>';
+        chatMessages.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">⏳</div><div>Loading...</div></div>';
         try {
             const res = await fetch(BASE_URL + `/message?action=getHistory&otherUserId=${otherUserId}&page=1&size=50`, { credentials: 'include' });
             const result = await res.json();
             if (result.code === 200 && result.data) {
                 let messages = result.data.reverse();
                 if (messages.length === 0) {
-                    chatMessages.innerHTML = `<div class="chat-empty"><div class="chat-empty-icon">💬</div><div>暂无消息</div></div>`;
+                    chatMessages.innerHTML = `<div class="chat-empty"><div class="chat-empty-icon">💬</div><div>No messages yet</div></div>`;
                     return;
                 }
                 let html = '';
@@ -998,17 +998,17 @@
 
     async function sendMessage() {
         if (!currentTargetUserId) {
-            showToast('请先选择会话', 'error');
+            showToast('Please select a conversation first', 'error');
             return;
         }
         const content = document.getElementById('messageInput').value.trim();
         if (!content) {
-            showToast('请输入消息', 'error');
+            showToast('Please enter a message', 'error');
             return;
         }
         const sendBtn = document.getElementById('sendBtn');
         sendBtn.disabled = true;
-        sendBtn.textContent = '发送中...';
+        sendBtn.textContent = 'Sending...';
         const jobId = document.getElementById('jobIdInput').value.trim();
         const jobTitle = document.getElementById('jobTitleInput').value.trim();
         try {
@@ -1020,7 +1020,7 @@
             const res = await fetch(BASE_URL + '/message?action=send', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
             const result = await res.json();
             if (result.code === 200) {
-                showToast('发送成功');
+                showToast('Sent');
                 document.getElementById('messageInput').value = '';
                 document.getElementById('jobIdInput').value = '';
                 document.getElementById('jobTitleInput').value = '';
@@ -1028,13 +1028,13 @@
                 await loadConversations();
                 document.getElementById('messageInput').focus();
             } else {
-                showToast('发送失败：' + result.msg, 'error');
+                showToast('Send failed: ' + result.msg, 'error');
             }
         } catch (e) {
-            showToast('网络错误', 'error');
+            showToast('Network error', 'error');
         }
         sendBtn.disabled = false;
-        sendBtn.textContent = '发送';
+        sendBtn.textContent = 'Send';
     }
 
     window.onload = async function () {
