@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BUPT TA Hiring System - Admin</title>
-    <link rel="stylesheet" href="./admin.css" />
+    <link rel="stylesheet" href="./admin.css?v=3" />
 </head>
 <body>
 <div class="admin-shell">
@@ -141,44 +141,6 @@
 </div>
 
 <!-- ========================= -->
-<!-- 驳回岗位弹窗 -->
-<!-- ========================= -->
-<div class="modal-overlay hidden" id="rejectPostModalOverlay">
-    <div class="modal-card modal-md scale-enter">
-        <div class="modal-header">
-            <h2>Reject Post</h2>
-            <button class="icon-btn" id="closeRejectPostModalBtn" type="button" aria-label="关闭">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 6 6 18M6 6l12 12"
-                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body" id="rejectPostModalBody">
-            <div class="alert-block alert-danger">
-                <div class="alert-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 9v4m0 4h.01M10.29 3.86l-7.54 13A2 2 0 0 0 4.47 20h15.06a2 2 0 0 0 1.72-3.14l-7.54-13a2 2 0 0 0-3.42 0Z"
-                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div class="alert-text">
-                    Rejecting this post will send it back to the MO for modification. It will not be visible to TAs until approved.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="rejectReasonInput">Rejection Reason (Required)</label>
-                <textarea id="rejectReasonInput" rows="6" placeholder="Please explain why this post is being rejected..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelRejectPostBtn" type="button">Cancel</button>
-            <button class="btn btn-danger" id="confirmRejectPostBtn" type="button">Confirm Reject</button>
-        </div>
-    </div>
-</div>
-
 <!-- ========================= -->
 <!-- Role Change Requests Modal -->
 <!-- ========================= -->
@@ -233,7 +195,7 @@
     </div>
 </div>
 
-<script src="./admin.js"></script>
+<script src="./admin.js?v=3"></script>
 
 <div class="inland-security-footer">
     <div class="tooltip-container">

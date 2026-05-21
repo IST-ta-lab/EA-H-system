@@ -20,9 +20,6 @@ const state = {
     },
 
     selectedTA: null,
-    selectedJobApplicants: [],
-
-    rejectReason: "",
 
     backendUsers: [],
     backendJobsList: [],
@@ -32,11 +29,7 @@ const state = {
         totalUsers: 0,
         totalTAs: 0,
         totalMOs: 0,
-        totalPosts: 0,
-        totalApplications: 0,
-        pendingPostReviews: 0,
-        pendingRoleRequests: 0,
-        activeLogsToday: 0
+        totalPosts: 0
     },
 
     roleRequests: [],
@@ -161,8 +154,6 @@ const Icons = {
   `
 };
 
-let scrollLockCount = 0;
-
 function lockBodyScroll() { /* no-op */ }
 function unlockBodyScroll() { /* no-op */ }
 
@@ -246,100 +237,6 @@ async function loadLoginUser() {
 }
 
 // 修复问题3：加载所有申请记录，用于计算TA工作负荷
-async function loadAllApplications() {
-    const r = await request("/application?action=listAll");
-    if (r.ok && r.data && r.data.code === 200) {
-        state.backendApplications = Array.isArray(r.data.data) ? r.data.data : [];
-        return state.backendApplications;
-    }
-    state.backendApplications = [];
-    return [];
-}
-
-// 计算申请统计数据
-function computeApplicationStats() {
-    const apps = state.backendApplications || [];
-    const total = apps.length;
-    const pending = apps.filter(a => a.applyStatus === 0 || a.applyStatus === "0").length;
-    const approved = apps.filter(a => a.applyStatus === 1 || a.applyStatus === "1").length;
-    const rejected = apps.filter(a => a.applyStatus === 2 || a.applyStatus === "2").length;
-    const approvalRate = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
-    
-    // 今日申请数
-    const today = new Date().toISOString().split('T')[0];
-    const todayApps = apps.filter(a => a.applyTime && a.applyTime.startsWith(today));
-    
-    // 统计每个岗位的申请数
-    const jobApplicationCounts = {};
-    apps.forEach(a => {
-        if (a.jobId) {
-            jobApplicationCounts[a.jobId] = (jobApplicationCounts[a.jobId] || 0) + 1;
-        }
-    });
-    
-    // 获取申请最热的岗位
-    const topJobs = Object.entries(jobApplicationCounts)
-        .map(([jobId, count]) => {
-            const job = state.backendJobsList.find(j => String(j.jobId) === String(jobId));
-            return {
-                jobId,
-                jobName: job ? job.jobName : `Job #${jobId}`,
-                count
-            };
-        })
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-    
-    return {
-        totalApplications: total,
-        pendingCount: pending,
-        approvedCount: approved,
-        rejectedCount: rejected,
-        approvalRate: parseFloat(approvalRate),
-        todayApplications: todayApps.length,
-        topJobsByApplications: topJobs
-    };
-}
-
-// 计算MO工作量统计数据
-function computeMoWorkloadStats() {
-    return state.moWorkloads.map(mo => {
-        // 该MO发布的岗位收到的所有申请
-        const moJobs = state.backendJobsList.filter(j => String(j.publisherMoId) === String(mo.id));
-        const moJobIds = moJobs.map(j => String(j.jobId));
-        
-        const moApps = state.backendApplications.filter(a => 
-            moJobIds.includes(String(a.jobId))
-        );
-        
-        const totalApps = moApps.length;
-        const pendingApps = moApps.filter(a => a.applyStatus === 0 || a.applyStatus === "0").length;
-        const approvedApps = moApps.filter(a => a.applyStatus === 1 || a.applyStatus === "1").length;
-        const rejectedApps = moApps.filter(a => a.applyStatus === 2 || a.applyStatus === "2").length;
-        const approvalRate = totalApps > 0 ? ((approvedApps / totalApps) * 100).toFixed(1) : 0;
-        
-        // 工作量等级
-        let workloadLevel = "light";
-        if (pendingApps >= 5 || totalApps >= 20) {
-            workloadLevel = "busy";
-        } else if (pendingApps >= 2 || totalApps >= 10) {
-            workloadLevel = "normal";
-        }
-        
-        return {
-            moId: mo.id,
-            moName: mo.name,
-            totalPublishedJobs: mo.publishedPosts,
-            totalApplications: totalApps,
-            pendingApplications: pendingApps,
-            approvedApplications: approvedApps,
-            rejectedApplications: rejectedApps,
-            approvalRate: parseFloat(approvalRate),
-            workloadLevel
-        };
-    });
-}
-
 // 模拟日志数据（后端暂无接口）
 function generateMockLogs() {
     const actionTypes = ['user_create', 'user_delete', 'job_create', 'job_delete', 'application_audit', 'role_change'];
@@ -400,19 +297,12 @@ function generateMockLogs() {
     return mockLogs;
 }
 
-// 加载日志数据
-// async function loadLogs()
-
-// 已实现后端接口连接 - 加载开放岗位（仅用于后端统计，不直接用于MO视图）
+// 已实现后端接口连接 - 加载开放岗位
 async function loadOpenJobs() {
     const r = await request("/job?action=listOpen");
     if (r.ok && r.data && r.data.code === 200) {
-        const jobs = Array.isArray(r.data.data) ? r.data.data : [];
-        state.backendJobs = jobs.map(mapJobForAdmin);
         return;
     }
-
-    state.backendJobs = [];
     showError((r.data && r.data.msg) || r.error || "Failed to load job list");
 }
 
@@ -770,8 +660,8 @@ function renderHeroActions() {
           <span class="action-stat-label">Jobs</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num stat-blue">${computeApplicationStats().totalApplications}</span>
-          <span class="action-stat-label">Applications</span>
+          <span class="action-stat-num stat-blue">${state.backendJobsList.filter(j => j.jobStatus === 0).length}</span>
+          <span class="action-stat-label">Open Jobs</span>
         </div>
       </div>
       <div class="action-button-row">
@@ -977,8 +867,9 @@ ${item.workloadStatus === 'overloaded' ? '⚠ Your current weekly workload of ' 
             `}).join("")
             : `
             <div class="empty-state">
+              <div class="empty-state-icon">${Icons.search}</div>
               <strong>No TA records matched.</strong>
-              <span>Try adjusting your search or workload status filter.</span>
+              <span>Try adjusting your search keyword or workload status filter.</span>
             </div>
           `
     }
@@ -1013,36 +904,63 @@ function renderMOView() {
     <div class="workload-grid">
       ${
         items.length > 0
-            ? items.map(item => `
-              <article class="workload-card" data-mo-id="${item.id}">
+            ? items.map(item => {
+                const totalApps = Number(item.totalApplications) || 0;
+                const pendingApps = Number(item.pendingApplications) || 0;
+                const totalPosts = Number(item.publishedPosts) || 0;
+                const openPosts = Number(item.openPosts) || 0;
+                const fillRate = totalPosts > 0 ? Math.round((totalPosts - openPosts) / totalPosts * 100) : 0;
+
+                return `
+              <article class="workload-card mo-enhanced" data-mo-id="${item.id}">
                 <div class="workload-top">
-                  <div>
+                  <div class="user-avatar-xl mo-avatar">${escapeHtml(getInitials(item.name))}</div>
+                  <div style="flex:1;">
                     <h3 class="workload-title">${escapeHtml(item.name)}</h3>
                     <div class="workload-sub">
                       <span class="badge badge-soft">@${escapeHtml(item.username)}</span>
                       <span class="badge badge-soft">${escapeHtml(item.course)}</span>
                     </div>
                   </div>
-                  <span class="badge badge-success">${escapeHtml(item.status)}</span>
+                  <span class="badge badge-success status-badge">${escapeHtml(item.status)}</span>
                 </div>
 
-                <p class="workload-desc">${escapeHtml(item.summary)}</p>
+                <div class="mo-stats-row">
+                  <div class="mo-stat">
+                    <div class="mo-stat-num stat-violet">${totalPosts}</div>
+                    <div class="mo-stat-label">Total Jobs</div>
+                  </div>
+                  <div class="mo-stat">
+                    <div class="mo-stat-num stat-green">${openPosts}</div>
+                    <div class="mo-stat-label">Open</div>
+                  </div>
+                  <div class="mo-stat">
+                    <div class="mo-stat-num stat-amber">${totalApps}</div>
+                    <div class="mo-stat-label">Applications</div>
+                  </div>
+                  <div class="mo-stat">
+                    <div class="mo-stat-num ${pendingApps > 0 ? 'stat-red' : 'stat-green'}">${pendingApps}</div>
+                    <div class="mo-stat-label">Pending</div>
+                  </div>
+                </div>
 
-                <div class="workload-actions" style="margin-bottom:16px;">
+                <div class="workload-progress-container" style="margin-bottom:12px;">
+                  <div class="workload-progress-header">
+                    <span class="workload-progress-label">Job Completion</span>
+                    <span class="workload-progress-value ${fillRate >= 100 ? 'healthy' : fillRate >= 50 ? 'near_limit' : 'overloaded'}" style="font-weight:600;">${fillRate}%</span>
+                  </div>
+                  <div class="workload-progress-bar ticked">
+                    <div class="workload-progress-fill ${fillRate >= 100 ? 'healthy' : fillRate >= 50 ? 'near_limit' : 'overloaded'}" style="width:${Math.min(fillRate, 100)}%;"></div>
+                  </div>
+                </div>
+
+                <div class="workload-actions" style="margin-bottom:12px;">
                   <button class="btn btn-sm btn-soft view-mo-detail-btn" type="button" data-mo-id="${item.id}">
                     ${Icons.eye} View Details
                   </button>
                   <button class="btn btn-sm btn-danger delete-mo-btn" type="button" data-mo-id="${item.id}">
                     ${Icons.reject} Delete MO
                   </button>
-                </div>
-
-                <div class="workload-sub" style="margin-bottom:16px;">
-                  <span class="badge badge-soft">Posts: ${escapeHtml(item.publishedPosts)}</span>
-                  <span class="badge badge-success">Open: ${escapeHtml(item.openPosts)}</span>
-                  <span class="badge badge-soft">Closed: ${escapeHtml(item.closedPosts)}</span>
-                  <span class="badge badge-primary">Apps: ${escapeHtml(item.totalApplications || 0)}</span>
-                  <span class="badge badge-warning">Pending: ${escapeHtml(item.pendingApplications || 0)}</span>
                 </div>
 
                 ${
@@ -1083,14 +1001,17 @@ function renderMOView() {
                   </div>
                 </div>
                         `
-                    : ""
+                    : `
+                  <p class="mo-no-posts">No jobs published yet.</p>
+                `
             }
               </article>
-            `).join("")
+            `}).join("")
             : `
             <div class="empty-state">
+              <div class="empty-state-icon">${Icons.users}</div>
               <strong>No MO records matched.</strong>
-              <span>There are no course organizers in the system yet.</span>
+              <span>There are no course organizers in the system yet. Register a MO account to get started.</span>
             </div>
           `
     }
@@ -1139,8 +1060,9 @@ function renderLogsView() {
             `).join("")
             : `
             <div class="empty-state">
-              <strong>No logs matched.</strong>
-              <span>Try adjusting your search or log type filter.</span>
+              <div class="empty-state-icon">${Icons.activity}</div>
+              <strong>No log entries matched.</strong>
+              <span>Try adjusting your search keyword or log type filter.</span>
             </div>
           `
     }
@@ -1164,7 +1086,7 @@ function renderRequestDot() {
 }
 
 function render() {
-    document.getElementById("navUserName").textContent = state.currentAdmin.name;
+    document.getElementById("navUserName").textContent = "Admin";
     renderHeroActions();
     renderSwitcher();
     renderMonitorContent();
@@ -1470,37 +1392,37 @@ function openTADetailModal(id) {
 
     els.taDetailModalBody.innerHTML = `
     <div id="taDetailContent">
-      <div class="user-profile-block" style="margin-bottom:20px;">
-        <div class="user-avatar-xl" style="width:72px;height:72px;font-size:24px;">${escapeHtml(getInitials(ta.name))}</div>
-        <div class="user-identity">
-          <h3 style="margin:0 0 6px;font-size:22px;">${escapeHtml(ta.name)}</h3>
-          <p style="margin:0;font-size:14px;color:var(--text-soft);">@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)}</p>
+      <div class="stats-hero" style="margin-bottom:20px;">
+        <div class="user-avatar-xl" style="width:56px;height:56px;font-size:20px;flex-shrink:0;background:rgba(255,255,255,0.2);">${escapeHtml(getInitials(ta.name))}</div>
+        <div class="stats-hero-text">
+          <h2 style="display:flex;align-items:center;gap:10px;">
+            ${escapeHtml(ta.name)}
+            <span class="badge ${statusInfo.class}" style="font-size:11px;padding:4px 10px;color:white;background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.3);">${statusInfo.text}</span>
+          </h2>
+          <p>@${escapeHtml(ta.username)} · ${escapeHtml(ta.course)} · ${escapeHtml(ta.email || 'No email')}</p>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-        <div style="padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-2));border-radius:14px;text-align:center;color:white;">
-          <div style="font-size:24px;font-weight:700;">${escapeHtml(ta.taskCount)}</div>
-          <div style="font-size:12px;opacity:0.9;">Applied Jobs</div>
+      <div class="mo-stats-row" style="margin-bottom:20px;">
+        <div class="mo-stat" style="background:linear-gradient(135deg, rgba(59,130,246,0.08), rgba(37,99,235,0.05));">
+          <div class="mo-stat-num stat-blue">${escapeHtml(ta.taskCount)}</div>
+          <div class="mo-stat-label">Applied Jobs</div>
         </div>
-        <div style="padding:14px;background:var(--bg-soft);border-radius:14px;text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:var(--text);">${escapeHtml(ta.currentHours)}h</div>
-          <div style="font-size:12px;color:var(--text-soft);">Current Load</div>
+        <div class="mo-stat">
+          <div class="mo-stat-num">${escapeHtml(ta.currentHours)}<span style="font-size:14px;">h</span></div>
+          <div class="mo-stat-label">Current Load</div>
         </div>
-        <div style="padding:14px;background:var(--bg-soft);border-radius:14px;text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:var(--text);">${escapeHtml(ta.maxHours)}h</div>
-          <div style="font-size:12px;color:var(--text-soft);">Max Hours</div>
+        <div class="mo-stat">
+          <div class="mo-stat-num">${escapeHtml(ta.maxHours)}<span style="font-size:14px;">h</span></div>
+          <div class="mo-stat-label">Max Limit</div>
+        </div>
+        <div class="mo-stat" style="background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.05));">
+          <div class="mo-stat-num stat-green">${escapeHtml(ta.currentHours === 0 ? 0 : Math.round(ta.currentHours / ta.maxHours * 100))}<span style="font-size:14px;">%</span></div>
+          <div class="mo-stat-label">Utilization</div>
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg-soft);border-radius:14px;">
-        <span class="badge ${statusInfo.class}" style="font-size:13px;font-weight:600;padding:10px 18px;">
-          ${statusInfo.text}
-        </span>
-        <span style="font-size:13px;color:var(--text-soft);">Workload Status</span>
-      </div>
-
-      <div class="workload-progress-container" style="margin-bottom:24px;">
+      <div class="workload-progress-container" style="margin-bottom:16px;">
         <div class="workload-progress-header">
           <span class="workload-progress-label">Weekly Workload Progress</span>
           <span class="workload-progress-value ${ta.workloadStatus}" style="font-weight:600;">${ta.hoursDisplay}</span>
@@ -1511,33 +1433,29 @@ function openTADetailModal(id) {
         </div>
       </div>
 
-      <div class="detail-grid" style="margin-bottom:20px;">
+      ${ta.skills && ta.skills.length > 0 ? `
+      <div style="margin-bottom:20px;">
+        <h3 style="margin:0 0 10px;font-size:14px;font-weight:600;color:var(--text);">Skills & Tags</h3>
+        <div class="tag-list">
+          ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="detail-grid" style="margin-bottom:16px;">
         <div class="detail-row">
           <span>User ID</span>
-          <span style="font-family:monospace;">${escapeHtml(ta.id)}</span>
+          <span style="font-family:monospace;font-size:12px;">${escapeHtml(ta.id)}</span>
         </div>
         <div class="detail-row">
           <span>Email</span>
           <span>${escapeHtml(ta.email || "-")}</span>
         </div>
         <div class="detail-row">
-          <span>Username</span>
-          <span>@${escapeHtml(ta.username)}</span>
-        </div>
-        <div class="detail-row">
-          <span>Course/Module</span>
+          <span>Course / Module</span>
           <span>${escapeHtml(ta.course)}</span>
         </div>
       </div>
-
-      ${ta.skills && ta.skills.length > 0 ? `
-      <div style="margin-bottom:20px;">
-        <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:var(--text);">Skills & Tags</h3>
-        <div class="tag-list">
-          ${ta.skills.map(skill => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
-        </div>
-      </div>
-      ` : ''}
 
       <div style="display:flex;gap:10px;margin-bottom:20px;">
         <button class="btn btn-sm btn-soft" type="button" id="viewPdfBtn" data-uid="${escapeHtml(ta.id)}">
@@ -1547,7 +1465,7 @@ function openTADetailModal(id) {
 
       ${ta.appliedJobs && ta.appliedJobs.length > 0 ? `
       <div>
-        <h3 style="margin:0 0 14px;font-size:15px;font-weight:600;color:var(--text);">Applied Jobs History</h3>
+        <h3 style="margin:0 0 14px;font-size:15px;font-weight:600;color:var(--text);">Applied Jobs · ${ta.appliedJobs.length} total</h3>
         <div style="display:flex;flex-direction:column;gap:8px;">
           ${ta.appliedJobs.map((job, index) => `
             <button class="job-detail-btn" type="button" data-job-index="${index}">
@@ -1576,8 +1494,10 @@ function openTADetailModal(id) {
         </div>
       </div>
       ` : `
-      <div style="padding:24px;text-align:center;color:var(--text-soft);background:var(--bg-soft);border-radius:12px;">
-        <p style="margin:0;">This TA has not applied for any jobs yet.</p>
+      <div class="empty-state" style="padding:32px 24px;">
+        <div class="empty-state-icon">${Icons.briefcase}</div>
+        <strong>No applications yet</strong>
+        <span>This TA has not applied for any jobs.</span>
       </div>
       `}
     </div>
@@ -1808,125 +1728,130 @@ function openJobDetailModal(job) {
 function closeJobDetailModal() { closeModal(els.jobDetailModalOverlay); }
 
 function openStatsModal() {
-    const appStats = computeApplicationStats();
-    
+    const openJobs = state.backendJobsList.filter(j => j.jobStatus === 0).length;
+    const closedJobs = state.backendJobsList.filter(j => j.jobStatus === 1).length;
+    const filledJobs = state.backendJobsList.filter(j => j.jobStatus === 2).length;
+    const adminCount = state.backendUsers.filter(u => u.userType === 3).length;
+    const totalPosts = state.stats.totalPosts;
+    const totalUsers = state.stats.totalUsers;
+    const totalTAs = state.stats.totalTAs;
+    const totalMOs = state.stats.totalMOs;
+    const openRate = totalPosts > 0 ? Math.round(openJobs / totalPosts * 100) : 0;
+    const filledRate = totalPosts > 0 ? Math.round(filledJobs / totalPosts * 100) : 0;
+    const taPct = totalUsers > 0 ? Math.round(totalTAs / totalUsers * 100) : 0;
+    const moPct = totalUsers > 0 ? Math.round(totalMOs / totalUsers * 100) : 0;
+
     els.statsModalBody.innerHTML = `
-    <div class="metrics-grid" style="margin-bottom:20px;">
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalUsers)}</strong>
-        <span>Total Users</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalTAs)}</strong>
-        <span>Total TAs</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalMOs)}</strong>
-        <span>Total MOs</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalPosts)}</strong>
-        <span>Total Posts</span>
+    <div class="stats-hero">
+      <div class="stats-hero-icon">${Icons.chart}</div>
+      <div class="stats-hero-text">
+        <h2>Platform Analytics</h2>
+        <p>A real-time snapshot of your recruitment platform's health — user composition, job pipeline, and key activity metrics.</p>
       </div>
     </div>
 
-    <div class="section-header" style="margin-top:24px;">
-      <div class="section-title-block">
-        <h3>Application Statistics</h3>
-        <p>Real-time application data from backend</p>
+    <div class="metrics-grid stats-metrics">
+      <div class="metric-card metric-card-glow metric-blue">
+        <div class="metric-icon">${Icons.users}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(totalUsers)}</strong>
+          <span>Total Users</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-violet">
+        <div class="metric-icon">${Icons.briefcase}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(totalPosts)}</strong>
+          <span>Total Jobs</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-green">
+        <div class="metric-icon">${Icons.activity}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(openJobs)}</strong>
+          <span>Open Now</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-amber">
+        <div class="metric-icon">${Icons.approve}</div>
+        <div class="metric-body">
+          <strong>${openRate}%</strong>
+          <span>Open Rate</span>
+        </div>
       </div>
     </div>
 
-    <div class="metrics-grid" style="margin-bottom:20px;">
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.totalApplications)}</strong>
-        <span>Total Applications</span>
+    <p class="stats-desc">Across the entire platform, <strong>${escapeHtml(totalUsers)} registered users</strong> participate in <strong>${escapeHtml(totalPosts)} published positions</strong>. Of these, <strong>${escapeHtml(openJobs)} positions (${openRate}%)</strong> are currently accepting applications — an indicator of active recruitment demand.</p>
+
+    <div class="stats-section-title">
+      <h3>${Icons.users} User Distribution</h3>
+    </div>
+    <div class="stats-bar-group">
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">TA ${taPct}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-blue" style="width:${taPct}%;">${escapeHtml(totalTAs)}</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.pendingCount)}</strong>
-        <span>Pending</span>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">MO ${moPct}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-violet" style="width:${moPct}%;">${escapeHtml(totalMOs)}</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.approvedCount)}</strong>
-        <span>Approved</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.approvalRate)}%</strong>
-        <span>Approval Rate</span>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Admin</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-purple" style="width:${totalUsers > 0 ? Math.round(adminCount / totalUsers * 100) : 0}%;">${escapeHtml(adminCount)}</div>
+        </div>
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="data-table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Current Value</th>
-              <th>Status</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>User Growth</td>
-              <td>${escapeHtml(state.stats.totalUsers)}</td>
-              <td><span class="badge badge-success">Stable</span></td>
-              <td>Overall user registration is growing steadily</td>
-            </tr>
-            <tr>
-              <td>Application Queue</td>
-              <td>${escapeHtml(appStats.pendingCount)}</td>
-              <td><span class="badge badge-warning">Attention</span></td>
-              <td>${escapeHtml(appStats.pendingCount)} applications awaiting processing</td>
-            </tr>
-            <tr>
-              <td>Role Change Requests</td>
-              <td>${escapeHtml(state.roleRequests.filter(r => r.status === "pending").length)}</td>
-              <td><span class="badge badge-warning">Pending</span></td>
-              <td>Has pending role request</td>
-            </tr>
-            <tr>
-              <td>System Activity</td>
-              <td>${escapeHtml(appStats.todayApplications)}</td>
-              <td><span class="badge badge-success">Healthy</span></td>
-              <td>${escapeHtml(appStats.todayApplications)} applications today</td>
-            </tr>
-          </tbody>
-        </table>
+    <p class="stats-desc">TAs make up <strong>${taPct}%</strong> of the user base as the primary applicants, while MOs account for <strong>${moPct}%</strong> as job publishers and reviewers. A healthy ratio of TAs to MOs ensures sufficient demand meets sufficient supply.</p>
+
+    <div class="stats-section-title">
+      <h3>${Icons.briefcase} Job Status Pipeline</h3>
+    </div>
+    <div class="stats-bar-group">
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Open ${openRate}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-green" style="width:${openRate}%;">${escapeHtml(openJobs)}</div>
+        </div>
+      </div>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Closed</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-amber" style="width:${totalPosts > 0 ? Math.round(closedJobs / totalPosts * 100) : 0}%;">${escapeHtml(closedJobs)}</div>
+        </div>
+      </div>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Filled ${filledRate}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-red" style="width:${filledRate}%;">${escapeHtml(filledJobs)} ${filledRate > 0 ? '· ' + filledRate + '%' : ''}</div>
+        </div>
       </div>
     </div>
 
-    ${appStats.topJobsByApplications.length > 0 ? `
-    <div class="section-header" style="margin-top:24px;">
-      <div class="section-title-block">
-        <h3>Top Jobs by Applications</h3>
-        <p>Most popular jobs among TAs</p>
+    <p class="stats-desc">Currently <strong>${escapeHtml(openJobs)} positions</strong> are open for applications, <strong>${escapeHtml(closedJobs)} have been closed</strong> (either manually or past deadline), and <strong>${escapeHtml(filledJobs)} have been successfully filled</strong> at a ${filledRate}% fill rate. A low fill rate may indicate mismatches between job requirements and available talent.</p>
+
+    <div class="stats-summary">
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-blue"></span> ${escapeHtml(totalTAs)} TAs — Applicants
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-violet"></span> ${escapeHtml(totalMOs)} MOs — Publishers
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-purple"></span> ${escapeHtml(adminCount)} Admins
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-green"></span> ${escapeHtml(openJobs)} Open — Hiring
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-red"></span> ${escapeHtml(filledJobs)} Filled — Completed
       </div>
     </div>
-    <div class="table-card">
-      <div class="data-table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Job Name</th>
-              <th>Application Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${appStats.topJobsByApplications.map((job, index) => `
-              <tr>
-                <td><span class="badge ${index === 0 ? 'badge-warning' : 'badge-soft'}">#${index + 1}</span></td>
-                <td>${escapeHtml(job.jobName)}</td>
-                <td><strong>${escapeHtml(job.count)}</strong></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    ` : ''}
   `;
 
     els.statsModalOverlay.classList.remove("hidden");
@@ -1934,11 +1859,7 @@ function openStatsModal() {
 }
 
 function closeStatsModal() { closeModal(els.statsModalOverlay); }
-function closeUsersModal() { closeModal(els.usersModalOverlay); }
-function closeUserDetailModal() { state.selectedUser = null; closeModal(els.userDetailModalOverlay); }
-function closeRequestsModal() { closeModal(els.requestsModalOverlay); }
-function closeAllJobsModal() { closeModal(els.allJobsModalOverlay); }
-function closeJobDetailModal() { closeModal(els.jobDetailModalOverlay); }
+
 
 // 已实现后端接口连接
 // 添加用户筛选状态
@@ -2550,54 +2471,6 @@ async function openPostApplicantsModal(jobId) {
     showError((r.data && r.data.msg) || r.error || "Failed to load applicants list");
 }
 
-// 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
-function openRejectPostModal(postId, moId) {
-    const post = getPostByIds(postId, moId);
-    if (!post) return;
-
-    state.selectedPost = { postId, moId, post };
-    state.rejectReason = "";
-    els.rejectReasonInput.value = "";
-    els.rejectPostModalOverlay.classList.remove("hidden");
-    lockBodyScroll();
-}
-
-// 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
-function closeRejectPostModal() {
-    state.selectedPost = null;
-    state.rejectReason = "";
-    closeModal(els.rejectPostModalOverlay);
-}
-
-// 未实现后端接口连接：示例接口文档中没有管理员驳回岗位接口，先保留前端演示逻辑
-function confirmRejectPost() {
-    if (!state.selectedPost) return;
-
-    const reason = els.rejectReasonInput.value.trim();
-    if (!reason) {
-        alert("Please enter a rejection reason.");
-        return;
-    }
-
-    const { postId, moId } = state.selectedPost;
-    const post = getPostByIds(postId, moId);
-    if (!post) return;
-
-    post.status = "rejected";
-
-    state.logs.unshift({
-        id: Date.now(),
-        type: "post_review",
-        title: "Post Rejected",
-        actor: state.currentAdmin.name,
-        time: new Date().toLocaleString("zh-CN"),
-        detail: `Rejected post '${post.jobName || post.title}' with reason: ${reason}`
-    });
-
-    closeRejectPostModal();
-    render();
-}
-
 // 已实现后端接口连接
 async function auditApplication(applicationId, auditStatus, remark, jobId) {
     const params = new URLSearchParams();
@@ -2807,12 +2680,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await loadLoginUser(); // 已实现后端接口连接
     if (!ok) return;
 
-    // 修复问题3：调整数据加载顺序
-    // 先加载申请记录（用于计算TA工作负荷），再加载岗位和用户数据
-    await loadAllApplications(); // 先加载申请记录
-    await loadAllJobs(); // 再加载岗位列表
-    await loadAllUsers(); // 用户列表加载时会使用申请记录来计算TA工作负荷
-    await loadOpenJobs(); // 开放岗位列表
+    await loadAllJobs();
+    await loadAllUsers();
+    await loadOpenJobs();
     state.logs = generateMockLogs(); // 生成模拟日志数据
     render();
 });
