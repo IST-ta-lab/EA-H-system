@@ -770,8 +770,8 @@ function renderHeroActions() {
           <span class="action-stat-label">Jobs</span>
         </div>
         <div class="action-stat">
-          <span class="action-stat-num stat-blue">${computeApplicationStats().totalApplications}</span>
-          <span class="action-stat-label">Applications</span>
+          <span class="action-stat-num stat-blue">${state.backendJobsList.filter(j => j.jobStatus === 0).length}</span>
+          <span class="action-stat-label">Open Jobs</span>
         </div>
       </div>
       <div class="action-button-row">
@@ -1808,125 +1808,130 @@ function openJobDetailModal(job) {
 function closeJobDetailModal() { closeModal(els.jobDetailModalOverlay); }
 
 function openStatsModal() {
-    const appStats = computeApplicationStats();
-    
+    const openJobs = state.backendJobsList.filter(j => j.jobStatus === 0).length;
+    const closedJobs = state.backendJobsList.filter(j => j.jobStatus === 1).length;
+    const filledJobs = state.backendJobsList.filter(j => j.jobStatus === 2).length;
+    const adminCount = state.backendUsers.filter(u => u.userType === 3).length;
+    const totalPosts = state.stats.totalPosts;
+    const totalUsers = state.stats.totalUsers;
+    const totalTAs = state.stats.totalTAs;
+    const totalMOs = state.stats.totalMOs;
+    const openRate = totalPosts > 0 ? Math.round(openJobs / totalPosts * 100) : 0;
+    const filledRate = totalPosts > 0 ? Math.round(filledJobs / totalPosts * 100) : 0;
+    const taPct = totalUsers > 0 ? Math.round(totalTAs / totalUsers * 100) : 0;
+    const moPct = totalUsers > 0 ? Math.round(totalMOs / totalUsers * 100) : 0;
+
     els.statsModalBody.innerHTML = `
-    <div class="metrics-grid" style="margin-bottom:20px;">
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalUsers)}</strong>
-        <span>Total Users</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalTAs)}</strong>
-        <span>Total TAs</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalMOs)}</strong>
-        <span>Total MOs</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(state.stats.totalPosts)}</strong>
-        <span>Total Posts</span>
+    <div class="stats-hero">
+      <div class="stats-hero-icon">${Icons.chart}</div>
+      <div class="stats-hero-text">
+        <h2>Platform Analytics</h2>
+        <p>A real-time snapshot of your recruitment platform's health — user composition, job pipeline, and key activity metrics.</p>
       </div>
     </div>
 
-    <div class="section-header" style="margin-top:24px;">
-      <div class="section-title-block">
-        <h3>Application Statistics</h3>
-        <p>Real-time application data from backend</p>
+    <div class="metrics-grid stats-metrics">
+      <div class="metric-card metric-card-glow metric-blue">
+        <div class="metric-icon">${Icons.users}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(totalUsers)}</strong>
+          <span>Total Users</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-violet">
+        <div class="metric-icon">${Icons.briefcase}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(totalPosts)}</strong>
+          <span>Total Jobs</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-green">
+        <div class="metric-icon">${Icons.activity}</div>
+        <div class="metric-body">
+          <strong>${escapeHtml(openJobs)}</strong>
+          <span>Open Now</span>
+        </div>
+      </div>
+      <div class="metric-card metric-card-glow metric-amber">
+        <div class="metric-icon">${Icons.approve}</div>
+        <div class="metric-body">
+          <strong>${openRate}%</strong>
+          <span>Open Rate</span>
+        </div>
       </div>
     </div>
 
-    <div class="metrics-grid" style="margin-bottom:20px;">
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.totalApplications)}</strong>
-        <span>Total Applications</span>
+    <p class="stats-desc">Across the entire platform, <strong>${escapeHtml(totalUsers)} registered users</strong> participate in <strong>${escapeHtml(totalPosts)} published positions</strong>. Of these, <strong>${escapeHtml(openJobs)} positions (${openRate}%)</strong> are currently accepting applications — an indicator of active recruitment demand.</p>
+
+    <div class="stats-section-title">
+      <h3>${Icons.users} User Distribution</h3>
+    </div>
+    <div class="stats-bar-group">
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">TA ${taPct}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-blue" style="width:${taPct}%;">${escapeHtml(totalTAs)}</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.pendingCount)}</strong>
-        <span>Pending</span>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">MO ${moPct}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-violet" style="width:${moPct}%;">${escapeHtml(totalMOs)}</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.approvedCount)}</strong>
-        <span>Approved</span>
-      </div>
-      <div class="metric-card">
-        <strong>${escapeHtml(appStats.approvalRate)}%</strong>
-        <span>Approval Rate</span>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Admin</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-purple" style="width:${totalUsers > 0 ? Math.round(adminCount / totalUsers * 100) : 0}%;">${escapeHtml(adminCount)}</div>
+        </div>
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="data-table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Current Value</th>
-              <th>Status</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>User Growth</td>
-              <td>${escapeHtml(state.stats.totalUsers)}</td>
-              <td><span class="badge badge-success">Stable</span></td>
-              <td>Overall user registration is growing steadily</td>
-            </tr>
-            <tr>
-              <td>Application Queue</td>
-              <td>${escapeHtml(appStats.pendingCount)}</td>
-              <td><span class="badge badge-warning">Attention</span></td>
-              <td>${escapeHtml(appStats.pendingCount)} applications awaiting processing</td>
-            </tr>
-            <tr>
-              <td>Role Change Requests</td>
-              <td>${escapeHtml(state.roleRequests.filter(r => r.status === "pending").length)}</td>
-              <td><span class="badge badge-warning">Pending</span></td>
-              <td>Has pending role request</td>
-            </tr>
-            <tr>
-              <td>System Activity</td>
-              <td>${escapeHtml(appStats.todayApplications)}</td>
-              <td><span class="badge badge-success">Healthy</span></td>
-              <td>${escapeHtml(appStats.todayApplications)} applications today</td>
-            </tr>
-          </tbody>
-        </table>
+    <p class="stats-desc">TAs make up <strong>${taPct}%</strong> of the user base as the primary applicants, while MOs account for <strong>${moPct}%</strong> as job publishers and reviewers. A healthy ratio of TAs to MOs ensures sufficient demand meets sufficient supply.</p>
+
+    <div class="stats-section-title">
+      <h3>${Icons.briefcase} Job Status Pipeline</h3>
+    </div>
+    <div class="stats-bar-group">
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Open ${openRate}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-green" style="width:${openRate}%;">${escapeHtml(openJobs)}</div>
+        </div>
+      </div>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Closed</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-amber" style="width:${totalPosts > 0 ? Math.round(closedJobs / totalPosts * 100) : 0}%;">${escapeHtml(closedJobs)}</div>
+        </div>
+      </div>
+      <div class="stats-bar-item">
+        <div class="stats-bar-label">Filled ${filledRate}%</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill bar-red" style="width:${filledRate}%;">${escapeHtml(filledJobs)} ${filledRate > 0 ? '· ' + filledRate + '%' : ''}</div>
+        </div>
       </div>
     </div>
 
-    ${appStats.topJobsByApplications.length > 0 ? `
-    <div class="section-header" style="margin-top:24px;">
-      <div class="section-title-block">
-        <h3>Top Jobs by Applications</h3>
-        <p>Most popular jobs among TAs</p>
+    <p class="stats-desc">Currently <strong>${escapeHtml(openJobs)} positions</strong> are open for applications, <strong>${escapeHtml(closedJobs)} have been closed</strong> (either manually or past deadline), and <strong>${escapeHtml(filledJobs)} have been successfully filled</strong> at a ${filledRate}% fill rate. A low fill rate may indicate mismatches between job requirements and available talent.</p>
+
+    <div class="stats-summary">
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-blue"></span> ${escapeHtml(totalTAs)} TAs — Applicants
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-violet"></span> ${escapeHtml(totalMOs)} MOs — Publishers
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-purple"></span> ${escapeHtml(adminCount)} Admins
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-green"></span> ${escapeHtml(openJobs)} Open — Hiring
+      </div>
+      <div class="stats-summary-item">
+        <span class="stats-summary-dot dot-red"></span> ${escapeHtml(filledJobs)} Filled — Completed
       </div>
     </div>
-    <div class="table-card">
-      <div class="data-table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Job Name</th>
-              <th>Application Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${appStats.topJobsByApplications.map((job, index) => `
-              <tr>
-                <td><span class="badge ${index === 0 ? 'badge-warning' : 'badge-soft'}">#${index + 1}</span></td>
-                <td>${escapeHtml(job.jobName)}</td>
-                <td><strong>${escapeHtml(job.count)}</strong></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    ` : ''}
   `;
 
     els.statsModalOverlay.classList.remove("hidden");
@@ -2807,12 +2812,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await loadLoginUser(); // 已实现后端接口连接
     if (!ok) return;
 
-    // 修复问题3：调整数据加载顺序
-    // 先加载申请记录（用于计算TA工作负荷），再加载岗位和用户数据
-    await loadAllApplications(); // 先加载申请记录
-    await loadAllJobs(); // 再加载岗位列表
-    await loadAllUsers(); // 用户列表加载时会使用申请记录来计算TA工作负荷
-    await loadOpenJobs(); // 开放岗位列表
+    await loadAllJobs();
+    await loadAllUsers();
+    await loadOpenJobs();
     state.logs = generateMockLogs(); // 生成模拟日志数据
     render();
 });
