@@ -1329,7 +1329,7 @@
 
           if (resumeStatus) {
             if (r.status === 404) {
-              resumeStatus.textContent = 'Resume not uploaded (未上传).';
+              resumeStatus.textContent = 'Resume not uploaded.';
               resumeStatus.className = 'text-sm text-amber-600 mt-3';
             } else if (r.status === 403) {
               resumeStatus.textContent = 'Resume is private and cannot be viewed.';
@@ -1498,7 +1498,7 @@
 
             if (resumeQueryStatus) {
               if (r.status === 404) {
-                resumeQueryStatus.textContent = 'Resume not uploaded (未上传).';
+                resumeQueryStatus.textContent = 'Resume not uploaded.';
                 resumeQueryStatus.className = 'text-sm text-amber-600 mt-2';
               } else if (r.status === 403) {
                 resumeQueryStatus.textContent = 'Resume is private and cannot be viewed.';
