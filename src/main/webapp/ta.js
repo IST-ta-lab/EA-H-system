@@ -310,6 +310,8 @@ function mapJobFromBackend(job) {
         contactUserId: contactUserId ? String(contactUserId) : "",
         contactName,
         tags: backendTags,
+        applyDeadline: job.applyDeadline || "",
+        jobStatus: typeof job.jobStatus === "number" ? job.jobStatus : Number(job.jobStatus),
         description: job.jobDesc || "No description available",
         raw: job
     };
@@ -331,9 +333,82 @@ function mapApplicationFromBackend(app) {
             module: app.belongModule || "Uncategorized",
             typeLabel: jobTypeMeta.label,
             description: app.jobDesc || "No description available",
-            hours: typeof app.workHoursWeekly === "number" ? app.workHoursWeekly : null
+            hours: typeof app.workHoursWeekly === "number" ? app.workHoursWeekly : null,
+            applyDeadline: app.applyDeadline || "",
+            jobStatus: typeof app.jobStatus === "number" ? app.jobStatus : Number(app.jobStatus)
         }
     };
+}
+
+function parseDeadlineDate(deadline) {
+    if (!deadline) return null;
+
+    const raw = String(deadline).trim();
+    if (!raw) return null;
+
+    let normalized = raw;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        normalized = `${raw}T23:59:59`;
+    } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}$/.test(raw)) {
+        normalized = raw.replace(" ", "T") + ":59";
+    } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(raw)) {
+        normalized = raw.replace(" ", "T");
+    }
+
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isApplicationJobClosed(app) {
+    if (!app || !app.job) return false;
+
+    const jobStatus = Number(app.job.jobStatus);
+    if (jobStatus === 1) return true;
+
+    const deadline = parseDeadlineDate(app.job.applyDeadline);
+    if (!deadline) return false;
+
+    return Date.now() > deadline.getTime();
+}
+
+function getApplicationDeadlineLabel(app) {
+    const deadline = app && app.job ? app.job.applyDeadline : "";
+    return deadline ? String(deadline) : "No deadline";
+}
+
+async function enrichApplicationJobs(applications) {
+    const enrichedApps = await Promise.all(applications.map(async app => {
+        if (!app || !app.jobId) return app;
+
+        const hasDeadline = !!(app.job && app.job.applyDeadline);
+        const hasJobStatus = Number.isFinite(Number(app.job && app.job.jobStatus));
+        if (hasDeadline || hasJobStatus) {
+            return app;
+        }
+
+        const detail = await request(`/job?action=getDetail&jobId=${encodeURIComponent(app.jobId)}`);
+        if (!(detail.ok && detail.data && detail.data.code === 200 && detail.data.data)) {
+            return app;
+        }
+
+        const mappedJob = mapJobFromBackend(detail.data.data);
+        return {
+            ...app,
+            job: {
+                ...app.job,
+                applyDeadline: mappedJob.applyDeadline || "",
+                jobStatus: mappedJob.jobStatus,
+                hours: app.job.hours !== null ? app.job.hours : mappedJob.hours
+            },
+            raw: {
+                ...app.raw,
+                applyDeadline: mappedJob.applyDeadline || app.raw.applyDeadline,
+                jobStatus: Number.isFinite(mappedJob.jobStatus) ? mappedJob.jobStatus : app.raw.jobStatus
+            }
+        };
+    }));
+
+    return enrichedApps;
 }
 
 function getStatusMeta(category, value) {
@@ -655,7 +730,7 @@ async function loadMyApplications() {
     const r = await request("/application?action=listMy");
     if (r.ok && r.data.code === 200) {
         const apps = Array.isArray(r.data.data) ? r.data.data : [];
-        state.applications = apps.map(mapApplicationFromBackend);
+        state.applications = await enrichApplicationJobs(apps.map(mapApplicationFromBackend));
         renderSidebar();
         if (state.currentView === "profile") {
             renderProfileView();
@@ -1197,14 +1272,18 @@ function renderSidebar() {
                 compact: true
             })
             : state.applications.map(app => `
-                  <div class="application-item fade-in">
+                  <div class="application-item fade-in ${isApplicationJobClosed(app) ? "application-item-closed" : ""}">
                     <div class="application-head">
                       <div>
                         <h5>${escapeHtml(app.job.course)}</h5>
                         <p class="application-sub">${escapeHtml(app.job.module)} - ${escapeHtml(app.job.typeLabel)}</p>
                       </div>
+                      ${isApplicationJobClosed(app)
+                        ? `<span class="badge badge-warning">已截止</span>`
+                        : ""}
                     </div>
                     <p class="application-desc">${escapeHtml(app.job.description)}</p>
+                    <p class="application-deadline">Deadline: ${escapeHtml(getApplicationDeadlineLabel(app))}</p>
                     <div class="application-meta">
                       <span>RoleID: ${escapeHtml(app.jobId)}</span>
                       <span>${app.job.hours !== null ? `${escapeHtml(app.job.hours)} hrs/week` : "Hours TBD"}</span>
@@ -1212,9 +1291,10 @@ function renderSidebar() {
                     <div class="application-footer">
                       ${(() => {
                         const meta = getApplicationStatusMeta(app.statusCode);
+                        const isClosed = isApplicationJobClosed(app);
                         return `
                           <span class="badge ${meta.className}">${escapeHtml(meta.label)}</span>
-                          <button class="btn btn-danger btn-xs cancel-application-btn" type="button" data-app-id="${escapeHtml(app.id)}" ${meta.canCancel ? "" : "disabled"}>
+                          <button class="btn btn-danger btn-xs cancel-application-btn" type="button" data-app-id="${escapeHtml(app.id)}" ${(meta.canCancel && !isClosed) ? "" : "disabled"}>
                             Cancel Application
                           </button>
                         `;
@@ -1223,6 +1303,17 @@ function renderSidebar() {
                   </div>
                 `).join("")
     }
+        </div>
+      </section>
+
+      <section class="glass-card section-card">
+        <h3 class="side-title">${Icons.sparkles} AI Suggestions</h3>
+        <div class="status-box">
+          <strong>Get role suggestions and application advice.</strong>
+          <p>Open the suggestion page to ask the AI for matching roles, stronger positioning, and next-step guidance.</p>
+          <div class="resume-actions">
+            <button class="btn btn-primary" id="openSuggestionPageBtn" type="button">Open Suggestions</button>
+          </div>
         </div>
       </section>
     </div>
@@ -1461,6 +1552,7 @@ function bindSidebarEvents() {
     const resumeUploadBtn = document.getElementById("resumeUploadBtn");
     const resumePreviewBtn = document.getElementById("resumePreviewBtn");
     const resumeReplaceBtn = document.getElementById("resumeReplaceBtn");
+    const openSuggestionPageBtn = document.getElementById("openSuggestionPageBtn");
     const cancelButtons = els.sidebar.querySelectorAll(".cancel-application-btn");
 
     if (openProfileEditBtn) {
@@ -1481,6 +1573,12 @@ function bindSidebarEvents() {
 
     if (resumeReplaceBtn) {
         resumeReplaceBtn.addEventListener("click", handleUploadResume);
+    }
+
+    if (openSuggestionPageBtn) {
+        openSuggestionPageBtn.addEventListener("click", () => {
+            location.href = "suggestion.html";
+        });
     }
 
     cancelButtons.forEach(btn => {
