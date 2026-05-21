@@ -1279,7 +1279,7 @@ function renderSidebar() {
                         <p class="application-sub">${escapeHtml(app.job.module)} - ${escapeHtml(app.job.typeLabel)}</p>
                       </div>
                       ${isApplicationJobClosed(app)
-                        ? `<span class="badge badge-warning">已截止</span>`
+                        ? `<span class="badge badge-warning">Closed</span>`
                         : ""}
                     </div>
                     <p class="application-desc">${escapeHtml(app.job.description)}</p>
