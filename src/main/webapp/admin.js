@@ -163,27 +163,23 @@ const Icons = {
 
 let scrollLockCount = 0;
 
-function lockBodyScroll() {
-    scrollLockCount++;
-    document.body.classList.add("modal-open");
-}
-
-function unlockBodyScroll() {
-    scrollLockCount = Math.max(0, scrollLockCount - 1);
-    if (scrollLockCount === 0) {
-        document.body.classList.remove("modal-open");
-    }
-}
+function lockBodyScroll() { /* no-op */ }
+function unlockBodyScroll() { /* no-op */ }
 
 function closeModal(overlay) {
     if (!overlay || overlay.classList.contains("hidden")) return;
     overlay.classList.add("scale-exit");
-    overlay.addEventListener("animationend", function handler() {
-        overlay.removeEventListener("animationend", handler);
+    let cleaned = false;
+    const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        overlay.removeEventListener("animationend", cleanup);
         overlay.classList.add("hidden");
         overlay.classList.remove("scale-exit");
         unlockBodyScroll();
-    }, { once: true });
+    };
+    overlay.addEventListener("animationend", cleanup, { once: true });
+    setTimeout(cleanup, 350);
 }
 
 // 已实现后端接口连接
@@ -594,6 +590,37 @@ async function deleteUser(userId) {
     showError((r.data && r.data.msg) || r.error || "Failed to delete user");
 }
 
+// 已实现后端接口连接 - 给TA发送工作量提醒消息
+async function sendReminderToTA(taId) {
+    const textarea = document.getElementById(`reminder-text-${taId}`);
+    if (!textarea) return;
+    const content = textarea.value.trim();
+    if (!content) return showError("Message content cannot be empty.");
+
+    const composeArea = document.getElementById(`reminder-${taId}`);
+    const sendBtn = composeArea ? composeArea.querySelector(".confirm-reminder-btn") : null;
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Sending..."; }
+
+    const params = new URLSearchParams();
+    params.append("receiverId", taId);
+    params.append("content", content);
+
+    const r = await request("/message?action=send", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params
+    });
+
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = `${Icons.bell} Send`; }
+
+    if (r.ok && r.data && r.data.code === 200) {
+        if (composeArea) composeArea.classList.add("hidden");
+        alert("Reminder sent successfully.");
+    } else {
+        showError((r.data && r.data.msg) || r.error || "Failed to send reminder");
+    }
+}
+
 // 已实现后端接口连接 - 退出登录
 async function logout() {
     if (!confirm("Are you sure you want to logout?")) {
@@ -888,7 +915,7 @@ function renderTAView() {
                 <div class="workload-top">
                   <div>
                     <h3 class="workload-title">
-                      <a href="#" class="ta-name-link view-ta-detail-btn" data-ta-id="${item.id}" style="color:var(--text);text-decoration:none;">${escapeHtml(item.name)}</a>
+                      <span class="ta-name-link view-ta-detail-btn" data-ta-id="${item.id}" style="color:var(--text);text-decoration:none;cursor:pointer;">${escapeHtml(item.name)}</span>
                     </h3>
                     <div class="workload-sub">
                       <span class="badge badge-soft">@${escapeHtml(item.username)}</span>
@@ -940,9 +967,26 @@ function renderTAView() {
                   <button class="btn btn-sm btn-soft view-ta-detail-btn" type="button" data-ta-id="${item.id}">
                     ${Icons.eye} View Details
                   </button>
+                  <button class="btn btn-sm ${item.workloadStatus === 'overloaded' ? 'btn-reminder-overload' : item.workloadStatus === 'near_limit' ? 'btn-reminder' : 'btn-reminder-msg'} send-reminder-btn" type="button" data-ta-id="${item.id}">
+                    ${Icons.bell} ${item.workloadStatus === 'overloaded' ? 'Send Warning' : item.workloadStatus === 'near_limit' ? 'Send Reminder' : 'Send Message'}
+                  </button>
                   <button class="btn btn-sm btn-danger delete-ta-btn" type="button" data-ta-id="${item.id}">
                     ${Icons.reject} Delete
                   </button>
+                </div>
+
+                <div class="reminder-compose hidden" id="reminder-${item.id}">
+                  <div class="reminder-to">To: ${escapeHtml(item.name)} (@${escapeHtml(item.username)})</div>
+                  <textarea class="reminder-textarea" id="reminder-text-${item.id}" rows="3">Dear ${escapeHtml(item.name)},
+
+${item.workloadStatus === 'overloaded' ? '⚠ Your current weekly workload of ' + item.currentHours + 'h has exceeded the limit of ' + item.maxHours + 'h. Please reduce your commitments immediately.' : item.workloadStatus === 'near_limit' ? '⚡ Your current weekly workload of ' + item.currentHours + 'h is approaching the limit of ' + item.maxHours + 'h. Please manage your commitments carefully.' : 'Your current weekly workload is ' + item.currentHours + 'h. Feel free to reach out if you have any questions.'}
+
+— Admin</textarea>
+                  <div class="reminder-actions">
+                    <button class="btn btn-sm btn-soft cancel-reminder-btn" type="button" data-ta-id="${item.id}">Cancel</button>
+                    <button class="btn btn-sm btn-primary confirm-reminder-btn" type="button" data-ta-id="${item.id}">${Icons.bell} Send</button>
+                  </div>
+                </div>
                 </div>
               </article>
             `}).join("")
@@ -1220,14 +1264,15 @@ function bindTAViewEvents() {
     parent.addEventListener("click", e => {
         const btn = e.target.closest(".view-ta-detail-btn");
         if (btn) {
+            e.preventDefault();
             const id = String(btn.dataset.taId);
             openTADetailModal(id);
         }
     });
 
-    // 删除TA按钮 - 使用事件委托，避免重复绑定
-    let taDeleteHandled = false;
-    if (!taDeleteHandled) {
+    // 删除TA按钮 - 使用事件委托，使用dataset标记防止重复绑定
+    if (!parent.dataset.deleteBound) {
+        parent.dataset.deleteBound = "1";
         parent.addEventListener("click", async e => {
             const btn = e.target.closest(".delete-ta-btn");
             if (btn) {
@@ -1238,7 +1283,32 @@ function bindTAViewEvents() {
                 }
             }
         });
-        taDeleteHandled = true;
+    }
+
+    // Send Message / Reminder 按钮 - 展开/收起消息编写区
+    if (!parent.dataset.reminderBound) {
+        parent.dataset.reminderBound = "1";
+        parent.addEventListener("click", e => {
+            const sendBtn = e.target.closest(".send-reminder-btn");
+            if (sendBtn) {
+                const taId = String(sendBtn.dataset.taId);
+                const composeArea = document.getElementById(`reminder-${taId}`);
+                if (composeArea) composeArea.classList.toggle("hidden");
+            }
+
+            const cancelBtn = e.target.closest(".cancel-reminder-btn");
+            if (cancelBtn) {
+                const taId = String(cancelBtn.dataset.taId);
+                const composeArea = document.getElementById(`reminder-${taId}`);
+                if (composeArea) composeArea.classList.add("hidden");
+            }
+
+            const confirmBtn = e.target.closest(".confirm-reminder-btn");
+            if (confirmBtn) {
+                const taId = String(confirmBtn.dataset.taId);
+                sendReminderToTA(taId);
+            }
+        });
     }
 }
 
@@ -1303,9 +1373,9 @@ function bindMOViewEvents() {
         }
     });
 
-    // 删除岗位和删除MO按钮 - 使用事件委托，避免重复绑定
-    let moDeleteHandled = false;
-    if (!moDeleteHandled) {
+    // 删除岗位和删除MO按钮 - 使用事件委托，dataset标记防止重复绑定
+    if (!parent.dataset.moDeleteBound) {
+        parent.dataset.moDeleteBound = "1";
         parent.addEventListener("click", async e => {
             const postBtn = e.target.closest(".delete-post-btn");
             if (postBtn) {
@@ -1325,7 +1395,6 @@ function bindMOViewEvents() {
                 }
             }
         });
-        moDeleteHandled = true;
     }
 }
 
