@@ -53,11 +53,11 @@
     </main>
 </div>
 
-<!-- Edit profile modal -->
+<!-- Guest preferences modal -->
 <div class="modal-overlay hidden" id="profileModalOverlay">
     <div class="modal-card modal-large scale-enter" id="profileModalCard">
         <div class="modal-header">
-            <h2>Edit Profile</h2>
+            <h2>Guest Preferences</h2>
             <button class="icon-btn" id="closeProfileModalBtn" type="button" aria-label="Close">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -66,6 +66,12 @@
         </div>
 
         <div class="modal-body form-layout scrollable">
+            <div class="form-group">
+                <p style="margin:0;color:var(--muted);line-height:1.6;">
+                    Preview how roles match your interests as a guest. Register or login later if you want to save a full profile.
+                </p>
+            </div>
+
             <div class="form-group">
                 <label for="profileNameInput">Name</label>
                 <input id="profileNameInput" type="text" />
@@ -101,8 +107,8 @@
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">Cancel</button>
-            <button class="btn btn-primary" id="saveProfileBtn" type="button">Save Changes</button>
+            <button class="btn btn-ghost" id="cancelProfileModalBtn" type="button">Continue Browsing</button>
+            <button class="btn btn-primary" id="saveProfileBtn" type="button">Register to Save</button>
         </div>
     </div>
 </div>
@@ -201,7 +207,7 @@
             <h2>Guest Access</h2>
         </div>
         <div class="modal-body">
-            <p class="guest-modal-desc">You are not registered. Please login/register first.</p>
+            <p class="guest-modal-desc">You are browsing as a guest. Register or login to apply, message course leads, and save your profile.</p>
         </div>
         <div class="modal-footer">
             <button class="btn btn-primary" id="guestGoLoginBtn" type="button">Register / Login</button>
