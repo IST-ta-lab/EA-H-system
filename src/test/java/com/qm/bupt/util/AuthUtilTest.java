@@ -79,7 +79,9 @@ public class AuthUtilTest {
     @Test
     @DisplayName("md5Encrypt: very long password (1000 chars) returns 32-char hex")
     void md5Encrypt_veryLongPassword_returns32CharHex() {
-        String longPassword = "a".repeat(1000);
+        StringBuilder sb = new StringBuilder(1000);
+        for (int i = 0; i < 1000; i++) sb.append('a');
+        String longPassword = sb.toString();
         String result = AuthUtil.md5Encrypt(longPassword);
         assertNotNull(result);
         assertEquals(32, result.length());
