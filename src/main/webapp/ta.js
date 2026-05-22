@@ -251,6 +251,18 @@ function normalizeTagList(tags) {
     return [];
 }
 
+function isGuestPortal() {
+    return portalConfig.role === "guest";
+}
+
+function getProfileKeywords() {
+    return normalizeTagList(
+        state.profile.tags && state.profile.tags.length > 0
+            ? state.profile.tags
+            : state.profile.skills
+    );
+}
+
 // Backend API connected
 function showError(message) {
     alert(message || "Request failed");
@@ -521,11 +533,7 @@ function getMatchData(job) {
     if (!job) return null;
 
     const jobTags = normalizeTagList(job.tags);
-    const userTags = normalizeTagList(
-        state.profile.tags && state.profile.tags.length > 0
-            ? state.profile.tags
-            : state.profile.skills
-    );
+    const userTags = getProfileKeywords();
     const userTagSet = new Set(userTags.map(tag => tag.toLowerCase()));
 
     if (jobTags.length === 0) {
@@ -744,6 +752,11 @@ async function loadMyApplications() {
 
 // Backend API connected
 async function logout() {
+    if (isGuestPortal()) {
+        goToLoginPage();
+        return;
+    }
+
     if (!portalConfig.allowLogout) {
         handleRestrictedAction();
         return;
@@ -767,11 +780,14 @@ async function logout() {
 async function loadTagList() {
     const r = await request("/user?action=listTags");
     if (r.ok && r.data && r.data.code === 200) {
-        const tags = Array.isArray(r.data.data) ? r.data.data : [];
+        const tags = normalizeTagList(Array.isArray(r.data.data) ? r.data.data : []);
         if (tags.length > 0) {
             state.availableTags = tags;
+            return;
         }
     }
+
+    state.availableTags = normalizeTagList(state.availableTags);
 }
 
 function createResumePicker() {
@@ -1164,6 +1180,71 @@ function renderJobCard(job) {
 }
 
 function renderSidebar() {
+    const profileKeywords = getProfileKeywords();
+    const showEditAction = !!portalConfig.allowProfileEdit;
+    const resumeSection = !portalConfig.allowResumeUpload
+        ? `
+          <div class="status-box">
+            <strong>Resume upload is available after login.</strong>
+            <p>Register or sign in to upload a PDF resume, preview it, and unlock quicker applications.</p>
+            <div class="resume-actions">
+              <button class="btn btn-primary" id="guestResumeLoginBtn" type="button">Register / Login</button>
+            </div>
+          </div>
+        `
+        : state.isUploadingResume
+        ? `
+              <div class="resume-box fade-in">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">...</div>
+                  <div>
+                    <strong style="display:block;margin-bottom:4px;">Uploading...</strong>
+                    <p style="margin:0;">Please wait</p>
+                  </div>
+                </div>
+              </div>
+            `
+        : state.hasResume
+        ? `
+              <div class="resume-box fade-in">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:44px;height:44px;border-radius:14px;">
+                    ${Icons.file}
+                  </div>
+                  <div>
+                    <strong style="display:block;margin-bottom:4px;">Resume Uploaded</strong>
+                    <p style="margin:0;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</p>
+                  </div>
+                  <div style="margin-left:auto;color:var(--success);width:22px;height:22px;">
+                    ${Icons.checkCircle}
+                  </div>
+                </div>
+                <div class="resume-actions">
+                  <button class="btn btn-soft" id="resumePreviewBtn" type="button">Preview</button>
+                  <button class="btn btn-ghost" id="resumeReplaceBtn" type="button">Replace</button>
+                </div>
+              </div>
+            `
+        : `
+              <button class="resume-box" id="resumeUploadBtn" type="button" style="width:100%;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">
+                    ${Icons.upload}
+                  </div>
+                  <div style="text-align:center;">
+                    <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
+                    <p style="margin:0;">Add your PDF resume to unlock faster applications and better job matching.</p>
+                  </div>
+                </div>
+              </button>
+              ${renderEmptyState({
+                    title: "No resume uploaded yet.",
+                    description: "You can still browse roles, but uploading a resume makes it easier to apply when a good match appears.",
+                    tips: ["Upload a PDF file", "Keep one updated version ready"],
+                    compact: true
+                })}
+            `;
+
     els.sidebar.innerHTML = `
     <div class="sidebar-sticky">
       <section class="glass-card section-card">
@@ -1186,78 +1267,25 @@ function renderSidebar() {
           </div>
           <div class="info-line">
             <span>Tags</span>
-            <span>${escapeHtml((state.profile.tags && state.profile.tags.length > 0
-                ? state.profile.tags
-                : state.profile.skills).join(", "))}</span>
+            <span>${escapeHtml(profileKeywords.join(", ") || "None selected")}</span>
           </div>
         </div>
 
         <div class="inline-actions" style="margin-top:18px;">
-          <button class="btn btn-soft" id="openProfileEditBtn" type="button">
-            Edit Profile
-          </button>
           <button class="btn btn-ghost" id="sidebarViewProfileBtn" type="button">
             Full Profile
           </button>
+          ${showEditAction ? `
+            <button class="btn btn-soft" id="openProfileEditBtn" type="button">
+              Edit Profile
+            </button>
+          ` : ""}
         </div>
       </section>
 
       <section class="glass-card section-card">
         <h3 class="side-title">${Icons.sparkles} Resume</h3>
-        ${
-        state.isUploadingResume
-            ? `
-              <div class="resume-box fade-in">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">...</div>
-                  <div>
-                    <strong style="display:block;margin-bottom:4px;">Uploading...</strong>
-                    <p style="margin:0;">Please wait</p>
-                  </div>
-                </div>
-              </div>
-            `
-            : state.hasResume
-            ? `
-              <div class="resume-box fade-in">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="profile-avatar" style="width:44px;height:44px;border-radius:14px;">
-                    ${Icons.file}
-                  </div>
-                  <div>
-                    <strong style="display:block;margin-bottom:4px;">Resume Uploaded</strong>
-                    <p style="margin:0;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</p>
-                  </div>
-                  <div style="margin-left:auto;color:var(--success);width:22px;height:22px;">
-                    ${Icons.checkCircle}
-                  </div>
-                </div>
-                <div class="resume-actions">
-                  <button class="btn btn-soft" id="resumePreviewBtn" type="button">Preview</button>
-                  <button class="btn btn-ghost" id="resumeReplaceBtn" type="button">Replace</button>
-                </div>
-              </div>
-            `
-            : `
-              <button class="resume-box" id="resumeUploadBtn" type="button" style="width:100%;">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">
-                    ${Icons.upload}
-                  </div>
-                  <div style="text-align:center;">
-                    <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
-                    <p style="margin:0;">Add your PDF resume to unlock faster applications and better job matching.</p>
-                  </div>
-                </div>
-              </button>
-              ${renderEmptyState({
-                    title: "No resume uploaded yet.",
-                    description: "You can still browse roles, but uploading a resume makes it easier to apply when a good match appears.",
-                    tips: ["Upload a PDF file", "Keep one updated version ready"],
-                    compact: true
-                })}
-            `
-    }
+        ${resumeSection}
       </section>
 
       <section class="glass-card section-card">
@@ -1324,10 +1352,76 @@ function renderSidebar() {
 
 function renderProfileView() {
     const applicationCount = state.applications.length;
-    const tagCount = (state.profile.tags && state.profile.tags.length > 0
-        ? state.profile.tags
-        : state.profile.skills).length;
+    const profileKeywords = getProfileKeywords();
+    const tagCount = profileKeywords.length;
     const visibilityText = state.profile.isVisible ? "Visible to recruiters" : "Hidden";
+    const showEditAction = !!portalConfig.allowProfileEdit;
+    const tagSectionTitle = isGuestPortal() ? "Tags for Preview" : "Tags";
+    const tagSectionDescription = isGuestPortal()
+        ? "Choose a few tags to preview which roles match your interests. These preferences stay only in this browser."
+        : "";
+    const tagSectionBody = isGuestPortal()
+        ? (state.availableTags.length > 0
+            ? state.availableTags.map(tag => `
+                <button
+                  class="filter-chip ${state.profile.tags.includes(tag) ? "active" : ""}"
+                  type="button"
+                  data-guest-profile-tag="${escapeHtml(tag)}"
+                >
+                  ${escapeHtml(tag)}
+                </button>
+              `).join("")
+            : `<span class="tag">No tags available</span>`)
+        : (profileKeywords.length > 0
+            ? profileKeywords.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
+            : `<span class="tag">No tags yet</span>`);
+    const resumeSection = !portalConfig.allowResumeUpload
+        ? `
+          <div class="status-box">
+            <strong>Resume tools are unlocked after login.</strong>
+            <p>Sign in to upload, preview, and replace a PDF resume before applying.</p>
+            <div class="resume-actions">
+              <button class="btn btn-primary" id="profileLoginCtaBtn" type="button">Register / Login</button>
+            </div>
+          </div>
+        `
+        : state.hasResume
+        ? `
+              <div class="resume-box">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:44px;height:44px;border-radius:14px;">
+                    ${Icons.file}
+                  </div>
+                  <div>
+                    <strong style="display:block;margin-bottom:4px;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</strong>
+                    <p style="margin:0;">PDF file ready for preview and replacement.</p>
+                  </div>
+                </div>
+                <div class="resume-actions">
+                  <button class="btn btn-soft" id="profileResumePreviewBtn" type="button">Preview Resume</button>
+                  <button class="btn btn-ghost" id="profileResumeReplaceBtn" type="button">Replace File</button>
+                </div>
+              </div>
+            `
+        : `
+              <button class="resume-box" id="profileResumeUploadBtn" type="button" style="width:100%;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">
+                    ${Icons.upload}
+                  </div>
+                  <div style="text-align:center;">
+                    <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
+                    <p style="margin:0;">Add a PDF first, then you can preview or replace it here.</p>
+                  </div>
+                </div>
+              </button>
+              ${renderEmptyState({
+                    title: "Your resume section is still empty.",
+                    description: "Upload one PDF resume so you are ready when you decide to apply for a role.",
+                    tips: ["Use a recent version", "Highlight teaching or grading experience"],
+                    compact: true
+                })}
+            `;
 
     els.profileView.innerHTML = `
     <div class="profile-page-grid">
@@ -1350,9 +1444,11 @@ function renderProfileView() {
             <button class="btn btn-soft" id="profileBackToFeedBtn" type="button">
               Back to Feed
             </button>
-            <button class="btn btn-primary" id="profileEditMainBtn" type="button">
-              ${Icons.edit} Edit Profile
-            </button>
+            ${showEditAction ? `
+              <button class="btn btn-primary" id="profileEditMainBtn" type="button">
+                ${Icons.edit} Edit Profile
+              </button>
+            ` : ""}
           </div>
         </div>
       </section>
@@ -1384,17 +1480,10 @@ function renderProfileView() {
 
         <div class="glass-card section-card">
           <div class="skill-box">
-            <h3>Tags</h3>
+            <h3>${tagSectionTitle}</h3>
+            ${tagSectionDescription ? `<p style="margin:0 0 12px;color:var(--muted);">${escapeHtml(tagSectionDescription)}</p>` : ""}
             <div class="tag-list">
-              ${
-        (state.profile.tags && state.profile.tags.length > 0
-            ? state.profile.tags
-            : state.profile.skills).length > 0
-            ? (state.profile.tags && state.profile.tags.length > 0
-                ? state.profile.tags
-                : state.profile.skills).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
-            : `<span class="tag">No tags yet</span>`
-    }
+              ${tagSectionBody}
             </div>
           </div>
         </div>
@@ -1407,46 +1496,7 @@ function renderProfileView() {
             <p>Preview your uploaded PDF or replace it with a newer version.</p>
           </div>
         </div>
-
-        ${
-        state.hasResume
-            ? `
-              <div class="resume-box">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="profile-avatar" style="width:44px;height:44px;border-radius:14px;">
-                    ${Icons.file}
-                  </div>
-                  <div>
-                    <strong style="display:block;margin-bottom:4px;">${escapeHtml(state.resumeName || "uploaded_resume.pdf")}</strong>
-                    <p style="margin:0;">PDF file ready for preview and replacement.</p>
-                  </div>
-                </div>
-                <div class="resume-actions">
-                  <button class="btn btn-soft" id="profileResumePreviewBtn" type="button">Preview Resume</button>
-                  <button class="btn btn-ghost" id="profileResumeReplaceBtn" type="button">Replace File</button>
-                </div>
-              </div>
-            `
-            : `
-              <button class="resume-box" id="profileResumeUploadBtn" type="button" style="width:100%;">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                  <div class="profile-avatar" style="width:52px;height:52px;border-radius:16px;">
-                    ${Icons.upload}
-                  </div>
-                  <div style="text-align:center;">
-                    <strong style="display:block;margin-bottom:6px;">Upload Resume</strong>
-                    <p style="margin:0;">Add a PDF first, then you can preview or replace it here.</p>
-                  </div>
-                </div>
-              </button>
-              ${renderEmptyState({
-                    title: "Your resume section is still empty.",
-                    description: "Upload one PDF resume so you are ready when you decide to apply for a role.",
-                    tips: ["Use a recent version", "Highlight teaching or grading experience"],
-                    compact: true
-                })}
-            `
-    }
+        ${resumeSection}
       </section>
 
       <section class="glass-card section-card">
@@ -1549,6 +1599,7 @@ function bindFeedEvents() {
 function bindSidebarEvents() {
     const openProfileEditBtn = document.getElementById("openProfileEditBtn");
     const sidebarViewProfileBtn = document.getElementById("sidebarViewProfileBtn");
+    const guestResumeLoginBtn = document.getElementById("guestResumeLoginBtn");
     const resumeUploadBtn = document.getElementById("resumeUploadBtn");
     const resumePreviewBtn = document.getElementById("resumePreviewBtn");
     const resumeReplaceBtn = document.getElementById("resumeReplaceBtn");
@@ -1561,6 +1612,10 @@ function bindSidebarEvents() {
 
     if (sidebarViewProfileBtn) {
         sidebarViewProfileBtn.addEventListener("click", () => setView("profile"));
+    }
+
+    if (guestResumeLoginBtn) {
+        guestResumeLoginBtn.addEventListener("click", goToLoginPage);
     }
 
     if (resumeUploadBtn) {
@@ -1607,9 +1662,11 @@ function bindSidebarEvents() {
 function bindProfileViewEvents() {
     const backBtn = document.getElementById("profileBackToFeedBtn");
     const editBtn = document.getElementById("profileEditMainBtn");
+    const profileLoginCtaBtn = document.getElementById("profileLoginCtaBtn");
     const profileResumeUploadBtn = document.getElementById("profileResumeUploadBtn");
     const profileResumePreviewBtn = document.getElementById("profileResumePreviewBtn");
     const profileResumeReplaceBtn = document.getElementById("profileResumeReplaceBtn");
+    const guestProfileTagButtons = document.querySelectorAll("[data-guest-profile-tag]");
 
     if (backBtn) {
         backBtn.addEventListener("click", () => setView("feed"));
@@ -1618,6 +1675,29 @@ function bindProfileViewEvents() {
     if (editBtn) {
         editBtn.addEventListener("click", openProfileModal);
     }
+
+    if (profileLoginCtaBtn) {
+        profileLoginCtaBtn.addEventListener("click", goToLoginPage);
+    }
+
+    guestProfileTagButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tag = btn.dataset.guestProfileTag || "";
+            if (!tag) return;
+
+            if (state.profile.tags.includes(tag)) {
+                state.profile.tags = state.profile.tags.filter(item => item !== tag);
+            } else {
+                state.profile.tags = [...state.profile.tags, tag];
+            }
+
+            renderProfileView();
+            renderSidebar();
+            if (state.currentView === "feed") {
+                renderFeedView();
+            }
+        });
+    });
 
     if (profileResumeUploadBtn) {
         profileResumeUploadBtn.addEventListener("click", handleUploadResume);
