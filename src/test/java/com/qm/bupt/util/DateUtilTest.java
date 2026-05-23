@@ -110,6 +110,22 @@ public class DateUtilTest {
     }
 
     @Test
+    @DisplayName("format: null date throws NullPointerException")
+    void format_nullDate_throwsNPE() {
+        assertThrows(NullPointerException.class, () -> {
+            DateUtil.format(null, "yyyy-MM-dd");
+        });
+    }
+
+    @Test
+    @DisplayName("format: null pattern throws NullPointerException")
+    void format_nullPattern_throwsNPE() {
+        assertThrows(NullPointerException.class, () -> {
+            DateUtil.format(new Date(), null);
+        });
+    }
+
+    @Test
     @DisplayName("format: specific known date produces expected output")
     void format_knownDate_producesExpectedOutput() {
         // Use epoch + offset for a well-known timestamp

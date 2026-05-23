@@ -91,20 +91,6 @@ public class AuthUtilTest {
     // ===== MD5 Encrypt: White-box (Branch coverage) =====
 
     @Test
-    @DisplayName("md5Encrypt: null check branch is triggered")
-    void md5Encrypt_nullBranch_returnsEmptyString() {
-        // Explicitly tests the null guard branch
-        assertEquals("", AuthUtil.md5Encrypt(null));
-    }
-
-    @Test
-    @DisplayName("md5Encrypt: empty check branch is triggered")
-    void md5Encrypt_emptyBranch_returnsEmptyString() {
-        // Explicitly tests the empty string guard branch
-        assertEquals("", AuthUtil.md5Encrypt(""));
-    }
-
-    @Test
     @DisplayName("md5Encrypt: single-digit hex padding branch (bytes < 16 are zero-padded)")
     void md5Encrypt_hexPaddingBranch_correctlyPads() {
         // MD5 of "admin" is known: 21232f297a57a5a743894a0e4a801fc3

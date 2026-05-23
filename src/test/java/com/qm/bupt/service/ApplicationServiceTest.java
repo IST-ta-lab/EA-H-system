@@ -3,6 +3,8 @@ package com.qm.bupt.service;
 import com.qm.bupt.dao.ApplicationDAO;
 import com.qm.bupt.dao.JobDAO;
 import com.qm.bupt.dao.TADAO;
+import com.qm.bupt.dto.ApplicationDetailDTO;
+import com.qm.bupt.dto.MyApplicationDTO;
 import com.qm.bupt.entity.Application;
 import com.qm.bupt.entity.Job;
 import com.qm.bupt.service.impl.ApplicationServiceImpl;
@@ -177,6 +179,49 @@ class ApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("auditApplication: nonexistent applicationId returns false")
+    void auditApplication_nonexistentApp_returnsFalse() {
+        boolean result = applicationService.auditApplication("fake-app-id", MO_USER_ID, 1, "no such app");
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("cancelApplication: nonexistent applicationId returns false")
+    void cancelApplication_nonexistentApp_returnsFalse() {
+        boolean result = applicationService.cancelApplication(TA_USER_ID, "fake-app-id");
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("cancelApplication: rejected application (status=2) can be cancelled")
+    void cancelApplication_rejectedApplication_returnsTrue() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+        applicationService.applyJob(TA_USER_ID, jobId);
+        String appId = getFirstApplicationId(jobId);
+
+        // Reject the application
+        applicationService.auditApplication(appId, MO_USER_ID, 2, "rejected");
+
+        // Rejected (status=2) should still be cancellable (only approved=1 is blocked)
+        boolean result = applicationService.cancelApplication(TA_USER_ID, appId);
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("applyJob: job with status FILLED (2) returns false")
+    void applyJob_jobFilled_returnsFalse() {
+        // Create job with recruitNum=1, apply and approve to fill it
+        String jobId = publishTestJob(MO_USER_ID, 1);
+        applicationService.applyJob(TA_USER_ID, jobId);
+        String appId = getFirstApplicationId(jobId);
+        applicationService.auditApplication(appId, MO_USER_ID, 1, "hired");
+
+        // Now job is FILLED (status=2), another TA should not be able to apply
+        boolean result = applicationService.applyJob(OTHER_TA_ID, jobId);
+        assertFalse(result);
+    }
+
+    @Test
     @DisplayName("cancelApplication: wrong user returns false")
     void cancelApplication_wrongUser_returnsFalse() {
         String jobId = publishTestJob(MO_USER_ID, 3);
@@ -185,6 +230,48 @@ class ApplicationServiceTest {
 
         boolean result = applicationService.cancelApplication(OTHER_TA_ID, appId);
         assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("listMyApplications: TA with applications returns non-empty list")
+    void listMyApplications_withApplications_returnsNonEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+        applicationService.applyJob(TA_USER_ID, jobId);
+
+        List<MyApplicationDTO> result = applicationService.listMyApplications(TA_USER_ID);
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(jobId, result.get(0).getJobId());
+    }
+
+    @Test
+    @DisplayName("listMyApplications: TA with no applications returns empty list")
+    void listMyApplications_noApplications_returnsEmpty() {
+        List<MyApplicationDTO> result = applicationService.listMyApplications(OTHER_TA_ID);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("listApplicationDetailsByJobId: job with applications returns non-empty list")
+    void listApplicationDetailsByJobId_withApplications_returnsNonEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+        applicationService.applyJob(TA_USER_ID, jobId);
+
+        List<ApplicationDetailDTO> result = applicationService.listApplicationDetailsByJobId(jobId);
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(jobId, result.get(0).getJobId());
+    }
+
+    @Test
+    @DisplayName("listApplicationDetailsByJobId: job with no applications returns empty list")
+    void listApplicationDetailsByJobId_noApplications_returnsEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+
+        List<ApplicationDetailDTO> result = applicationService.listApplicationDetailsByJobId(jobId);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     // --- Helper methods ---
