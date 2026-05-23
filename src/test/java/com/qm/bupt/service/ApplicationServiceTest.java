@@ -3,6 +3,8 @@ package com.qm.bupt.service;
 import com.qm.bupt.dao.ApplicationDAO;
 import com.qm.bupt.dao.JobDAO;
 import com.qm.bupt.dao.TADAO;
+import com.qm.bupt.dto.ApplicationDetailDTO;
+import com.qm.bupt.dto.MyApplicationDTO;
 import com.qm.bupt.entity.Application;
 import com.qm.bupt.entity.Job;
 import com.qm.bupt.service.impl.ApplicationServiceImpl;
@@ -185,6 +187,48 @@ class ApplicationServiceTest {
 
         boolean result = applicationService.cancelApplication(OTHER_TA_ID, appId);
         assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("listMyApplications: TA with applications returns non-empty list")
+    void listMyApplications_withApplications_returnsNonEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+        applicationService.applyJob(TA_USER_ID, jobId);
+
+        List<MyApplicationDTO> result = applicationService.listMyApplications(TA_USER_ID);
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(jobId, result.get(0).getJobId());
+    }
+
+    @Test
+    @DisplayName("listMyApplications: TA with no applications returns empty list")
+    void listMyApplications_noApplications_returnsEmpty() {
+        List<MyApplicationDTO> result = applicationService.listMyApplications(OTHER_TA_ID);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("listApplicationDetailsByJobId: job with applications returns non-empty list")
+    void listApplicationDetailsByJobId_withApplications_returnsNonEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+        applicationService.applyJob(TA_USER_ID, jobId);
+
+        List<ApplicationDetailDTO> result = applicationService.listApplicationDetailsByJobId(jobId);
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(jobId, result.get(0).getJobId());
+    }
+
+    @Test
+    @DisplayName("listApplicationDetailsByJobId: job with no applications returns empty list")
+    void listApplicationDetailsByJobId_noApplications_returnsEmpty() {
+        String jobId = publishTestJob(MO_USER_ID, 3);
+
+        List<ApplicationDetailDTO> result = applicationService.listApplicationDetailsByJobId(jobId);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     // --- Helper methods ---

@@ -183,6 +183,32 @@ class JobServiceTest {
         assertNotNull(jobService.getJobById(job.getJobId()));
     }
 
+    @Test
+    @DisplayName("listAllJobs: returns all jobs regardless of publisher")
+    void listAllJobs_returnsAllJobs() {
+        publishHelper("Job A", MO_USER_ID);
+        publishHelper("Job B", OTHER_MO_ID);
+
+        List<Job> allJobs = jobService.listAllJobs();
+        assertEquals(2, allJobs.size());
+    }
+
+    @Test
+    @DisplayName("listAllJobs: empty when no jobs published")
+    void listAllJobs_empty_returnsEmptyList() {
+        List<Job> allJobs = jobService.listAllJobs();
+        assertNotNull(allJobs);
+        assertTrue(allJobs.isEmpty());
+    }
+
+    @Test
+    @DisplayName("publishJob: null job throws NullPointerException")
+    void publishJob_nullJob_throwsNPE() {
+        assertThrows(NullPointerException.class, () -> {
+            jobService.publishJob(null, MO_USER_ID);
+        });
+    }
+
     // --- Helper methods ---
 
     private void publishHelper(String name, String moId) {
