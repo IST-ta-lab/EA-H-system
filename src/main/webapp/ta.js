@@ -100,7 +100,9 @@ const state = {
     appOptions: {
         takenCourse: false,
         inPerson: true
-    }
+    },
+
+    moNameMap: {} // userId -> realName lookup for MO publishers
 };
 
 const els = {};
@@ -313,7 +315,8 @@ function mapUserToProfile(user) {
 function mapJobFromBackend(job) {
     const backendTags = normalizeTagList(job.tags);
     const contactUserId = job.publisherMoId || job.publisherId || job.publisherUserId || job.moId || job.userId || "";
-    const contactName = job.publisherName || job.moName || "Course Lead";
+    const moName = contactUserId ? state.moNameMap[contactUserId] : null;
+    const contactName = moName || job.publisherName || job.moName || "Course Lead";
     return {
         id: job.jobId,
         course: job.jobName || "Untitled Role",
@@ -707,6 +710,20 @@ async function loadLoginUser() {
     alert("Not logged in or session expired. Please log in again.");
     location.href = "index.html";
     return false;
+}
+
+// Backend API connected
+async function loadMOUserList() {
+    const r = await request("/user?action=listMOs");
+    if (r.ok && r.data && r.data.code === 200) {
+        const users = Array.isArray(r.data.data) ? r.data.data : [];
+        state.moNameMap = {};
+        users.forEach(u => {
+            if (u.userId) {
+                state.moNameMap[u.userId] = u.realName || u.username || "MO";
+            }
+        });
+    }
 }
 
 // Backend API connected
@@ -2287,6 +2304,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!ok) return;
 
     await loadTagList(); // Backend API connected
+    await loadMOUserList(); // Backend API connected
     await loadOpenJobs(); // Backend API connected
     await loadMyApplications(); // Backend API connected
     await loadRecommendedJobs();
