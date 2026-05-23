@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * UserService integration tests — exercises business logic through real DAO/JSON persistence.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UserServiceTest {
 
     private static UserService userService;
@@ -131,6 +130,28 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("registerMO: duplicate username returns false")
+    void registerMO_duplicateUsername_returnsFalse() {
+        MO mo1 = buildMO("dup_mo", "pwd1");
+        userService.registerMO(mo1);
+
+        MO mo2 = buildMO("dup_mo", "pwd2");
+        boolean result = userService.registerMO(mo2);
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("registerAdmin: duplicate username returns false")
+    void registerAdmin_duplicateUsername_returnsFalse() {
+        Admin admin1 = buildAdmin("dup_admin", "pwd1");
+        userService.registerAdmin(admin1);
+
+        Admin admin2 = buildAdmin("dup_admin", "pwd2");
+        boolean result = userService.registerAdmin(admin2);
+        assertFalse(result);
+    }
+
+    @Test
     @DisplayName("registerMO: success returns true")
     void registerMO_success_returnsTrue() {
         MO mo = buildMO("new_mo", "pwd456");
@@ -160,10 +181,32 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("getUserByUsername: null username returns null")
+    void getUserByUsername_null_returnsNull() {
+        User found = userService.getUserByUsername(null);
+        assertNull(found);
+    }
+
+    @Test
     @DisplayName("getUserByUsername: not found returns null")
     void getUserByUsername_notFound_returnsNull() {
         User found = userService.getUserByUsername("no_such_user");
         assertNull(found);
+    }
+
+    @Test
+    @DisplayName("updateTAProfile: valid TA updates successfully")
+    void updateTAProfile_validTA_returnsTrue() {
+        TA ta = buildTA("update_ta", "pwd");
+        userService.registerTA(ta);
+
+        ta.setRealName("Updated Name");
+        ta.setMajor("Physics");
+        boolean result = userService.updateTAProfile(ta);
+        assertTrue(result);
+
+        TA found = userService.getTAById(ta.getUserId());
+        assertEquals("Updated Name", found.getRealName());
     }
 
     @Test
@@ -180,6 +223,14 @@ class UserServiceTest {
         ta.setUserId(null);
         boolean result = userService.updateTAProfile(ta);
         assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("matchTAsByTags: null tags returns empty list")
+    void matchTAsByTags_nullTags_returnsEmptyList() {
+        List<TA> result = userService.matchTAsByTags(null);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -210,6 +261,57 @@ class UserServiceTest {
         assertTrue(result.get(0).getMatchScore() >= result.get(1).getMatchScore());
         assertEquals(3, result.get(0).getMatchScore().intValue());
         assertEquals(2, result.get(1).getMatchScore().intValue());
+    }
+
+    @Test
+    @DisplayName("getUserById: existing user returns User")
+    void getUserById_existing_returnsUser() {
+        TA ta = buildTA("ta_by_id", "pwd");
+        userService.registerTA(ta);
+
+        User found = userService.getUserById(ta.getUserId());
+        assertNotNull(found);
+        assertEquals("ta_by_id", found.getUsername());
+    }
+
+    @Test
+    @DisplayName("getUserById: nonexistent id returns null")
+    void getUserById_nonexistent_returnsNull() {
+        User found = userService.getUserById("non-existent-id");
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("getTAById: existing TA returns TA object")
+    void getTAById_existing_returnsTA() {
+        TA ta = buildTA("ta_only", "pwd");
+        userService.registerTA(ta);
+
+        TA found = userService.getTAById(ta.getUserId());
+        assertNotNull(found);
+        assertEquals("ta_only", found.getUsername());
+    }
+
+    @Test
+    @DisplayName("getTAById: nonexistent id returns null")
+    void getTAById_nonexistent_returnsNull() {
+        TA found = userService.getTAById("non-existent-id");
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("matchTAsByTags: TA with null tag element is safely skipped")
+    void matchTAsByTags_taWithNullTagElement_safelySkipped() {
+        TA ta = buildTA("ta_null_tag", "pwd");
+        ta.setTags(Arrays.asList("Java", null, "Python"));
+        userService.registerTA(ta);
+
+        // Must not throw NPE — null tags are skipped in matching
+        List<TA> result = userService.matchTAsByTags(Arrays.asList("Java", "Python"));
+        assertNotNull(result);
+        // The registered TA should be found (matches both Java and Python)
+        boolean found = result.stream().anyMatch(r -> "ta_null_tag".equals(r.getUsername()));
+        assertTrue(found);
     }
 
     // --- White-box: Branch coverage ---
