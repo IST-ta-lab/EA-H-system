@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class UserServiceImpl implements UserService {
 
@@ -153,5 +154,12 @@ public class UserServiceImpl implements UserService {
         
         matchedTAs.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
         return matchedTAs;
+    }
+
+    @Override
+    public List<User> listMOs() {
+        return userDAO.listAll().stream()
+                .filter(u -> u.getUserType() == 2)
+                .collect(Collectors.toList());
     }
 }

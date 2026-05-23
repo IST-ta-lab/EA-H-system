@@ -34,4 +34,7 @@ public interface UserService {
 
     // 根据标签匹配TA，返回匹配度
     List<TA> matchTAsByTags(List<String> jobTags);
+
+    // 获取所有MO用户基本信息（userId, realName, username）
+    List<User> listMOs();
 }
