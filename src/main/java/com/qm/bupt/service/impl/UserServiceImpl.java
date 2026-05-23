@@ -141,7 +141,7 @@ public class UserServiceImpl implements UserService {
             }
             int matchCount = 0;
             for (String tag : taTags) {
-                if (lowerJobTags.contains(tag.toLowerCase())) {
+                if (tag != null && lowerJobTags.contains(tag.toLowerCase())) {
                     matchCount++;
                 }
             }
