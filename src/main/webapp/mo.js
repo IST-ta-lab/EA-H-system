@@ -329,7 +329,6 @@
       renderTagOptions();
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
     // GET /user?action=listTags
     async function loadAvailableTags() {
       if (dom.formTagOptions) {
@@ -393,7 +392,7 @@
       };
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // GET /user?action=getLoginUser
     async function loadCurrentUser() {
       const r = await request('/user?action=getLoginUser');
@@ -422,7 +421,7 @@
       return true;
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // POST /user?action=logout
     async function logout() {
       await request('/user?action=logout', { method: 'POST' });
@@ -430,7 +429,7 @@
       window.location.href = 'index.html';
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // GET /job?action=listMy
     // GET /application?action=listByJob&jobId=...
     async function loadJobsWithApplicants() {
@@ -900,7 +899,7 @@
       return 'General';
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // POST /job?action=publish
     // POST /job?action=update
     async function saveJob() {
@@ -1363,7 +1362,7 @@
       openModal(dom.applicantModal);
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // GET /job?action=matchTAs&jobId=...
     async function openMatchCandidatesModal(jobId) {
       const job = findJob(jobId);
@@ -1544,7 +1543,7 @@
       openModal(dom.applicantModal);
     }
 
-    // 宸插疄鐜板悗绔帴鍙ｈ繛鎺?
+
     // POST /application?action=audit
     async function auditApplication(applicationId, auditStatus, jobIdOrNull) {
       const targetJob = jobIdOrNull ? findJob(jobIdOrNull) : findJobByApplicationId(applicationId);
@@ -1639,7 +1638,7 @@
       }
     }
 
-    // 已实现后端接口连接
+
     // POST /job?action=delete
     async function deleteJob(jobId) {
       const normalizedId = String(jobId || '').trim();
