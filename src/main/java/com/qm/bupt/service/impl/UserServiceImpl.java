@@ -154,4 +154,11 @@ public class UserServiceImpl implements UserService {
         matchedTAs.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
         return matchedTAs;
     }
+
+    @Override
+    public List<User> listMOs() {
+        return userDAO.listAll().stream()
+                .filter(u -> u.getUserType() == 2)
+                .collect(Collectors.toList());
+    }
 }

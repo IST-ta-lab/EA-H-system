@@ -428,5 +428,21 @@ public class UserServlet extends BaseServlet {
         writeJson(response, Result.success(tags));
     }
 
+    /**
+     * Get basic info of all MO users
+     * GET /user?action=listMOs
+     * Requires login, returns userId, realName, username for each MO
+     */
+    public void listMOs(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User loginUser = (User) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            writeJson(response, Result.error(401, "Not logged in"));
+            return;
+        }
+        List<User> mos = userService.listMOs();
+        writeJson(response, Result.success(mos));
+    }
+
 
 }
