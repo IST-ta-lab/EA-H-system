@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * UserService integration tests — exercises business logic through real DAO/JSON persistence.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UserServiceTest {
 
     private static UserService userService;
@@ -210,6 +209,57 @@ class UserServiceTest {
         assertTrue(result.get(0).getMatchScore() >= result.get(1).getMatchScore());
         assertEquals(3, result.get(0).getMatchScore().intValue());
         assertEquals(2, result.get(1).getMatchScore().intValue());
+    }
+
+    @Test
+    @DisplayName("getUserById: existing user returns User")
+    void getUserById_existing_returnsUser() {
+        TA ta = buildTA("ta_by_id", "pwd");
+        userService.registerTA(ta);
+
+        User found = userService.getUserById(ta.getUserId());
+        assertNotNull(found);
+        assertEquals("ta_by_id", found.getUsername());
+    }
+
+    @Test
+    @DisplayName("getUserById: nonexistent id returns null")
+    void getUserById_nonexistent_returnsNull() {
+        User found = userService.getUserById("non-existent-id");
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("getTAById: existing TA returns TA object")
+    void getTAById_existing_returnsTA() {
+        TA ta = buildTA("ta_only", "pwd");
+        userService.registerTA(ta);
+
+        TA found = userService.getTAById(ta.getUserId());
+        assertNotNull(found);
+        assertEquals("ta_only", found.getUsername());
+    }
+
+    @Test
+    @DisplayName("getTAById: nonexistent id returns null")
+    void getTAById_nonexistent_returnsNull() {
+        TA found = userService.getTAById("non-existent-id");
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("matchTAsByTags: TA with null tag element is safely skipped")
+    void matchTAsByTags_taWithNullTagElement_safelySkipped() {
+        TA ta = buildTA("ta_null_tag", "pwd");
+        ta.setTags(Arrays.asList("Java", null, "Python"));
+        userService.registerTA(ta);
+
+        // Must not throw NPE — null tags are skipped in matching
+        List<TA> result = userService.matchTAsByTags(Arrays.asList("Java", "Python"));
+        assertNotNull(result);
+        // The registered TA should be found (matches both Java and Python)
+        boolean found = result.stream().anyMatch(r -> "ta_null_tag".equals(r.getUsername()));
+        assertTrue(found);
     }
 
     // --- White-box: Branch coverage ---
