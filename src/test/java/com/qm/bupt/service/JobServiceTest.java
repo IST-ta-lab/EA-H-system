@@ -202,6 +202,50 @@ class JobServiceTest {
     }
 
     @Test
+    @DisplayName("getJobById: null jobId returns null")
+    void getJobById_nullId_returnsNull() {
+        Job found = jobService.getJobById(null);
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("getJobById: nonexistent jobId returns null")
+    void getJobById_nonexistent_returnsNull() {
+        Job found = jobService.getJobById("fake-job-id");
+        assertNull(found);
+    }
+
+    @Test
+    @DisplayName("listOpenJobs: closed job (status=1) is excluded")
+    void listOpenJobs_closedJobExcluded() throws Exception {
+        publishHelper("Open Job", MO_USER_ID);
+        publishHelper("Soon Closed", MO_USER_ID);
+
+        // Manually set second job's status to 1 (closed) via JSON
+        List<Job> myJobs = jobService.listMyJobs(MO_USER_ID);
+        Job toClose = myJobs.get(1);
+        String json = new String(java.nio.file.Files.readAllBytes(tempDir.resolve("job.json")));
+        json = json.replace(
+            "\"jobId\": \"" + toClose.getJobId() + "\", \"publisherMoId\": \"" + MO_USER_ID + "\", \"jobName\": \"Soon Closed\"",
+            "\"jobId\": \"" + toClose.getJobId() + "\", \"publisherMoId\": \"" + MO_USER_ID + "\", \"jobName\": \"Soon Closed\""
+        );
+        // Use a simpler approach: update via the DAO
+        toClose.setJobStatus(1);
+        com.qm.bupt.dao.JobDAO.getInstance().updateById(toClose, toClose.getJobId(), "jobId");
+
+        List<Job> openJobs = jobService.listOpenJobs();
+        assertEquals(1, openJobs.size());
+        assertEquals("Open Job", openJobs.get(0).getJobName());
+    }
+
+    @Test
+    @DisplayName("deleteJob: nonexistent jobId returns false")
+    void deleteJob_nonexistent_returnsFalse() {
+        boolean result = jobService.deleteJob("fake-job-id", MO_USER_ID);
+        assertFalse(result);
+    }
+
+    @Test
     @DisplayName("publishJob: null job throws NullPointerException")
     void publishJob_nullJob_throwsNPE() {
         assertThrows(NullPointerException.class, () -> {
