@@ -6,25 +6,30 @@ import jakarta.servlet.ServletContext;
 import java.util.List;
 
 /**
- * 用户数据访问层
+ * Data access object for User entities.
+ *
+ * <p>Manages persistence of all user types (TA, MO, Admin) to the user.json file.
+ * Extends BaseDAO with a custom {@code findById} helper for direct lookups.</p>
  */
 public class UserDAO extends BaseDAO<User> {
 
-    // 单例实例
     private static final UserDAO INSTANCE = new UserDAO();
-    // 数据文件存储路径（WEB-INF/data/user.json，受保护目录）
     private String filePath;
 
-    // 私有构造，单例模式
     private UserDAO() {
     }
 
-    // 获取单例
+    /**
+     * Returns the singleton instance of UserDAO.
+     */
     public static UserDAO getInstance() {
         return INSTANCE;
     }
 
-    // 初始化文件路径（必须在Servlet初始化时调用，传入ServletContext）
+    /**
+     * Initializes the file path using the ServletContext.
+     * Must be called during application startup by SystemInitListener.
+     */
     public void init(ServletContext context) {
         this.filePath = context.getRealPath("/WEB-INF/data/user.json");
     }
@@ -39,6 +44,12 @@ public class UserDAO extends BaseDAO<User> {
         return User.class;
     }
 
+    /**
+     * Finds a user by their unique user ID.
+     *
+     * @param userId the user ID to look up
+     * @return the matching User, or null if not found
+     */
     public User findById(String userId) {
         List<User> list = listAll();
         for (User u : list) {

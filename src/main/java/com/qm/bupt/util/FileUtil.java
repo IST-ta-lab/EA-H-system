@@ -6,7 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- * 文件读写工具类，封装文本文件操作
+ * File I/O utility for reading and writing text files.
+ *
+ * <p>Provides convenient static methods for file read, write, and existence
+ * check operations using UTF-8 encoding. Directories are auto-created on write.</p>
  */
 public class FileUtil {
 

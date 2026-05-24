@@ -16,13 +16,19 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Servlet handling administrative operations: user and job management.
+ *
+ * <p>Mapped to {@code /admin?action=xxx}. All endpoints require Admin-level
+ * authentication. Provides user listing/detail/deletion and job listing/deletion.</p>
+ */
 @WebServlet("/admin")
 public class AdminServlet extends BaseServlet {
 
     private final AdminService adminService = AdminServiceImpl.getInstance();
 
     /**
-     * 权限校验：仅Admin可访问
+     * Checks whether the current session has Admin-level authorization.
      */
     private boolean checkAdminAuth(HttpSession session) {
         User loginUser = (User) session.getAttribute("loginUser");
@@ -30,7 +36,7 @@ public class AdminServlet extends BaseServlet {
     }
 
     /**
-     * 1. 查看所有用户名单
+     * Lists all users with summary information (Admin only).
      * GET /admin?action=listUsers
      */
     public void listUsers(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -43,8 +49,8 @@ public class AdminServlet extends BaseServlet {
     }
 
     /**
-     * 2. 根据用户ID删除用户
-     * POST /admin?action=deleteUser&userId=xxx
+     * Deletes a user and their role-specific data (Admin only).
+     * POST /admin?action=deleteUser&amp;userId=xxx
      */
     public void deleteUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (!checkAdminAuth(request.getSession())) {
@@ -57,8 +63,8 @@ public class AdminServlet extends BaseServlet {
     }
 
     /**
-     * 3. 根据用户ID查看详细信息
-     * GET /admin?action=getUserDetail&userId=xxx
+     * Gets detailed information for a specific user (Admin only).
+     * GET /admin?action=getUserDetail&amp;userId=xxx
      */
     public void getUserDetail(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (!checkAdminAuth(request.getSession())) {
@@ -71,7 +77,7 @@ public class AdminServlet extends BaseServlet {
     }
 
     /**
-     * 4. 查看所有发布过的岗位
+     * Lists all job postings across all MOs (Admin only).
      * GET /admin?action=listAllJobs
      */
     public void listAllJobs(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -84,8 +90,8 @@ public class AdminServlet extends BaseServlet {
     }
 
     /**
-     * 5. 根据岗位ID删除岗位
-     * POST /admin?action=deleteJob&jobId=xxx
+     * Deletes a job posting and cascadingly removes related applications (Admin only).
+     * POST /admin?action=deleteJob&amp;jobId=xxx
      */
     public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (!checkAdminAuth(request.getSession())) {

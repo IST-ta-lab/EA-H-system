@@ -3,7 +3,11 @@ package com.qm.bupt.entity;
 import java.io.Serializable;
 
 /**
- * 技能字典实体，用于AI技能匹配功能
+ * Skill dictionary entity used for AI-powered skill matching.
+ *
+ * <p>Each skill has a unique ID, name, and type classification
+ * (technical, soft skill, or job-specific). Skills are referenced by
+ * both TAs (their proficiencies) and Jobs (required qualifications).</p>
  */
 public class Skill implements Serializable {
     private static final long serialVersionUID = 1L;

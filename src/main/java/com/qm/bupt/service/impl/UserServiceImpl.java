@@ -17,9 +17,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of UserService handling authentication, registration, and profile management.
+ *
+ * <p>Manages three user roles (TA, MO, Admin) with dual-storage for TAs
+ * (user.json + ta.json). Passwords are MD5-hashed before storage.</p>
+ */
 public class UserServiceImpl implements UserService {
 
-    // 单例实例
     private static final UserServiceImpl INSTANCE = new UserServiceImpl();
     private final UserDAO userDAO = UserDAO.getInstance();
     private final TADAO taDAO = TADAO.getInstance();
@@ -28,12 +33,16 @@ public class UserServiceImpl implements UserService {
     private UserServiceImpl() {
     }
 
+    /**
+     * Returns the singleton instance of UserServiceImpl.
+     */
     public static UserServiceImpl getInstance() {
         return INSTANCE;
     }
 
     @Override
     public User login(String username, String password) {
+
         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
             return null;
         }

@@ -1,6 +1,11 @@
-// JobStatusEnum.java 岗位状态枚举
 package com.qm.bupt.entity.enums;
 
+/**
+ * Enum representing the lifecycle status of a job posting.
+ *
+ * <p>Jobs start as OPEN when published, and can transition to CLOSED
+ * (by the MO) or FILLED (automatically when all positions are filled).</p>
+ */
 public enum JobStatusEnum {
     OPEN(0, "招聘中"),
     CLOSED(1, "已截止"),

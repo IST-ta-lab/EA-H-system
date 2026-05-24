@@ -9,7 +9,15 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 管理员用户详情DTO：根据角色展示不同的深度信息
+ * DTO for the admin user detail view, providing role-specific deep information.
+ *
+ * <p>Contains common user fields plus role-specific data:
+ * <ul>
+ *   <li>TA: full TA profile + application history</li>
+ *   <li>MO: full MO profile + published job list</li>
+ *   <li>Admin: basic info only</li>
+ * </ul>
+ * </p>
  */
 public class UserDetailDTO implements Serializable {
     private static final long serialVersionUID = 1L;

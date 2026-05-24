@@ -1,6 +1,11 @@
-// UserTypeEnum.java 用户角色枚举
 package com.qm.bupt.entity.enums;
 
+/**
+ * Enum representing the three user roles in the system.
+ *
+ * <p>Used as the {@code userType} discriminator field in the User entity hierarchy
+ * for Gson polymorphic deserialization.</p>
+ */
 public enum UserTypeEnum {
     TA(1, "助教申请者"),
     MO(2, "模块组织者"),

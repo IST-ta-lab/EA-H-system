@@ -10,8 +10,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 通用数据访问层基类，封装所有CRUD操作
- * @param <T> 实体类型
+ * Generic data access base class providing CRUD operations for all entity types.
+ *
+ * <p>Subclasses specify the JSON file path and entity class. All read/write
+ * operations are synchronized on a static lock to prevent concurrent file
+ * corruption. ID-based operations use reflection to invoke the named getter.</p>
+ *
+ * @param <T> the entity type managed by this DAO
  */
 public abstract class BaseDAO<T> {
 
@@ -25,7 +30,9 @@ public abstract class BaseDAO<T> {
     private static final Object LOCK = new Object();
 
     /**
-     * 查询所有数据
+     * Retrieves all entities from the JSON data file.
+     *
+     * @return list of all entities, or an empty list if the file is empty or missing
      */
     public List<T> listAll() {
         synchronized (LOCK) {
@@ -43,9 +50,11 @@ public abstract class BaseDAO<T> {
     }
 
     /**
-     * 根据ID查询
-     * @param id 实体唯一ID
-     * @param idFieldName ID字段名（如userId、jobId）
+     * Finds an entity by its unique ID using reflection on the specified field name.
+     *
+     * @param id          the unique identifier value
+     * @param idFieldName the field name used for ID matching (e.g., "userId", "jobId")
+     * @return an Optional containing the matching entity, or empty if not found
      */
     public Optional<T> getById(String id, String idFieldName) {
         List<T> list = listAll();
@@ -61,7 +70,10 @@ public abstract class BaseDAO<T> {
     }
 
     /**
-     * 新增/保存数据
+     * Appends a new entity to the data file.
+     *
+     * @param entity the entity to save
+     * @return true if the save was successful, false on I/O error
      */
     public boolean save(T entity) {
         synchronized (LOCK) {
@@ -79,10 +91,12 @@ public abstract class BaseDAO<T> {
     }
 
     /**
-     * 根据ID更新数据
-     * @param entity 新的实体数据
-     * @param id 实体唯一ID
-     * @param idFieldName ID字段名
+     * Replaces the entity matching the given ID with the provided entity.
+     *
+     * @param entity      the new entity data
+     * @param id          the unique identifier of the entity to update
+     * @param idFieldName the field name used for ID matching
+     * @return true if the update was successful, false on I/O error
      */
     public boolean updateById(T entity, String id, String idFieldName) {
         synchronized (LOCK) {
@@ -111,7 +125,11 @@ public abstract class BaseDAO<T> {
     }
 
     /**
-     * 根据ID删除数据
+     * Removes the entity matching the given ID from the data file.
+     *
+     * @param id          the unique identifier of the entity to delete
+     * @param idFieldName the field name used for ID matching
+     * @return true if the deletion was successful, false on I/O error
      */
     public boolean deleteById(String id, String idFieldName) {
         synchronized (LOCK) {
@@ -137,7 +155,10 @@ public abstract class BaseDAO<T> {
     }
 
     /**
-     * 批量保存数据
+     * Overwrites the entire data file with the provided list of entities.
+     *
+     * @param entityList the complete list of entities to persist
+     * @return true if successful, false on I/O error
      */
     public boolean saveBatch(List<T> entityList) {
         synchronized (LOCK) {

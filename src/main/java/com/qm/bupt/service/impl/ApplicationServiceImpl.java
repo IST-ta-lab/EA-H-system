@@ -16,6 +16,13 @@ import java.util.ArrayList; // 【新增】
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of ApplicationService for job application management.
+ *
+ * <p>Handles application submission (with duplicate and status checks),
+ * MO auditing (with ownership verification and auto-fill logic),
+ * and application querying with enriched DTO assembly.</p>
+ */
 public class ApplicationServiceImpl implements ApplicationService {
 
     private static final ApplicationServiceImpl INSTANCE = new ApplicationServiceImpl();
@@ -26,6 +33,9 @@ public class ApplicationServiceImpl implements ApplicationService {
     private ApplicationServiceImpl() {
     }
 
+    /**
+     * Returns the singleton instance of ApplicationServiceImpl.
+     */
     public static ApplicationServiceImpl getInstance() {
         return INSTANCE;
     }

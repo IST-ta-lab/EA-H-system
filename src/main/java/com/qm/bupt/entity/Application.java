@@ -3,7 +3,11 @@ package com.qm.bupt.entity;
 import java.io.Serializable;
 
 /**
- * 岗位申请记录实体（TA与Job的多对多关联）
+ * Application entity representing a TA's application for a job position.
+ *
+ * <p>Acts as the many-to-many relationship between TA and Job. Tracks the
+ * application status (pending/passed/rejected), audit information from the
+ * reviewing MO, and timestamps.</p>
  */
 public class Application implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -11,7 +11,12 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
- * 基础Servlet，通过action参数分发方法，统一响应格式
+ * Abstract base servlet providing action-based method dispatch via reflection.
+ *
+ * <p>Both GET and POST requests are handled through {@code doPost}, which
+ * reads the {@code action} query parameter and invokes the corresponding
+ * method on the concrete subclass using reflection. All responses are
+ * returned as JSON with consistent UTF-8 encoding and CORS headers.</p>
  */
 public abstract class BaseServlet extends HttpServlet {
 
@@ -48,7 +53,10 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     /**
-     * 写入JSON响应
+     * Writes a Result object as a JSON response.
+     *
+     * @param response the HTTP response
+     * @param result   the Result object to serialize
      */
     protected void writeJson(HttpServletResponse response, Result<?> result) throws IOException {
         response.getWriter().write(JsonUtil.toJson(result));

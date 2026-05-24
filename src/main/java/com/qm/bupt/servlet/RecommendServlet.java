@@ -13,6 +13,12 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Servlet providing AI-powered recommendation endpoints.
+ *
+ * <p>Mapped to {@code /recommend?action=xxx}. Supports job-to-TA and TA-to-job
+ * recommendations based on vector embedding similarity scores.</p>
+ */
 @WebServlet("/recommend")
 public class RecommendServlet extends BaseServlet {
 

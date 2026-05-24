@@ -18,6 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Servlet handling in-app messaging: sending, history retrieval, conversation listing, and unread counts.
+ *
+ * <p>Mapped to {@code /message?action=xxx}. All endpoints require authentication.
+ * Supports paginated conversation history and batch mark-as-read.</p>
+ */
 @WebServlet("/message")
 public class MessageServlet extends BaseServlet {
 

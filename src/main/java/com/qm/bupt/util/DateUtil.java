@@ -4,7 +4,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * 日期工具类，统一日期格式
+ * Date utility providing consistent date-formatting operations.
+ *
+ * <p>Uses the default pattern {@code yyyy-MM-dd HH:mm:ss} for the current
+ * timestamp and supports custom patterns for formatting arbitrary Date objects.</p>
  */
 public class DateUtil {
 
@@ -15,14 +18,14 @@ public class DateUtil {
     }
 
     /**
-     * 获取当前时间，格式：yyyy-MM-dd HH:mm:ss
+     * Returns the current date/time formatted as yyyy-MM-dd HH:mm:ss.
      */
     public static String getNow() {
         return new SimpleDateFormat(DEFAULT_PATTERN).format(new Date());
     }
 
     /**
-     * 日期格式化
+     * Formats a Date object using the given pattern.
      */
     public static String format(Date date, String pattern) {
         return new SimpleDateFormat(pattern).format(date);

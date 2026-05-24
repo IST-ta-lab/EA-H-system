@@ -15,14 +15,20 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Servlet handling job application operations: applying, auditing, listing, and cancelling.
+ *
+ * <p>Mapped to {@code /application?action=xxx}. TAs can apply for and cancel their own
+ * applications; MOs can review applications for their job postings.</p>
+ */
 @WebServlet("/application")
 public class ApplicationServlet extends BaseServlet {
 
     private final ApplicationService applicationService = ApplicationServiceImpl.getInstance();
 
     /**
-     * 1. TA申请岗位（必须登录TA）
-     * POST /application?action=apply&jobId=xxx
+     * Submits a job application (TA only, requires login).
+     * POST /application?action=apply&amp;jobId=xxx
      */
     public void apply(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -43,9 +49,9 @@ public class ApplicationServlet extends BaseServlet {
     }
 
     /**
-     * 2. MO审核申请（必须登录MO，且只能审核自己的）
-     * POST /application?action=audit&applicationId=xxx&auditStatus=1&remark=xxx
-     * auditStatus: 1=通过, 2=拒绝
+     * Reviews a job application (MO only, must own the job posting).
+     * POST /application?action=audit&amp;applicationId=xxx&amp;auditStatus=1&amp;remark=xxx
+     * auditStatus: 1=approve, 2=reject
      */
     public void audit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -69,8 +75,8 @@ public class ApplicationServlet extends BaseServlet {
     }
 
     /**
-     * 3. 查询某岗位的所有申请（MO调用）【已修改：现在返回带TA详情的DTO】
-     * GET /application?action=listByJob&jobId=xxx
+     * Lists all applications for a job posting with TA details (MO only).
+     * GET /application?action=listByJob&amp;jobId=xxx
      */
     public void listByJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -89,7 +95,7 @@ public class ApplicationServlet extends BaseServlet {
     }
 
     /**
-     * 4. TA查询自己的申请记录
+     * Lists the logged-in TA's own application records.
      * GET /application?action=listMy
      */
     public void listMy(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -106,8 +112,8 @@ public class ApplicationServlet extends BaseServlet {
     }
 
     /**
-     * 5. TA取消申请
-     * POST /application?action=cancel&applicationId=xxx
+     * Cancels a pending application (TA only, cannot cancel approved applications).
+     * POST /application?action=cancel&amp;applicationId=xxx
      */
     public void cancel(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();

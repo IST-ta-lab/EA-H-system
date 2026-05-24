@@ -5,7 +5,11 @@ import com.qm.bupt.entity.enums.UserTypeEnum;
 import java.io.Serializable;
 
 /**
- * Admin管理员实体，继承User基类
+ * Admin entity, extending the base User class.
+ *
+ * <p>Administrators have system-wide management privileges, including user
+ * and job management. The {@code roleLevel} field distinguishes between
+ * regular and super administrators.</p>
  */
 public class Admin extends User implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -20,6 +20,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servlet handling job posting operations: publishing, listing, updating, deleting, and TA matching.
+ *
+ * <p>Mapped to {@code /job?action=xxx}. MOs can publish/update/delete their own jobs;
+ * all users (including unauthenticated guests) can browse open job listings.</p>
+ */
 @WebServlet("/job")
 public class JobServlet extends BaseServlet {
 
@@ -28,7 +34,7 @@ public class JobServlet extends BaseServlet {
     private final EmbeddingService embeddingService = EmbeddingService.getInstance();
 
     /**
-     * 1. MO发布岗位（必须登录）
+     * Publishes a new job posting (MO only, requires login).
      * POST /job?action=publish
      */
     public void publish(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -82,7 +88,7 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 2. 查询所有发布的岗位（无需登录，游客可看）
+     * Lists all job postings (no authentication required).
      * GET /job?action=listAll
      */
     public void listAll(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -91,7 +97,7 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 3. 查询所有招聘中岗位（无需登录）
+     * Lists only open (recruiting) job postings (no authentication required).
      * GET /job?action=listOpen
      */
     public void listOpen(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -100,7 +106,7 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 4. MO查询自己发布的岗位（必须登录）
+     * Lists jobs published by the currently logged-in MO.
      * GET /job?action=listMy
      */
     public void listMy(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -121,8 +127,8 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 5. 根据ID查询岗位详情
-     * GET /job?action=getDetail&jobId=xxx
+     * Gets the full details of a job posting by its ID.
+     * GET /job?action=getDetail&amp;jobId=xxx
      */
     public void getDetail(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String jobId = request.getParameter("jobId");
@@ -131,8 +137,8 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 6. MO根据工作ID匹配TA（必须登录）
-     * GET /job?action=matchTAs&jobId=xxx
+     * Matches TAs to a job posting based on tag similarity (MO only).
+     * GET /job?action=matchTAs&amp;jobId=xxx
      */
     public void matchTAs(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -164,7 +170,7 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 7. MO修改自己发布的岗位（必须登录）
+     * Updates an existing job posting (MO only, must be the original publisher).
      * POST /job?action=update
      */
     public void update(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -277,8 +283,8 @@ public class JobServlet extends BaseServlet {
     }
 
     /**
-     * 8. MO删除自己发布的岗位（必须登录）
-     * POST /job?action=delete&jobId=xxx
+     * Deletes a job posting (MO only, must be the original publisher).
+     * POST /job?action=delete&amp;jobId=xxx
      */
     public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();

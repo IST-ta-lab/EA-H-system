@@ -9,6 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Data access object for vector embeddings used in AI-powered recommendation.
+ *
+ * <p>Manages persistence of TA and job embeddings to separate JSON files.
+ * Embeddings are stored as Map&lt;String, List&lt;Double&gt;&gt; keyed by entity ID.
+ * Provides CRUD operations for both TA and job embedding data.</p>
+ */
 public class EmbeddingDAO {
 
     private static final Object LOCK = new Object();
@@ -22,15 +29,31 @@ public class EmbeddingDAO {
     private EmbeddingDAO() {
     }
 
+    /**
+     * Returns the singleton instance of EmbeddingDAO.
+     */
     public static EmbeddingDAO getInstance() {
         return INSTANCE;
     }
 
+    /**
+     * Initializes file paths for TA and job embedding data.
+     *
+     * @param taFilePath  the file path for TA embeddings
+     * @param jobFilePath the file path for job embeddings
+     */
     public void init(String taFilePath, String jobFilePath) {
         this.taEmbeddingFilePath = taFilePath;
         this.jobEmbeddingFilePath = jobFilePath;
     }
 
+    /**
+     * Saves or updates a TA's embedding vector.
+     *
+     * @param taId      the TA's unique identifier
+     * @param embedding the embedding vector as a list of doubles
+     * @return true if successful, false on I/O error
+     */
     public boolean saveTAEmbedding(String taId, List<Double> embedding) {
         synchronized (LOCK) {
             try {
@@ -46,6 +69,13 @@ public class EmbeddingDAO {
         }
     }
 
+    /**
+     * Saves or updates a job's embedding vector.
+     *
+     * @param jobId     the job's unique identifier
+     * @param embedding the embedding vector as a list of doubles
+     * @return true if successful, false on I/O error
+     */
     public boolean saveJobEmbedding(String jobId, List<Double> embedding) {
         synchronized (LOCK) {
             try {
@@ -61,16 +91,33 @@ public class EmbeddingDAO {
         }
     }
 
+    /**
+     * Retrieves a TA's embedding vector.
+     *
+     * @param taId the TA's unique identifier
+     * @return the embedding vector, or null if not found
+     */
     public List<Double> getTAEmbedding(String taId) {
         Map<String, List<Double>> embeddings = loadTAEmbeddings();
         return embeddings.get(taId);
     }
 
+    /**
+     * Retrieves a job's embedding vector.
+     *
+     * @param jobId the job's unique identifier
+     * @return the embedding vector, or null if not found
+     */
     public List<Double> getJobEmbedding(String jobId) {
         Map<String, List<Double>> embeddings = loadJobEmbeddings();
         return embeddings.get(jobId);
     }
 
+    /**
+     * Loads all TA embeddings from the data file.
+     *
+     * @return a map of TA ID to embedding vector, or an empty map if none exist
+     */
     public Map<String, List<Double>> loadTAEmbeddings() {
         synchronized (LOCK) {
             try {
@@ -86,6 +133,11 @@ public class EmbeddingDAO {
         }
     }
 
+    /**
+     * Loads all job embeddings from the data file.
+     *
+     * @return a map of job ID to embedding vector, or an empty map if none exist
+     */
     public Map<String, List<Double>> loadJobEmbeddings() {
         synchronized (LOCK) {
             try {
@@ -101,6 +153,12 @@ public class EmbeddingDAO {
         }
     }
 
+    /**
+     * Deletes a TA's embedding vector.
+     *
+     * @param taId the TA's unique identifier
+     * @return true if successful, false on I/O error
+     */
     public boolean deleteTAEmbedding(String taId) {
         synchronized (LOCK) {
             try {
@@ -116,6 +174,12 @@ public class EmbeddingDAO {
         }
     }
 
+    /**
+     * Deletes a job's embedding vector.
+     *
+     * @param jobId the job's unique identifier
+     * @return true if successful, false on I/O error
+     */
     public boolean deleteJobEmbedding(String jobId) {
         synchronized (LOCK) {
             try {

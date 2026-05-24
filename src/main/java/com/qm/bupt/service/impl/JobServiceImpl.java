@@ -9,6 +9,13 @@ import com.qm.bupt.util.DateUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of JobService for job posting CRUD operations.
+ *
+ * <p>Handles the complete job lifecycle including ownership verification
+ * for update and delete operations. Auto-generates UUIDs and timestamps
+ * for new job postings.</p>
+ */
 public class JobServiceImpl implements JobService {
 
     private static final JobServiceImpl INSTANCE = new JobServiceImpl();
@@ -17,6 +24,9 @@ public class JobServiceImpl implements JobService {
     private JobServiceImpl() {
     }
 
+    /**
+     * Returns the singleton instance of JobServiceImpl.
+     */
     public static JobServiceImpl getInstance() {
         return INSTANCE;
     }

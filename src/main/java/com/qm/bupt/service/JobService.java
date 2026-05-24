@@ -3,19 +3,69 @@ package com.qm.bupt.service;
 import com.qm.bupt.entity.Job;
 import java.util.List;
 
+/**
+ * Service interface for job posting operations.
+ *
+ * <p>Covers the full job lifecycle: publishing, listing (all/open/my),
+ * detail querying, updating, and deleting. Ownership checks ensure MOs
+ * can only modify their own postings.</p>
+ */
 public interface JobService {
-    // 1. MO发布新岗位
+
+    /**
+     * Publishes a new job posting under the specified MO.
+     *
+     * @param job           the job entity to publish
+     * @param publisherMoId the MO's user ID
+     * @return true if publishing succeeded
+     */
     boolean publishJob(Job job, String publisherMoId);
-    // 2. 查询所有发布的岗位（游客可看）
+
+    /**
+     * Lists all job postings (including closed and filled).
+     *
+     * @return list of all jobs
+     */
     List<Job> listAllJobs();
-    // 3. 查询所有招聘中岗位
+
+    /**
+     * Lists only currently open (recruiting) job postings.
+     *
+     * @return list of open jobs
+     */
     List<Job> listOpenJobs();
-    // 4. MO查询自己发布的岗位
+
+    /**
+     * Lists all jobs published by a specific MO.
+     *
+     * @param moUserId the MO's user ID
+     * @return list of jobs published by this MO
+     */
     List<Job> listMyJobs(String moUserId);
-    // 5. 根据ID查询岗位
+
+    /**
+     * Looks up a job by its unique ID.
+     *
+     * @param jobId the job ID to search for
+     * @return the matching Job, or null if not found
+     */
     Job getJobById(String jobId);
-    // 6. MO修改自己发布的岗位
+
+    /**
+     * Updates an existing job posting (MO ownership required).
+     *
+     * @param job      the updated job entity
+     * @param moUserId the requesting MO's user ID (for ownership verification)
+     * @return true if the update succeeded
+     */
     boolean updateJob(Job job, String moUserId);
-    // 7. MO删除自己发布的岗位
+
+    /**
+     * Deletes a job posting (MO ownership required).
+     *
+     * @param jobId    the job ID to delete
+     * @param moUserId the requesting MO's user ID (for ownership verification)
+     * @return true if the deletion succeeded
+     */
     boolean deleteJob(String jobId, String moUserId);
 }

@@ -5,15 +5,50 @@ import com.qm.bupt.dto.UserListDTO;
 import com.qm.bupt.entity.Job;
 import java.util.List;
 
+/**
+ * Service interface for administrative operations.
+ *
+ * <p>Provides user management (list, detail, delete) and job management
+ * (list all, delete with cascading application removal) functions
+ * available exclusively to Admin users.</p>
+ */
 public interface AdminService {
-    // 1. 查看所有用户名单
+
+    /**
+     * Lists all users with summary information for the admin dashboard.
+     *
+     * @return list of UserListDTO with basic user info and role descriptions
+     */
     List<UserListDTO> listAllUsers();
-    // 2. 根据用户ID删除用户
+
+    /**
+     * Deletes a user and their role-specific data (TA/MO sub-records).
+     *
+     * @param userId the user ID to delete
+     * @return true if the deletion succeeded
+     */
     boolean deleteUser(String userId);
-    // 3. 根据用户ID查看详细信息
+
+    /**
+     * Retrieves detailed user information including role-specific data.
+     *
+     * @param userId the user ID to query
+     * @return a UserDetailDTO with common and role-specific fields, or null if not found
+     */
     UserDetailDTO getUserDetail(String userId);
-    // 4. 查看所有发布过的岗位
+
+    /**
+     * Lists all job postings across all MOs.
+     *
+     * @return list of all jobs
+     */
     List<Job> listAllJobs();
-    // 5. 根据岗位ID删除岗位
+
+    /**
+     * Deletes a job posting and cascadingly removes its related applications.
+     *
+     * @param jobId the job ID to delete
+     * @return true if the deletion succeeded
+     */
     boolean deleteJob(String jobId);
 }

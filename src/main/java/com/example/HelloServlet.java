@@ -8,7 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-// 注解配置访问路径，浏览器访问 /hello 就能触发这个Servlet
+/**
+ * Health check servlet verifying the application is deployed and running.
+ *
+ * <p>Mapped to {@code /hello}. Returns a simple HTML page confirming successful
+ * deployment of the Jakarta Servlet environment.</p>
+ */
 @WebServlet("/hello")
 public class HelloServlet extends HttpServlet {
     @Override

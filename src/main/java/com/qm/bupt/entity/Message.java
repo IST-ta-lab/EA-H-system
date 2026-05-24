@@ -2,6 +2,13 @@ package com.qm.bupt.entity;
 
 import java.io.Serializable;
 
+/**
+ * Message entity representing in-app communication between users.
+ *
+ * <p>Messages are sent between TAs, MOs, and Admins. Each message records
+ * the sender and receiver (with names for display), content, optional job
+ * reference, send time, and read status.</p>
+ */
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
 
