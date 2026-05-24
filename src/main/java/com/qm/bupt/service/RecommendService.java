@@ -8,6 +8,13 @@ import com.qm.bupt.dao.TADAO;
 
 import java.util.*;
 
+/**
+ * Service for AI-powered job-TA and TA-job recommendations.
+ *
+ * <p>Uses cosine similarity on pre-computed vector embeddings to find the best
+ * matches between TAs and job postings. Results are sorted by similarity score
+ * and limited to a configurable top-K count.</p>
+ */
 public class RecommendService {
 
     private static final RecommendService INSTANCE = new RecommendService();
@@ -22,10 +29,20 @@ public class RecommendService {
         this.taDAO = TADAO.getInstance();
     }
 
+    /**
+     * Returns the singleton instance of RecommendService.
+     */
     public static RecommendService getInstance() {
         return INSTANCE;
     }
 
+    /**
+     * Recommends job postings for a TA based on embedding similarity.
+     *
+     * @param taId the TA's user ID
+     * @param topK the maximum number of recommendations to return
+     * @return a list of RecommendResult sorted by score descending
+     */
     public List<RecommendResult> recommendJobsForTA(String taId, int topK) {
         List<Double> taEmbedding = embeddingDAO.getTAEmbedding(taId);
         if (taEmbedding == null || taEmbedding.isEmpty()) {
@@ -51,6 +68,13 @@ public class RecommendService {
         return results.subList(0, limit);
     }
 
+    /**
+     * Recommends TAs for a job posting based on embedding similarity.
+     *
+     * @param jobId the job ID
+     * @param topK  the maximum number of recommendations to return
+     * @return a list of RecommendResult sorted by score descending
+     */
     public List<RecommendResult> recommendTAsForJob(String jobId, int topK) {
         List<Double> jobEmbedding = embeddingDAO.getJobEmbedding(jobId);
         if (jobEmbedding == null || jobEmbedding.isEmpty()) {
@@ -76,6 +100,13 @@ public class RecommendService {
         return results.subList(0, limit);
     }
 
+    /**
+     * Computes cosine similarity between two vectors.
+     *
+     * @param vecA first vector
+     * @param vecB second vector
+     * @return cosine similarity score in [0, 1], or 0 if vectors differ in size or are zero-vectors
+     */
     private double cosineSimilarity(List<Double> vecA, List<Double> vecB) {
         if (vecA.size() != vecB.size()) {
             return 0.0;
@@ -101,6 +132,9 @@ public class RecommendService {
         return dotProduct / (normA * normB);
     }
 
+    /**
+     * Result wrapper for a recommendation item.
+     */
     public static class RecommendResult {
         private String id;
         private String name;

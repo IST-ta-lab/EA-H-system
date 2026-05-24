@@ -11,7 +11,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 登录权限过滤器，拦截未登录请求
+ * Authentication filter that intercepts unauthenticated requests.
+ *
+ * <p>Maintains a whitelist of public paths (login, registration, guest job listing,
+ * tag listing, static resources). Unauthenticated requests to non-whitelisted
+ * paths receive a 401 JSON response. Authenticated users pass through.</p>
  */
 public class AuthFilter implements Filter {
 

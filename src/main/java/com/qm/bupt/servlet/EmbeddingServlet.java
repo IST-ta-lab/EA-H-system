@@ -21,6 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servlet for managing vector embeddings used in AI matching.
+ *
+ * <p>Mapped to {@code /embedding?action=xxx}. Provides endpoints to update
+ * and retrieve embedding vectors for both TAs and job postings.</p>
+ */
 @WebServlet("/embedding")
 public class EmbeddingServlet extends BaseServlet {
 

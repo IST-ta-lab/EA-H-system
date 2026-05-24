@@ -3,7 +3,10 @@ package com.qm.bupt.dto;
 import java.io.Serializable;
 
 /**
- * 管理员用户列表DTO：展示所有用户的基本信息
+ * DTO for the admin user list view, displaying basic information for all users.
+ *
+ * <p>Includes user ID, username, real name, email, user type (with description),
+ * and account status. Used by the admin management dashboard.</p>
  */
 public class UserListDTO implements Serializable {
     private static final long serialVersionUID = 1L;

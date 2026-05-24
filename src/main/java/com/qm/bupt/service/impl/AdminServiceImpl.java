@@ -10,6 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of AdminService for administrative operations.
+ *
+ * <p>Provides user management with role-specific data assembly (TA/MO detail views),
+ * user deletion with cascading sub-record removal, and job deletion with
+ * cascading application record cleanup.</p>
+ */
 public class AdminServiceImpl implements AdminService {
 
     private static final AdminServiceImpl INSTANCE = new AdminServiceImpl();
@@ -22,6 +29,9 @@ public class AdminServiceImpl implements AdminService {
     private AdminServiceImpl() {
     }
 
+    /**
+     * Returns the singleton instance of AdminServiceImpl.
+     */
     public static AdminServiceImpl getInstance() {
         return INSTANCE;
     }

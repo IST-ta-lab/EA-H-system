@@ -5,7 +5,10 @@ import jakarta.servlet.annotation.WebFilter;
 import java.io.IOException;
 
 /**
- * 全局编码过滤器，统一设置UTF-8编码
+ * Global encoding filter that sets UTF-8 encoding for all requests and responses.
+ *
+ * <p>Mapped to {@code /*} via {@code @WebFilter}. Ensures consistent character
+ * encoding across the entire application.</p>
  */
 @WebFilter("/*")
 public class EncodingFilter implements Filter {

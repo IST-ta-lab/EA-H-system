@@ -13,7 +13,11 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 /**
- * JSON工具类，封装Gson操作（支持多态反序列化）
+ * JSON utility class wrapping Gson operations with polymorphic deserialization support.
+ *
+ * <p>Configures a singleton Gson instance with a RuntimeTypeAdapterFactory for the
+ * User hierarchy, enabling automatic instantiation of TA, MO, or Admin subclasses
+ * based on the {@code userType} field. Date format and HTML escaping are also configured.</p>
  */
 public class JsonUtil {
 

@@ -6,7 +6,10 @@ import com.qm.bupt.entity.Job;
 import java.io.Serializable;
 
 /**
- * TA端申请记录DTO：申请信息 + 岗位信息
+ * DTO for a TA's own application records with associated job information.
+ *
+ * <p>Combines application fields (status, time, remark) with job details
+ * (name, type, module, description, hours) for display on the TA dashboard.</p>
  */
 public class MyApplicationDTO implements Serializable {
     private static final long serialVersionUID = 1L;

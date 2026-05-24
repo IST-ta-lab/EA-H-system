@@ -10,6 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Data access object for Message entities.
+ *
+ * <p>Manages persistence of in-app messages to the message.json file.
+ * Provides custom query methods for conversation history, unread counts,
+ * and read-status marking. Unlike other DAOs, MessageDAO does not extend
+ * BaseDAO due to its specialized query requirements.</p>
+ */
 public class MessageDAO {
 
     private static final MessageDAO INSTANCE = new MessageDAO();
@@ -19,14 +27,26 @@ public class MessageDAO {
     private MessageDAO() {
     }
 
+    /**
+     * Returns the singleton instance of MessageDAO.
+     */
     public static MessageDAO getInstance() {
         return INSTANCE;
     }
 
+    /**
+     * Initializes the file path using the ServletContext.
+     */
     public void init(ServletContext context) {
         this.filePath = context.getRealPath("/WEB-INF/data/message.json");
     }
 
+    /**
+     * Adds a new message to the data file.
+     *
+     * @param message the message to persist
+     * @return true if successful, false on I/O error
+     */
     public boolean add(Message message) {
         synchronized (LOCK) {
             try {
@@ -42,6 +62,11 @@ public class MessageDAO {
         }
     }
 
+    /**
+     * Retrieves all messages from the data file.
+     *
+     * @return list of all messages, or an empty list if the file is empty
+     */
     public List<Message> findAll() {
         synchronized (LOCK) {
             try {
@@ -57,6 +82,14 @@ public class MessageDAO {
         }
     }
 
+    /**
+     * Finds all messages exchanged between two users (both directions),
+     * sorted by send time descending.
+     *
+     * @param senderId   one user's ID
+     * @param receiverId the other user's ID
+     * @return list of messages in the conversation
+     */
     public List<Message> findBySenderAndReceiver(String senderId, String receiverId) {
         List<Message> all = findAll();
         return all.stream()
@@ -66,6 +99,12 @@ public class MessageDAO {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Finds all unique user IDs that the given user has conversed with.
+     *
+     * @param userId the user to find conversation partners for
+     * @return list of unique user IDs
+     */
     public List<String> findConversationUsers(String userId) {
         List<Message> all = findAll();
         List<String> userIds = new ArrayList<>();
@@ -80,6 +119,12 @@ public class MessageDAO {
         return userIds;
     }
 
+    /**
+     * Counts the number of unread messages for a given user.
+     *
+     * @param userId the receiver's user ID
+     * @return the count of messages with status = 0 (unread)
+     */
     public int countUnread(String userId) {
         List<Message> all = findAll();
         return (int) all.stream()
@@ -87,6 +132,11 @@ public class MessageDAO {
                 .count();
     }
 
+    /**
+     * Marks a list of messages as read (status = 1).
+     *
+     * @param messageIds list of message IDs to mark as read
+     */
     public void markAsRead(List<String> messageIds) {
         synchronized (LOCK) {
             try {

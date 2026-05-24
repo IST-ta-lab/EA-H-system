@@ -4,7 +4,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 招聘岗位实体
+ * Job posting entity representing a TA position published by an MO.
+ *
+ * <p>Contains job details such as title, type, description, working hours,
+ * recruitment quota, deadline, and status. Each job is associated with a
+ * publisher (MO) and optionally tagged with skill requirements.</p>
  */
 public class Job implements Serializable {
     private static final long serialVersionUID = 1L;

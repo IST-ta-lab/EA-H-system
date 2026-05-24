@@ -6,7 +6,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * MO模块组织者实体，继承User基类
+ * Module Organizer (MO) entity, extending the base User class.
+ *
+ * <p>Contains MO-specific fields such as staff ID, department, managed modules,
+ * and published job IDs. MOs are responsible for posting job openings and
+ * reviewing TA applications.</p>
  */
 public class MO extends User implements Serializable {
     private static final long serialVersionUID = 1L;

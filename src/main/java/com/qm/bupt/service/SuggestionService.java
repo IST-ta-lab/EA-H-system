@@ -20,6 +20,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for generating AI-powered career suggestions for TAs.
+ *
+ * <p>Retrieves recommended jobs for a TA (via embedding or tag-matching fallback),
+ * builds a structured prompt with the TA's profile and job matches, then calls
+ * an OpenAI-compatible chat API to generate personalized advice.</p>
+ */
 public class SuggestionService {
 
     private static final String DEFAULT_API_URL = "https://api.openai.com/v1/chat/completions";
@@ -41,6 +48,9 @@ public class SuggestionService {
         this.gson = new Gson();
     }
 
+    /**
+     * Returns the singleton instance of SuggestionService.
+     */
     public static SuggestionService getInstance() {
         return INSTANCE;
     }
@@ -62,7 +72,14 @@ public class SuggestionService {
     }
 
     /**
-     * 为TA生成AI建议，基于其被推荐的岗位
+     * Generates AI-powered career suggestions for a TA based on recommended job positions.
+     *
+     * <p>Uses embedding-based recommendation first; falls back to tag matching
+     * if no embeddings are available.</p>
+     *
+     * @param taId the TA's user ID
+     * @return the AI-generated suggestion text
+     * @throws Exception if the TA is not found or the AI API call fails
      */
     public String generateSuggestion(String taId) throws Exception {
         TA ta = taDAO.getById(taId, "userId").orElse(null);
@@ -87,7 +104,8 @@ public class SuggestionService {
     }
 
     /**
-     * 标签匹配回退：当嵌入向量不存在时，用TA与Job的标签交集数量排序
+     * Tag-matching fallback: when embeddings are unavailable, rank jobs by
+     * the intersection count of tags between the TA and each job posting.
      */
     private List<RecommendResult> recommendByTagMatch(TA ta, int topK) {
         List<String> taTags = ta.getTags();

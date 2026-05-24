@@ -12,15 +12,21 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
+/**
+ * Servlet generating AI-powered career suggestions for TAs.
+ *
+ * <p>Mapped to {@code /suggestion?action=generateForTA}. Uses the SuggestionService
+ * to produce personalized advice based on recommended job matches.</p>
+ */
 @WebServlet("/suggestion")
 public class SuggestionServlet extends BaseServlet {
 
     private final SuggestionService suggestionService = SuggestionService.getInstance();
 
     /**
-     * 为TA生成AI建议
-     * GET /suggestion?action=generateForTA&taId=xxx
-     * taId可选，默认使用当前登录用户
+     * Generates AI-powered career suggestions for a TA.
+     * GET /suggestion?action=generateForTA&amp;taId=xxx
+     * taId is optional; defaults to the currently logged-in user.
      */
     public void generateForTA(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();

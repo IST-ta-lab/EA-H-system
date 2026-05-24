@@ -5,7 +5,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 /**
- * 认证工具类：密码加密、UUID生成
+ * Authentication utility providing password hashing and unique ID generation.
+ *
+ * <p>Uses MD5 for password encryption (suitable for educational projects)
+ * and UUID for generating globally unique entity identifiers.</p>
  */
 public class AuthUtil {
 
@@ -14,14 +17,15 @@ public class AuthUtil {
     }
 
     /**
-     * 生成全局唯一UUID
+     * Generates a globally unique UUID string (without hyphens).
      */
     public static String generateUUID() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
     /**
-     * MD5密码加密（教学项目够用，生产环境可升级为BCrypt）
+     * Encrypts a password using MD5 hashing.
+     * Suitable for educational projects; production deployments should use BCrypt.
      */
     public static String md5Encrypt(String password) {
         if (password == null || password.isEmpty()) {

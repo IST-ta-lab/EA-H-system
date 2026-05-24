@@ -6,7 +6,12 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 用户抽象基类，抽取TA/MO/Admin公共属性
+ * Abstract base class for all user types (TA, MO, Admin).
+ *
+ * <p>Provides common fields such as userId, username, password, and email.
+ * Concrete subclasses extend this with role-specific attributes.
+ * Gson polymorphic deserialization is configured via {@code RuntimeTypeAdapterFactory}
+ * using the {@code userType} field as the discriminator.</p>
  */
 public abstract class User implements Serializable {
     private static final long serialVersionUID = 1L;

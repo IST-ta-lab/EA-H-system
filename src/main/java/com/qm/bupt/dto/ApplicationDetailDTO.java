@@ -6,8 +6,11 @@ import com.qm.bupt.entity.TA;
 import java.io.Serializable;
 
 /**
- * 申请详情DTO：组装申请记录 + TA申请者信息
- * 专门用于MO查看申请列表时返回
+ * DTO combining application record and TA applicant details.
+ *
+ * <p>Used by the MO when viewing the applicant list for a job posting.
+ * Assembles application information together with the TA's profile details
+ * (name, student ID, major, education, email, CV path, self-introduction).</p>
  */
 public class ApplicationDetailDTO implements Serializable {
     private static final long serialVersionUID = 1L;

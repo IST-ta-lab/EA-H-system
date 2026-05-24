@@ -27,8 +27,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 用户相关接口
- * 访问路径：/user?action=xxx
+ * Servlet handling user-related operations: login, registration, profile management, PDF upload/download.
+ *
+ * <p>Mapped to {@code /user?action=xxx}. Provides 9 action endpoints covering
+ * authentication (login/logout), registration (TA/MO/Admin), profile updates,
+ * PDF file handling, tag listing, and MO information queries.</p>
  */
 @WebServlet("/user")
 @MultipartConfig
@@ -38,9 +41,8 @@ public class UserServlet extends BaseServlet {
     private final EmbeddingService embeddingService = EmbeddingService.getInstance();
 
     /**
-     * 登录接口
-     * 访问：POST /user?action=login
-     * 参数：username, password
+     * Authenticates a user with username and password.
+     * POST /user?action=login&amp;username=xxx&amp;password=xxx
      */
     public void login(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = request.getParameter("username");
@@ -61,9 +63,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * TA注册接口
-     * 访问：POST /user?action=registerTA
-     * 参数：username, password, realName, email, studentId, major, education, grade
+     * Registers a new TA account.
+     * POST /user?action=registerTA&amp;username=xxx&amp;password=xxx&amp;realName=xxx&amp;email=xxx&amp;studentId=xxx&amp;major=xxx&amp;education=xxx&amp;grade=xxx
      */
     public void registerTA(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // 接收参数
@@ -104,8 +105,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 获取当前登录用户信息
-     * 访问：GET /user?action=getLoginUser
+     * Returns the currently logged-in user's information.
+     * GET /user?action=getLoginUser
      */
     public void getLoginUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -118,9 +119,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 更新TA个人资料
-     * 访问：POST /user?action=updateProfile
-     * 参数：realName, email, major, selfIntro, skills(英文逗号分隔), profileVisible(true/false 或 1/0)
+     * Updates the logged-in TA's profile information.
+     * POST /user?action=updateProfile&amp;realName=xxx&amp;email=xxx&amp;major=xxx&amp;selfIntro=xxx&amp;skills=xxx&amp;profileVisible=true/false
      */
     public void updateProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -200,8 +200,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 退出登录
-     * 访问：POST /user?action=logout
+     * Logs out the current user by invalidating the session.
+     * POST /user?action=logout
      */
     public void logout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -210,9 +210,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * MO注册接口
-     * 访问：POST /user?action=registerMO
-     * 参数：username, password, realName, email, staffId, department
+     * Registers a new MO account.
+     * POST /user?action=registerMO&amp;username=xxx&amp;password=xxx&amp;realName=xxx&amp;email=xxx&amp;staffId=xxx&amp;department=xxx
      */
     public void registerMO(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // 接收参数
@@ -249,9 +248,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * Admin注册接口（仅用于初始化，实际项目中Admin应该由后台直接创建）
-     * 访问：POST /user?action=registerAdmin
-     * 参数：username, password, realName, email
+     * Registers a new Admin account (for initialization; Admins should normally be created by other means).
+     * POST /user?action=registerAdmin&amp;username=xxx&amp;password=xxx&amp;realName=xxx&amp;email=xxx
      */
     public void registerAdmin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = request.getParameter("username");
@@ -281,9 +279,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * TA上传个人资料PDF
-     * 访问：POST /user?action=uploadProfilePdf
-     * 参数：file (multipart file)
+     * Uploads a PDF profile document for the logged-in TA.
+     * POST /user?action=uploadProfilePdf with multipart file
      */
     public void uploadProfilePdf(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
@@ -343,9 +340,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 根据uid下载TA的个人资料PDF
-     * 访问：GET /user?action=downloadProfilePdf&uid=xxx
-     * 仅当TA设置了profileVisible=true且已上传PDF时才可下载
+     * Downloads a TA's profile PDF by user ID (respects privacy settings).
+     * GET /user?action=downloadProfilePdf&amp;uid=xxx
      */
     public void downloadProfilePdf(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String uid = request.getParameter("uid");
@@ -397,9 +393,8 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 获取Tag列表
-     * 访问：GET /user?action=listTags
-     * 无需登录，返回所有可选的Tag
+     * Retrieves the list of available skill tags (no authentication required).
+     * GET /user?action=listTags
      */
     public void listTags(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String jsonPath = request.getServletContext().getRealPath("/WEB-INF/data/tags.json");

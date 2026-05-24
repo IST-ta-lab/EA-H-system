@@ -6,7 +6,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * TA申请者实体，继承User基类
+ * Teaching Assistant (TA) entity, extending the base User class.
+ *
+ * <p>Contains TA-specific fields such as student ID, major, education level,
+ * skill IDs, CV path, and tag-based matching score. Used as the primary
+ * applicant role in the recruitment system.</p>
  */
 public class TA extends User implements Serializable {
     private static final long serialVersionUID = 1L;

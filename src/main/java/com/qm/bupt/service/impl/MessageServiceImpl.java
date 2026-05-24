@@ -10,6 +10,12 @@ import com.qm.bupt.util.DateUtil;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Implementation of MessageService for in-app messaging.
+ *
+ * <p>Handles message sending with automatic sender/receiver name resolution,
+ * paginated conversation history retrieval, and unread message management.</p>
+ */
 public class MessageServiceImpl implements MessageService {
 
     private static final MessageServiceImpl INSTANCE = new MessageServiceImpl();
@@ -19,6 +25,9 @@ public class MessageServiceImpl implements MessageService {
     private MessageServiceImpl() {
     }
 
+    /**
+     * Returns the singleton instance of MessageServiceImpl.
+     */
     public static MessageServiceImpl getInstance() {
         return INSTANCE;
     }

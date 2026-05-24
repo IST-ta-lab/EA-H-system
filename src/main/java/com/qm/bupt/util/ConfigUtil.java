@@ -3,6 +3,13 @@ package com.qm.bupt.util;
 import java.io.*;
 import java.util.Properties;
 
+/**
+ * Configuration utility reading from config.properties and environment variables.
+ *
+ * <p>Reads from {@code WEB-INF/data/config.properties} first, then falls back
+ * to system environment variables. Initialized once by SystemInitListener
+ * during application startup.</p>
+ */
 public class ConfigUtil {
 
     private static final String CONFIG_FILE = "/WEB-INF/data/config.properties";

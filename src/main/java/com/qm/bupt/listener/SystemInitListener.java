@@ -8,7 +8,10 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 
 /**
- * 系统初始化监听器，项目启动时初始化DAO文件路径
+ * Application lifecycle listener that initializes DAO file paths on system startup.
+ *
+ * <p>Called when the servlet context is initialized. Sets up real file paths
+ * for all DAO instances and initializes the configuration utility.</p>
  */
 @WebListener
 public class SystemInitListener implements ServletContextListener {

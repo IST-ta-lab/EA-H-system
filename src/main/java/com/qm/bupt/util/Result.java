@@ -3,7 +3,11 @@ package com.qm.bupt.util;
 import java.io.Serializable;
 
 /**
- * 统一API响应结果类，前后端交互规范
+ * Unified API response wrapper for frontend-backend communication.
+ *
+ * <p>All servlet endpoints return data wrapped in this class, providing a
+ * consistent JSON structure with status code, message, and payload fields.
+ * Static factory methods create success and error responses.</p>
  */
 public class Result<T> implements Serializable {
     private static final long serialVersionUID = 1L;
