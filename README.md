@@ -34,7 +34,7 @@ A Java Web application built with Jakarta Servlet 5.0, providing core hiring wor
 - **Maven**: 3.6 or higher
 - **Tomcat**: 10.1.x (Jakarta EE 9 required; Tomcat 9 and below are incompatible)
 - **API Tokens** (optional, for AI features):
-  - `EMBEDDING_API_TOKEN` — for AI job/TA matching and recommendation
+  - `EMBEDDING_API_TOKEN` — Gitee AI API key for AI job/TA matching and recommendation
   - `AI_API_TOKEN` — for AI-powered career suggestions (OpenAI-compatible API)
 
 ## Quick Start
@@ -52,7 +52,7 @@ This generates `target/tapj.war`.
 Copy `src/main/webapp/WEB-INF/data/config.properties.example` to `config.properties` in the same directory and fill in your API tokens:
 
 ```properties
-EMBEDDING_API_TOKEN=your_token_here
+EMBEDDING_API_TOKEN=your_gitee_ai_api_key_here
 AI_API_TOKEN=your_token_here
 AI_API_URL=https://api.openai.com/v1/chat/completions
 AI_API_MODEL=gpt-3.5-turbo
@@ -72,7 +72,7 @@ Open a browser and go to `http://localhost:8080/tapj/`
 
 | Key               | Required For              | Fallback                     |
 |-------------------|---------------------------|------------------------------|
-| `EMBEDDING_API_TOKEN` | AI matching / recommendation | env var `EMBEDDING_API_TOKEN` |
+| `EMBEDDING_API_TOKEN` | AI matching / recommendation (Gitee AI API key) | env var `EMBEDDING_API_TOKEN` |
 | `AI_API_TOKEN`        | AI suggestion (`/suggestion`) | env var `AI_API_TOKEN`         |
 | `AI_API_URL`          | Custom API endpoint       | `https://api.openai.com/v1/chat/completions` |
 | `AI_API_MODEL`        | Model selection           | `gpt-3.5-turbo`              |
